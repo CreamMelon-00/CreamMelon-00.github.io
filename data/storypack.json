@@ -1,0 +1,33 @@
+{
+  "format": "story-dialogue-studio",
+  "version": 1,
+  "exportedAt": "2026-06-19T09:09:44Z",
+  "meta": {
+    "key": "project",
+    "title": "가문과 가족",
+    "description": "배포 테스트용 샘플입니다. 제작용 HTML에서 프로젝트를 내보낸 뒤 data/storypack.json을 교체하세요."
+  },
+  "episodes": [
+    {
+      "id": "episode_publish_sample",
+      "order": 1,
+      "title": "배포 테스트",
+      "subtitle": "storypack 자동 로드 확인용",
+      "description": "이 화가 보이면 웹사이트 배포용 구조가 정상 작동하는 것입니다.",
+      "coverAssetId": "",
+      "script": "- 배포 테스트 화면 | data/storypack.json을 자동으로 읽어온 상태입니다.\n\n@무드 긴장\n@정적 0.8\n\n안내 | 시스템\n이 파일은 배포 테스트용 샘플입니다.\n\n안내 | 시스템\n제작용 HTML에서 프로젝트를 내보낸 뒤, [storypack.json] 파일을 교체하면 실제 작품이 표시됩니다.\n\n안내 | 시스템\n이제 이 폴더를 Netlify, Cloudflare Pages, GitHub Pages 같은 정적 호스팅에 올리면 됩니다.",
+      "createdAt": "2026-06-19T09:09:44Z",
+      "updatedAt": "2026-06-19T09:09:44Z"
+    }
+  ],
+  "assets": [],
+  "progress": [],
+  "glossary": [
+    {
+      "term": "storypack.json",
+      "description": "스토리, 배경 이미지, 고유명사 사전이 들어있는 배포용 데이터 파일입니다.\\n제작용 HTML에서 '프로젝트 내보내기'를 누르면 생성됩니다.",
+      "createdAt": "2026-06-19T09:09:44Z",
+      "updatedAt": "2026-06-19T09:09:44Z"
+    }
+  ]
+}

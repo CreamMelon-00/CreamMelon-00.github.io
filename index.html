@@ -1,0 +1,4460 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>세계관 스토리 플레이어</title>
+  <style>
+    :root {
+      --bg: #0f1116;
+      --surface: #171a21;
+      --surface-2: #1e232d;
+      --surface-3: #252c38;
+      --line: #353d4b;
+      --text: #f2f4f7;
+      --muted: #9da8b8;
+      --accent: #d9b46f;
+      --accent-strong: #f0c983;
+      --danger: #c96c6c;
+      --success: #76bd91;
+      --shadow: 0 18px 60px rgba(0, 0, 0, 0.28);
+      --viewer-darkness: 0.5;
+      --viewer-fit: cover;
+      --letterbox-height: clamp(88px, 10vh, 132px);
+      --glass: rgba(13, 16, 22, 0.82);
+      --glass-soft: rgba(13, 16, 22, 0.58);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background:
+        radial-gradient(circle at top, rgba(69, 79, 98, 0.18), transparent 34%),
+        radial-gradient(circle at 80% 0%, rgba(217, 180, 111, 0.07), transparent 26%),
+        linear-gradient(180deg, #151820 0%, var(--bg) 100%);
+      color: var(--text);
+      font-family:
+        Pretendard, "Noto Sans KR", "Apple SD Gothic Neo",
+        system-ui, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    button {
+      border: 1px solid rgba(255, 255, 255, 0.11);
+      border-radius: 10px;
+      padding: 9px 13px;
+      background: rgba(30, 35, 45, 0.82);
+      color: var(--text);
+      cursor: pointer;
+      transition:
+        transform 0.12s ease,
+        border-color 0.12s ease,
+        background 0.12s ease,
+        opacity 0.12s ease;
+    }
+
+    button:hover {
+      border-color: #5a6679;
+      background: var(--surface-3);
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    button.primary {
+      background: var(--accent);
+      color: #17120b;
+      border-color: transparent;
+      font-weight: 800;
+    }
+
+    button.primary:hover {
+      background: var(--accent-strong);
+    }
+
+    button.ghost {
+      background: transparent;
+    }
+
+    button.danger {
+      color: #ffd1d1;
+      border-color: rgba(201, 108, 108, 0.52);
+    }
+
+    button.small {
+      padding: 7px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      outline: none;
+      background: #12151b;
+      color: var(--text);
+    }
+
+    input,
+    select {
+      min-height: 42px;
+      padding: 9px 11px;
+    }
+
+    textarea {
+      padding: 14px;
+      resize: vertical;
+      line-height: 1.65;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      border-color: #6b788d;
+      box-shadow: 0 0 0 3px rgba(107, 120, 141, 0.14);
+    }
+
+    code {
+      color: #f0ca87;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 5px;
+      padding: 2px 5px;
+    }
+
+    .screen {
+      display: none;
+      min-height: 100vh;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    .app-shell {
+      width: min(1220px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 26px 0 42px;
+    }
+
+    .top-nav {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    .brand {
+      margin-right: auto;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: clamp(22px, 3vw, 32px);
+      letter-spacing: -0.03em;
+    }
+
+    .brand p {
+      margin: 7px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(23, 26, 33, 0.96);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.015);
+    }
+
+    .panel-header h2,
+    .panel-header h3 {
+      margin: 0;
+    }
+
+    .panel-header p {
+      margin: 7px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 9px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .toolbar.right {
+      justify-content: flex-end;
+    }
+
+    .lobby-hero {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 24px;
+      align-items: end;
+      padding: 28px;
+      margin-bottom: 20px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background:
+        linear-gradient(135deg, rgba(217, 180, 111, 0.11), transparent 42%),
+        rgba(23, 26, 33, 0.94);
+      box-shadow: var(--shadow);
+    }
+
+    .lobby-hero h2 {
+      margin: 0;
+      font-size: clamp(24px, 4vw, 42px);
+      letter-spacing: -0.04em;
+    }
+
+    .lobby-hero p {
+      max-width: 720px;
+      margin: 12px 0 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .episode-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+      gap: 16px;
+    }
+
+    .episode-card {
+      position: relative;
+      min-height: 250px;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      overflow: hidden;
+      background: var(--surface);
+      box-shadow: 0 10px 36px rgba(0, 0, 0, 0.2);
+    }
+
+    .episode-cover {
+      height: 104px;
+      background:
+        linear-gradient(rgba(8, 10, 14, 0.2), rgba(8, 10, 14, 0.74)),
+        radial-gradient(circle at 50% 20%, #465367, #222832 48%, #15181e);
+      background-size: cover;
+      background-position: center;
+    }
+
+    .episode-card-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+    }
+
+    .episode-order {
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+    }
+
+    .episode-title {
+      margin: 7px 0 0;
+      font-size: 20px;
+      line-height: 1.35;
+    }
+
+    .episode-subtitle {
+      margin: 7px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .episode-description {
+      margin: 12px 0 16px;
+      color: #cbd1da;
+      font-size: 13px;
+      line-height: 1.6;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 3;
+      overflow: hidden;
+    }
+
+    .episode-card-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: auto;
+      flex-wrap: wrap;
+    }
+
+    .empty-state {
+      grid-column: 1 / -1;
+      padding: 64px 24px;
+      border: 1px dashed #475163;
+      border-radius: 15px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.8;
+    }
+
+    .editor-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: 18px;
+    }
+
+    .form-section {
+      padding: 18px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 110px minmax(0, 1fr);
+      gap: 12px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .field.full {
+      grid-column: 1 / -1;
+    }
+
+    .field label {
+      color: #cfd5dd;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    #episodeScript {
+      min-height: 500px;
+      font-family:
+        "D2Coding", "NanumGothicCoding", ui-monospace, SFMono-Regular,
+        Consolas, monospace;
+      white-space: pre-wrap;
+    }
+
+    .editor-footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 18px;
+      border-top: 1px solid var(--line);
+      flex-wrap: wrap;
+    }
+
+    .asset-panel {
+      min-height: 720px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .asset-list {
+      flex: 1;
+      max-height: 640px;
+      overflow: auto;
+    }
+
+    .asset-empty {
+      padding: 44px 20px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .asset-item {
+      display: grid;
+      grid-template-columns: 78px minmax(0, 1fr);
+      gap: 12px;
+      padding: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.065);
+    }
+
+    .asset-thumb {
+      width: 78px;
+      height: 54px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      background: #0b0d11;
+    }
+
+    .asset-info {
+      min-width: 0;
+    }
+
+    .asset-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .asset-id {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 11px;
+      word-break: break-all;
+    }
+
+    .asset-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 9px;
+      flex-wrap: wrap;
+    }
+
+    .viewer-screen {
+      position: relative;
+      min-height: 100vh;
+      overflow: hidden;
+      isolation: isolate;
+      background: #11141a;
+    }
+
+    @keyframes screen-shake {
+      0% { transform: translate3d(0, 0, 0) rotate(0deg); }
+      12% { transform: translate3d(-7px, 4px, 0) rotate(-0.25deg); }
+      24% { transform: translate3d(8px, -3px, 0) rotate(0.25deg); }
+      36% { transform: translate3d(-6px, -5px, 0) rotate(0.15deg); }
+      48% { transform: translate3d(6px, 4px, 0) rotate(-0.18deg); }
+      60% { transform: translate3d(-4px, 3px, 0) rotate(0.12deg); }
+      72% { transform: translate3d(4px, -2px, 0) rotate(-0.1deg); }
+      84% { transform: translate3d(-2px, 1px, 0) rotate(0.06deg); }
+      100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+    }
+
+    .viewer-screen.is-shaking .viewer-content,
+    .viewer-screen.is-shaking .viewer-background {
+      animation: screen-shake 360ms cubic-bezier(.36,.07,.19,.97) both;
+    }
+
+    .typing-cursor {
+      display: inline-block;
+      width: 0.58em;
+      margin-left: 1px;
+      color: rgba(240, 201, 131, 0.86);
+      animation: cursor-blink 0.86s steps(2, start) infinite;
+    }
+
+    @keyframes cursor-blink {
+      0%, 46% { opacity: 1; }
+      47%, 100% { opacity: 0; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .viewer-screen.is-shaking .viewer-wrap,
+      .viewer-screen.is-shaking .viewer-background,
+      .typing-cursor {
+        animation: none;
+      }
+    }
+
+    .viewer-fallback,
+    .viewer-background,
+    .viewer-shade,
+    .viewer-vignette,
+    .viewer-blackout,
+    .viewer-focus-image,
+    .viewer-transition-fade {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .viewer-fallback {
+      z-index: 0;
+      background:
+        radial-gradient(circle at 50% 18%, #445063 0%, #252b35 36%, #15181d 100%);
+    }
+
+    .viewer-background {
+      z-index: 1;
+      background-size: var(--viewer-fit);
+      background-position: var(--camera-position);
+      background-repeat: no-repeat;
+      opacity: 1;
+      transform: scale(var(--camera-scale));
+      transform-origin: center;
+      filter: var(--visual-filter) blur(var(--visual-blur));
+      transition:
+        opacity 240ms ease,
+        transform 4600ms ease,
+        background-position 1800ms ease,
+        filter 620ms ease;
+      will-change: transform, filter, background-position;
+    }
+
+    .viewer-background.is-changing {
+      opacity: 0;
+    }
+
+    .viewer-shade {
+      z-index: 2;
+      background:
+        linear-gradient(
+          rgba(8, 10, 14, calc(var(--viewer-darkness) * 0.48)),
+          rgba(8, 10, 14, var(--viewer-darkness))
+        );
+    }
+
+    .viewer-vignette {
+      z-index: 2;
+      background:
+        radial-gradient(
+          circle at 50% 50%,
+          transparent 0%,
+          transparent 48%,
+          rgba(0, 0, 0, 0.42) 78%,
+          rgba(0, 0, 0, 0.82) 100%
+        );
+      opacity: var(--vignette-opacity);
+      transition: opacity 520ms ease;
+    }
+
+    .viewer-blackout {
+      z-index: 3;
+      background: #020307;
+      opacity: 0;
+      transition: opacity 520ms ease;
+    }
+
+    .viewer-screen.is-blackout .viewer-blackout {
+      opacity: 0.94;
+    }
+
+    .viewer-stage-message {
+      transition: opacity 420ms ease;
+    }
+
+    .viewer-stage-message:empty {
+      opacity: 0;
+    }
+
+    .viewer-screen.is-blackout .viewer-stage-message {
+      opacity: 0.08;
+    }
+
+    .viewer-focus-image {
+      z-index: 7;
+      background-color: #020307;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: contain;
+      opacity: 0;
+      transform: scale(1.012);
+      transition:
+        opacity 420ms ease,
+        transform 620ms ease;
+    }
+
+    .viewer-transition-fade {
+      z-index: 30;
+      background: #020307;
+      opacity: 0;
+      transition: opacity 680ms ease;
+    }
+
+    .viewer-transition-fade.is-active {
+      opacity: 1;
+    }
+
+    .viewer-screen.is-transitioning .viewer-content {
+      cursor: wait;
+    }
+
+    .viewer-screen.is-transitioning .dialogue-box,
+    .viewer-screen.is-transitioning .viewer-stage-message {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 160ms ease;
+    }
+
+    .viewer-screen.is-silent .dialogue-box,
+    .viewer-screen.is-silent .viewer-stage-message {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 180ms ease;
+    }
+
+    .viewer-screen.is-scene-intro .dialogue-box {
+      opacity: 0;
+      transform: translateY(8px);
+      pointer-events: none;
+      transition:
+        opacity 220ms ease,
+        transform 220ms ease;
+    }
+
+    .viewer-screen.is-scene-intro .viewer-stage {
+      cursor: pointer;
+    }
+
+    .viewer-screen.is-scene-intro .viewer-stage-message strong,
+    .viewer-screen.is-scene-intro .viewer-stage-message span {
+      display: block;
+      animation: scene-title-pop 260ms ease both;
+    }
+
+    .viewer-screen.is-scene-intro .viewer-stage-message span {
+      margin-top: 10px;
+      color: rgba(255, 255, 255, 0.72);
+      font-size: clamp(13px, 1.45vw, 16px);
+      font-weight: 650;
+      letter-spacing: -0.01em;
+    }
+
+    @keyframes scene-title-pop {
+      from {
+        opacity: 0;
+        transform: translateY(7px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .viewer-screen.is-focus .viewer-focus-image {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .viewer-letterbox {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: var(--letterbox-height);
+      z-index: 3;
+      background: #020307;
+      pointer-events: none;
+      transition:
+        height 420ms ease,
+        opacity 420ms ease,
+        transform 420ms ease;
+      box-shadow: 0 0 32px rgba(0, 0, 0, 0.38);
+    }
+
+    .viewer-letterbox-top {
+      top: 0;
+    }
+
+    .viewer-letterbox-bottom {
+      bottom: 0;
+    }
+
+    .viewer-screen.is-focus .viewer-letterbox {
+      height: 0;
+      opacity: 0;
+      box-shadow: none;
+    }
+
+    .viewer-screen.is-focus .viewer-topbar,
+    .viewer-screen.is-focus .viewer-progress-track,
+    .viewer-screen.is-focus .viewer-stage-message,
+    .viewer-screen.is-focus .dialogue-box,
+    .viewer-screen.is-focus .viewer-bottom-ui {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 260ms ease;
+    }
+
+    .viewer-wrap {
+      position: relative;
+      z-index: 2;
+    }
+
+    .viewer-wrap {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .viewer-content {
+      --camera-scale: 1;
+      --camera-position: center;
+      --visual-filter: none;
+      --visual-blur: 0px;
+      --vignette-opacity: 0;
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      isolation: isolate;
+      background: #05070b;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.075);
+      box-shadow:
+        inset 0 -1px 0 rgba(0, 0, 0, 0.45),
+        0 18px 42px rgba(0, 0, 0, 0.18);
+    }
+
+    .viewer-topbar {
+      position: relative;
+      z-index: 6;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: var(--glass-soft);
+      backdrop-filter: blur(12px);
+    }
+
+    .viewer-heading {
+      min-width: 0;
+      margin-right: auto;
+    }
+
+    .viewer-heading strong,
+    .viewer-heading span {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .viewer-heading strong {
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+
+    .viewer-heading span {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .viewer-progress-track {
+      position: relative;
+      z-index: 6;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.09);
+    }
+
+    .viewer-progress {
+      width: 0%;
+      height: 100%;
+      background: var(--accent);
+      transition: width 0.18s ease;
+    }
+
+    .viewer-stage {
+      position: relative;
+      z-index: 5;
+      flex: 1;
+      display: grid;
+      place-items: center;
+      min-height: 390px;
+      padding: calc(var(--letterbox-height) + 18px) 24px;
+    }
+
+    .viewer-stage-message {
+      max-width: 660px;
+      text-align: center;
+      color: rgba(255, 255, 255, 0.64);
+      line-height: 1.65;
+      text-shadow: 0 2px 16px rgba(0, 0, 0, 0.72);
+    }
+
+    .viewer-stage-message strong {
+      display: block;
+      margin-bottom: 7px;
+      color: rgba(255, 255, 255, 0.92);
+      font-size: clamp(18px, 2.1vw, 24px);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .dialogue-box {
+      position: relative;
+      z-index: 5;
+      width: min(920px, calc(100% - 40px));
+      min-height: 174px;
+      margin: 0 auto clamp(18px, 3vh, 34px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 18px;
+      overflow: hidden;
+      background: var(--glass);
+      backdrop-filter: blur(16px) saturate(1.08);
+      cursor: pointer;
+      user-select: none;
+      box-shadow:
+        0 18px 54px rgba(0, 0, 0, 0.32),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    .dialogue-speaker-row {
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 10px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.075);
+      background: rgba(255, 255, 255, 0.018);
+    }
+
+    .dialogue-speaker {
+      color: var(--accent);
+      font-size: 17px;
+      font-weight: 950;
+      letter-spacing: -0.012em;
+    }
+
+    .dialogue-affiliation {
+      color: rgba(157, 168, 184, 0.86);
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .dialogue-counter {
+      margin-left: auto;
+      color: rgba(157, 168, 184, 0.72);
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .dialogue-text {
+      min-height: 126px;
+      padding: 19px 22px 24px;
+      font-size: clamp(15px, 1.45vw, 18px);
+      line-height: 1.82;
+      letter-spacing: -0.01em;
+      white-space: pre-wrap;
+      word-break: keep-all;
+    }
+
+    .dialogue-text.direction {
+      color: rgba(204, 210, 218, 0.82);
+      font-style: italic;
+      text-align: center;
+      font-size: clamp(14px, 1.25vw, 17px);
+    }
+
+    .dialogue-text.scene {
+      display: grid;
+      place-items: center;
+      color: var(--accent);
+      text-align: center;
+      font-weight: 900;
+      font-size: clamp(16px, 1.6vw, 20px);
+      letter-spacing: -0.015em;
+    }
+
+    .viewer-bottom-ui {
+      position: relative;
+      z-index: 6;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 18px 18px 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.075);
+      background:
+        linear-gradient(180deg, rgba(23, 26, 33, 0.94), rgba(14, 17, 23, 0.98));
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.025),
+        0 -18px 42px rgba(0, 0, 0, 0.18);
+    }
+
+    .viewer-bottom-ui::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 0;
+      width: min(860px, calc(100% - 42px));
+      height: 1px;
+      transform: translateX(-50%);
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(217, 180, 111, 0.28),
+        transparent
+      );
+      pointer-events: none;
+    }
+
+    .viewer-controls {
+      position: relative;
+      z-index: 6;
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      padding: 0;
+      flex-wrap: wrap;
+    }
+
+    .viewer-settings {
+      position: relative;
+      z-index: 6;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0;
+      justify-content: center;
+      flex-wrap: wrap;
+      color: rgba(157, 168, 184, 0.82);
+      font-size: 11px;
+    }
+
+    .viewer-bottom-ui button {
+      min-width: 58px;
+      background: rgba(31, 36, 46, 0.72);
+    }
+
+    .viewer-bottom-ui button.primary {
+      background: var(--accent);
+    }
+
+    .viewer-settings select {
+      width: auto;
+      min-width: 130px;
+    }
+
+    .viewer-settings input[type="range"] {
+      width: 140px;
+      accent-color: var(--accent);
+    }
+
+    .inline-whisper {
+      color: rgba(242, 244, 247, 0.58);
+      font-size: 0.88em;
+      line-height: 1;
+      font-style: italic;
+      letter-spacing: -0.005em;
+    }
+
+    .inline-shout {
+      display: inline-block;
+      color: rgba(255, 255, 255, 0.98);
+      font-size: 1.36em;
+      line-height: 1.35;
+      font-weight: 950;
+      letter-spacing: -0.02em;
+      text-shadow: 0 2px 18px rgba(0, 0, 0, 0.52);
+      transform: translateY(0.02em);
+    }
+
+    .glossary-link {
+      display: inline;
+      color: var(--accent-strong);
+      border-bottom: 1px dotted rgba(240, 201, 131, 0.72);
+      cursor: help;
+      text-decoration: none;
+      transition: color 0.12s ease, border-color 0.12s ease;
+    }
+
+    .glossary-link:hover {
+      color: #ffe0a4;
+      border-bottom-color: #ffe0a4;
+    }
+
+    .glossary-link.missing {
+      color: rgba(214, 177, 109, 0.74);
+      border-bottom-color: rgba(214, 177, 109, 0.36);
+    }
+
+    .glossary-form {
+      display: grid;
+      gap: 12px;
+    }
+
+    .glossary-list {
+      max-height: 360px;
+      overflow: auto;
+      border-top: 1px solid rgba(255, 255, 255, 0.075);
+    }
+
+    .glossary-empty {
+      padding: 42px 20px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .glossary-item {
+      padding: 13px 15px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.065);
+    }
+
+    .glossary-term {
+      color: var(--accent);
+      font-weight: 900;
+      font-size: 14px;
+    }
+
+    .glossary-description {
+      margin-top: 6px;
+      color: #cbd1da;
+      font-size: 13px;
+      line-height: 1.65;
+      white-space: pre-wrap;
+    }
+
+    #termPopupDescription {
+      white-space: pre-wrap;
+      line-height: 1.75;
+    }
+
+    .viewer-glossary-list {
+      max-height: min(520px, 62vh);
+    }
+
+    .glossary-item.is-missing .glossary-term::after {
+      content: "미등록";
+      display: inline-flex;
+      align-items: center;
+      margin-left: 8px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      border: 1px solid rgba(214, 177, 109, 0.24);
+      color: rgba(214, 177, 109, 0.88);
+      background: rgba(214, 177, 109, 0.08);
+      font-size: 10px;
+      font-weight: 800;
+      vertical-align: 1px;
+    }
+
+    .glossary-actions {
+      display: flex;
+      gap: 7px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      z-index: 100;
+      max-width: min(520px, calc(100% - 32px));
+      transform: translate(-50%, 18px);
+      padding: 11px 15px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 11px;
+      background: rgba(17, 20, 26, 0.95);
+      color: var(--text);
+      box-shadow: var(--shadow);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      font-size: 13px;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    body.published #newEpisodeBtn,
+    body.published #exportProjectBtn,
+    body.published #importProjectBtn,
+    body.published #projectSettingsBtn,
+    body.published #assetLibraryBtn,
+    body.published #glossaryBtn,
+    body.published #viewerEditBtn,
+    body.published .episode-card-actions button:not(.primary) {
+      display: none !important;
+    }
+
+    body.published .brand p {
+      max-width: 720px;
+    }
+
+    body.published .episode-card-actions {
+      justify-content: flex-start;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 90;
+      display: none;
+      place-items: center;
+      padding: 20px;
+      background: rgba(4, 5, 7, 0.74);
+      backdrop-filter: blur(4px);
+    }
+
+    .modal-backdrop.show {
+      display: grid;
+    }
+
+    .modal {
+      width: min(520px, 100%);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      overflow: hidden;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .modal-body {
+      padding: 18px;
+    }
+
+    .modal-body p {
+      margin: 0 0 14px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 9px;
+      padding: 14px 18px;
+      border-top: 1px solid var(--line);
+    }
+
+    @media (max-width: 930px) {
+      .editor-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .asset-panel {
+        min-height: auto;
+      }
+
+      .asset-list {
+        max-height: 420px;
+      }
+
+      .lobby-hero {
+        grid-template-columns: 1fr;
+        align-items: start;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .app-shell {
+        width: min(100% - 20px, 1220px);
+        padding-top: 14px;
+      }
+
+      .top-nav {
+        align-items: flex-start;
+        flex-wrap: wrap;
+      }
+
+      .brand {
+        width: 100%;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .field.full {
+        grid-column: auto;
+      }
+
+      .dialogue-box {
+        width: calc(100% - 18px);
+        min-height: 160px;
+        margin-bottom: 10px;
+      }
+
+      .viewer-bottom-ui {
+        padding: 14px 10px 16px;
+        gap: 10px;
+      }
+
+      .dialogue-text {
+        font-size: 15px;
+        line-height: 1.76;
+        padding: 17px 18px 22px;
+      }
+
+      .viewer-topbar {
+        flex-wrap: wrap;
+      }
+
+      .viewer-heading {
+        width: 100%;
+        order: -1;
+      }
+    }
+  </style>
+</head>
+<body class="published">
+  <section id="lobbyScreen" class="screen active">
+    <div class="app-shell">
+      <nav class="top-nav">
+        <div class="brand">
+          <h1>스토리 다이얼로그 스튜디오</h1>
+          <p>링크로 감상하는 세계관 시나리오 플레이어입니다.</p>
+        </div>
+        <button id="newEpisodeBtn" class="primary">새 화 제작</button>
+        <button id="exportProjectBtn">프로젝트 내보내기</button>
+        <button id="importProjectBtn">프로젝트 불러오기</button>
+        <input id="importProjectInput" type="file" accept=".storypack,.json,application/json" hidden />
+      </nav>
+
+      <section class="lobby-hero">
+        <div>
+          <h2 id="projectTitleDisplay">가문과 가족</h2>
+          <p id="projectDescriptionDisplay">
+            로비에서 화를 선택해 감상하세요.
+            작품 데이터는 사이트에 포함된 storypack에서 자동으로 불러옵니다.
+          </p>
+        </div>
+        <div class="toolbar right">
+          <button id="projectSettingsBtn">작품 정보</button>
+          <button id="assetLibraryBtn">배경 라이브러리</button>
+          <button id="glossaryBtn">고유명사 사전</button>
+        </div>
+      </section>
+
+      <main id="episodeGrid" class="episode-grid"></main>
+    </div>
+  </section>
+
+  <section id="editorScreen" class="screen">
+    <div class="app-shell">
+      <nav class="top-nav">
+        <div class="brand">
+          <h1 id="editorHeading">새 시나리오 제작</h1>
+          <p>
+            배경 명령은 <code>@배경 asset_id</code> 형식입니다.
+            표현 문법은 <code>*작게*</code>, <code>#크게#</code>, <code>[고유명사]</code>를 사용합니다.
+            화면 흔들림은 <code>@흔들림</code>을 대사나 연출 바로 앞에 적습니다.
+            암전은 <code>@암전</code>, 복귀는 <code>@조명</code>을 사용합니다.
+            컷신은 <code>@집중 asset_id</code>, 레터박스는 <code>@레터박스 확대</code>처럼 조작합니다.
+            장면 설명은 <code>- 장소 | 설명</code> 형식으로 직접 작성할 수 있습니다.
+          </p>
+        </div>
+        <button id="editorBackBtn">로비로</button>
+      </nav>
+
+      <div class="editor-layout">
+        <section class="panel">
+          <header class="panel-header">
+            <h2>시나리오 정보</h2>
+            <p>제목, 순서, 설명과 원문을 저장합니다.</p>
+          </header>
+
+          <div class="form-section">
+            <div class="form-grid">
+              <div class="field">
+                <label for="episodeOrder">화 순서</label>
+                <input id="episodeOrder" type="number" min="1" step="1" value="1" />
+              </div>
+
+              <div class="field">
+                <label for="episodeTitle">화 제목</label>
+                <input id="episodeTitle" type="text" placeholder="아버지의 그림자 上" />
+              </div>
+
+              <div class="field full">
+                <label for="episodeSubtitle">부제 또는 인용문</label>
+                <input id="episodeSubtitle" type="text" placeholder="달리는 기차 위에 중립은 없다." />
+              </div>
+
+              <div class="field full">
+                <label for="episodeDescription">로비 설명</label>
+                <textarea id="episodeDescription" rows="3" placeholder="이 화를 소개하는 짧은 문장"></textarea>
+              </div>
+
+              <div class="field full">
+                <label for="episodeCoverAsset">로비 카드 표지</label>
+                <select id="episodeCoverAsset">
+                  <option value="">기본 표지</option>
+                </select>
+              </div>
+
+              <div class="field full">
+                <label for="episodeScript">시나리오 원문</label>
+                <textarea id="episodeScript" spellcheck="false" placeholder="@배경 north_alley&#10;- 연방 북방주, 골목길&#10;&#10;에른스트 | 하노버 용병단&#10;야, 야, 빨리 빨리 좀 해라~"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <footer class="editor-footer">
+            <div class="toolbar">
+              <button id="saveEpisodeBtn" class="primary">저장</button>
+              <button id="previewEpisodeBtn">미리보기</button>
+            </div>
+            <div class="toolbar">
+              <button id="duplicateEpisodeBtn">복제</button>
+              <button id="deleteEpisodeBtn" class="danger">삭제</button>
+            </div>
+          </footer>
+        </section>
+
+        <aside class="panel asset-panel">
+          <header class="panel-header">
+            <h3>공용 배경 라이브러리</h3>
+            <p>배경은 작품 전체에서 공유되며, 각 화는 고정 ID로 이미지를 참조합니다.</p>
+            <div class="toolbar" style="margin-top: 12px;">
+              <button id="editorAddAssetsBtn" class="small">이미지 추가</button>
+              <input id="assetFileInput" type="file" accept="image/*" multiple hidden />
+              <button id="editorRefreshAssetsBtn" class="small">새로고침</button>
+            </div>
+          </header>
+          <div id="editorAssetList" class="asset-list"></div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section id="viewerScreen" class="screen viewer-screen">
+    <div class="viewer-wrap">
+      <header class="viewer-topbar">
+        <button id="viewerLobbyBtn" class="small">로비</button>
+        <button id="viewerEditBtn" class="small">이 화 수정</button>
+        <div class="viewer-heading">
+          <strong id="viewerEpisodeTitle">시나리오</strong>
+          <span id="viewerSceneName">장면 미지정</span>
+        </div>
+        <button id="previousEpisodeBtn" class="small">이전 화</button>
+        <button id="nextEpisodeBtn" class="small">다음 화</button>
+      </header>
+
+      <div class="viewer-progress-track">
+        <div id="viewerProgress" class="viewer-progress"></div>
+      </div>
+
+      <div class="viewer-content">
+        <div class="viewer-fallback"></div>
+        <div id="viewerBackground" class="viewer-background"></div>
+        <div class="viewer-shade"></div>
+        <div id="viewerVignette" class="viewer-vignette"></div>
+        <div class="viewer-blackout"></div>
+        <div id="viewerFocusImage" class="viewer-focus-image"></div>
+        <div id="viewerTransitionFade" class="viewer-transition-fade"></div>
+
+        <div class="viewer-letterbox viewer-letterbox-top"></div>
+        <div class="viewer-letterbox viewer-letterbox-bottom"></div>
+
+        <main class="viewer-stage">
+          <div id="viewerStageMessage" class="viewer-stage-message">
+            <strong>시나리오 준비 중</strong>
+          </div>
+        </main>
+
+        <section id="dialogueBox" class="dialogue-box" tabindex="0">
+          <div class="dialogue-speaker-row">
+            <span id="dialogueSpeaker" class="dialogue-speaker">SYSTEM</span>
+            <span id="dialogueAffiliation" class="dialogue-affiliation"></span>
+            <span id="dialogueCounter" class="dialogue-counter">0 / 0</span>
+          </div>
+          <div id="dialogueText" class="dialogue-text">시나리오가 아직 시작되지 않았습니다.</div>
+        </section>
+      </div>
+
+      <div class="viewer-bottom-ui">
+        <div class="viewer-controls">
+          <button id="viewerPrevBtn">이전</button>
+          <button id="viewerNextBtn" class="primary">다음</button>
+          <button id="viewerAutoBtn">자동 재생</button>
+          <button id="viewerRestartBtn">처음부터</button>
+          <button id="viewerGlossaryBtn">고유명사 목록</button>
+        </div>
+
+        <div class="viewer-settings">
+          <label for="viewerFit">배경 맞춤</label>
+          <select id="viewerFit">
+            <option value="cover">화면 채우기</option>
+            <option value="contain">전체 보이기</option>
+            <option value="100% 100%">화면에 늘이기</option>
+          </select>
+
+          <label for="viewerDarkness">어둡기</label>
+          <input id="viewerDarkness" type="range" min="0" max="0.9" step="0.05" value="0.5" />
+
+          <span id="viewerBackgroundLabel">배경: 기본</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div id="glossaryModal" class="modal-backdrop">
+    <section class="modal" style="width: min(780px, 100%);">
+      <header class="panel-header">
+        <h3>고유명사 사전</h3>
+        <p>
+          대사에서 <code>[스프링필드 가문]</code>처럼 대괄호로 감싼 고유명사는
+          감상 화면에서 클릭 가능한 설명 링크가 됩니다.
+          큰 외침은 <code>#멈춰#</code>, 작은 중얼거림은 <code>*중얼*</code>로 표시합니다.
+          화면 흔들림은 <code>@흔들림</code>으로 표시합니다.
+          암전은 <code>@암전</code>, 복귀는 <code>@조명</code>으로 표시합니다.
+          컷신은 <code>@집중 asset_id</code>, 레터박스는 <code>@레터박스 확대</code>처럼 표시합니다.
+          카메라는 <code>@카메라 확대</code>, 색감은 <code>@색감 차갑게</code>, 정적은 <code>@정적 1.2</code>처럼 표시합니다.
+        </p>
+      </header>
+      <div class="modal-body">
+        <div class="glossary-form">
+          <div class="field">
+            <label for="glossaryTermInput">고유명사</label>
+            <input id="glossaryTermInput" type="text" placeholder="스프링필드 가문" />
+          </div>
+          <div class="field">
+            <label for="glossaryDescriptionInput">간략 설명</label>
+            <textarea id="glossaryDescriptionInput" rows="5" placeholder="북방주의 대가문 중 하나. 검소함을 미덕으로 삼는다."></textarea>
+          </div>
+          <div class="toolbar">
+            <button id="saveGlossaryEntryBtn" class="primary">사전 항목 저장</button>
+            <button id="clearGlossaryFormBtn">입력 비우기</button>
+          </div>
+        </div>
+      </div>
+      <div id="glossaryList" class="glossary-list"></div>
+      <footer class="modal-actions">
+        <button data-close-modal="glossaryModal">닫기</button>
+      </footer>
+    </section>
+  </div>
+
+  <div id="termPopupModal" class="modal-backdrop">
+    <section class="modal">
+      <header class="panel-header">
+        <h3 id="termPopupTitle">고유명사</h3>
+      </header>
+      <div class="modal-body">
+        <p id="termPopupDescription"></p>
+      </div>
+      <footer class="modal-actions">
+        <button data-close-modal="termPopupModal" class="primary">확인</button>
+      </footer>
+    </section>
+  </div>
+
+  <div id="viewerGlossaryModal" class="modal-backdrop">
+    <section class="modal" style="width: min(780px, 100%);">
+      <header class="panel-header">
+        <h3>이 장면까지의 고유명사</h3>
+        <p id="viewerGlossarySummary">
+          현재 감상 위치까지 대사에 등장한 고유명사를 모아 보여줍니다.
+        </p>
+      </header>
+      <div id="viewerGlossaryList" class="glossary-list viewer-glossary-list"></div>
+      <footer class="modal-actions">
+        <button data-close-modal="viewerGlossaryModal" class="primary">닫기</button>
+      </footer>
+    </section>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <div id="projectSettingsModal" class="modal-backdrop">
+    <section class="modal">
+      <header class="panel-header">
+        <h3>작품 정보</h3>
+        <p>로비 상단에 표시할 작품명과 설명입니다.</p>
+      </header>
+      <div class="modal-body">
+        <div class="field">
+          <label for="projectTitleInput">작품명</label>
+          <input id="projectTitleInput" type="text" />
+        </div>
+        <div class="field" style="margin-top: 13px;">
+          <label for="projectDescriptionInput">작품 설명</label>
+          <textarea id="projectDescriptionInput" rows="5"></textarea>
+        </div>
+      </div>
+      <footer class="modal-actions">
+        <button data-close-modal="projectSettingsModal">취소</button>
+        <button id="saveProjectSettingsBtn" class="primary">저장</button>
+      </footer>
+    </section>
+  </div>
+
+  <div id="assetLibraryModal" class="modal-backdrop">
+    <section class="modal" style="width: min(760px, 100%);">
+      <header class="panel-header">
+        <h3>배경 라이브러리</h3>
+        <p>이미지 파일은 IndexedDB에 Blob 형태로 저장됩니다.</p>
+        <div class="toolbar" style="margin-top: 12px;">
+          <button id="modalAddAssetsBtn" class="small">이미지 추가</button>
+          <button id="closeAssetLibraryBtn" class="small">닫기</button>
+        </div>
+      </header>
+      <div id="modalAssetList" class="asset-list" style="max-height: 560px;"></div>
+    </section>
+  </div>
+
+  <script>
+    "use strict";
+
+    const DB_NAME = "story-dialogue-studio-v4";
+    const DB_VERSION = 2;
+    const PUBLISHED_STORYPACK_URL = "data/storypack.json";
+    const STORES = {
+      episodes: "episodes",
+      assets: "assets",
+      meta: "meta",
+      progress: "progress",
+      glossary: "glossary"
+    };
+
+    const DEFAULT_PROJECT = {
+      key: "project",
+      title: "가문과 가족",
+      description:
+        "로비에서 화를 선택해 감상하거나, 제작실에서 새로운 시나리오를 작성하세요."
+    };
+
+    const SAMPLE_SCRIPT = `- 연방 북방주, 골목길
+
+에른스트 | ???
+야, 야, 빨리 빨리 좀 해라~
+
+(툭툭)
+
+네빌 | 비서
+실례함다, ‘하노버 용병단’ 에른스트 씨 맞으심까?
+
+에른스트 | 하노버 용병단
+혹시, 그쪽이 의뢰인이야?`;
+
+    const screens = {
+      lobby: document.getElementById("lobbyScreen"),
+      editor: document.getElementById("editorScreen"),
+      viewer: document.getElementById("viewerScreen")
+    };
+
+    const episodeGrid = document.getElementById("episodeGrid");
+    const projectTitleDisplay = document.getElementById("projectTitleDisplay");
+    const projectDescriptionDisplay = document.getElementById("projectDescriptionDisplay");
+
+    const editorHeading = document.getElementById("editorHeading");
+    const episodeOrder = document.getElementById("episodeOrder");
+    const episodeTitle = document.getElementById("episodeTitle");
+    const episodeSubtitle = document.getElementById("episodeSubtitle");
+    const episodeDescription = document.getElementById("episodeDescription");
+    const episodeCoverAsset = document.getElementById("episodeCoverAsset");
+    const episodeScript = document.getElementById("episodeScript");
+    const deleteEpisodeBtn = document.getElementById("deleteEpisodeBtn");
+    const duplicateEpisodeBtn = document.getElementById("duplicateEpisodeBtn");
+    const editorAssetList = document.getElementById("editorAssetList");
+    const modalAssetList = document.getElementById("modalAssetList");
+    const assetFileInput = document.getElementById("assetFileInput");
+
+    const viewerContent = document.querySelector(".viewer-content");
+    const viewerBackground = document.getElementById("viewerBackground");
+    const viewerFocusImage = document.getElementById("viewerFocusImage");
+    const viewerTransitionFade = document.getElementById("viewerTransitionFade");
+    const viewerEpisodeTitle = document.getElementById("viewerEpisodeTitle");
+    const viewerSceneName = document.getElementById("viewerSceneName");
+    const viewerStageMessage = document.getElementById("viewerStageMessage");
+    const dialogueBox = document.getElementById("dialogueBox");
+    const dialogueSpeaker = document.getElementById("dialogueSpeaker");
+    const dialogueAffiliation = document.getElementById("dialogueAffiliation");
+    const dialogueCounter = document.getElementById("dialogueCounter");
+    const dialogueText = document.getElementById("dialogueText");
+    const viewerProgress = document.getElementById("viewerProgress");
+    const viewerPrevBtn = document.getElementById("viewerPrevBtn");
+    const viewerNextBtn = document.getElementById("viewerNextBtn");
+    const viewerAutoBtn = document.getElementById("viewerAutoBtn");
+    const viewerGlossaryBtn = document.getElementById("viewerGlossaryBtn");
+    const previousEpisodeBtn = document.getElementById("previousEpisodeBtn");
+    const nextEpisodeBtn = document.getElementById("nextEpisodeBtn");
+    const viewerFit = document.getElementById("viewerFit");
+    const viewerDarkness = document.getElementById("viewerDarkness");
+    const viewerBackgroundLabel = document.getElementById("viewerBackgroundLabel");
+
+    const toast = document.getElementById("toast");
+    const importProjectInput = document.getElementById("importProjectInput");
+    const projectSettingsModal = document.getElementById("projectSettingsModal");
+    const assetLibraryModal = document.getElementById("assetLibraryModal");
+    const glossaryModal = document.getElementById("glossaryModal");
+    const termPopupModal = document.getElementById("termPopupModal");
+    const viewerGlossaryModal = document.getElementById("viewerGlossaryModal");
+    const projectTitleInput = document.getElementById("projectTitleInput");
+    const projectDescriptionInput = document.getElementById("projectDescriptionInput");
+    const glossaryTermInput = document.getElementById("glossaryTermInput");
+    const glossaryDescriptionInput = document.getElementById("glossaryDescriptionInput");
+    const glossaryList = document.getElementById("glossaryList");
+    const termPopupTitle = document.getElementById("termPopupTitle");
+    const termPopupDescription = document.getElementById("termPopupDescription");
+    const viewerGlossaryList = document.getElementById("viewerGlossaryList");
+    const viewerGlossarySummary = document.getElementById("viewerGlossarySummary");
+
+    let dbPromise = null;
+    let episodesCache = [];
+    let assetsCache = [];
+    let assetUrls = new Map();
+    let projectMeta = { ...DEFAULT_PROJECT };
+    let glossaryCache = [];
+    let editingGlossaryTerm = null;
+    let editingEpisodeId = null;
+    let viewerEpisodeId = null;
+    let viewerEntries = [];
+    let viewerPlayableIndices = [];
+    let viewerPosition = 0;
+    let viewerAutoTimer = null;
+    let viewerBackgroundId = null;
+    let viewerFocusAssetId = null;
+    let viewerLetterboxMode = "normal";
+    let viewerTransitionToken = 0;
+    let viewerTransitioning = false;
+    let deferredTypewriter = null;
+    let viewerSilenceTimer = null;
+    let viewerSilenceActive = false;
+    let sceneRevealPhase = 0;
+    let sceneRevealEntryIndex = -1;
+    let typingTimer = null;
+    let typingState = null;
+    let pendingShake = false;
+    let previewDraft = null;
+    let toastTimer = null;
+
+    function openDatabase() {
+      if (dbPromise) return dbPromise;
+
+      dbPromise = new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+        request.onupgradeneeded = () => {
+          const db = request.result;
+
+          if (!db.objectStoreNames.contains(STORES.episodes)) {
+            const store = db.createObjectStore(STORES.episodes, { keyPath: "id" });
+            store.createIndex("order", "order", { unique: false });
+          }
+
+          if (!db.objectStoreNames.contains(STORES.assets)) {
+            db.createObjectStore(STORES.assets, { keyPath: "id" });
+          }
+
+          if (!db.objectStoreNames.contains(STORES.meta)) {
+            db.createObjectStore(STORES.meta, { keyPath: "key" });
+          }
+
+          if (!db.objectStoreNames.contains(STORES.progress)) {
+            db.createObjectStore(STORES.progress, { keyPath: "episodeId" });
+          }
+
+          if (!db.objectStoreNames.contains(STORES.glossary)) {
+            db.createObjectStore(STORES.glossary, { keyPath: "term" });
+          }
+        };
+
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+
+      return dbPromise;
+    }
+
+    async function storeGet(storeName, key) {
+      const db = await openDatabase();
+      return new Promise((resolve, reject) => {
+        const request = db
+          .transaction(storeName, "readonly")
+          .objectStore(storeName)
+          .get(key);
+
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    async function storeGetAll(storeName) {
+      const db = await openDatabase();
+      return new Promise((resolve, reject) => {
+        const request = db
+          .transaction(storeName, "readonly")
+          .objectStore(storeName)
+          .getAll();
+
+        request.onsuccess = () => resolve(request.result || []);
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    async function storePut(storeName, value) {
+      const db = await openDatabase();
+      return new Promise((resolve, reject) => {
+        const request = db
+          .transaction(storeName, "readwrite")
+          .objectStore(storeName)
+          .put(value);
+
+        request.onsuccess = () => resolve(value);
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    async function storeDelete(storeName, key) {
+      const db = await openDatabase();
+      return new Promise((resolve, reject) => {
+        const request = db
+          .transaction(storeName, "readwrite")
+          .objectStore(storeName)
+          .delete(key);
+
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    async function clearStore(storeName) {
+      const db = await openDatabase();
+      return new Promise((resolve, reject) => {
+        const request = db
+          .transaction(storeName, "readwrite")
+          .objectStore(storeName)
+          .clear();
+
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    function showScreen(name) {
+      Object.entries(screens).forEach(([screenName, element]) => {
+        element.classList.toggle("active", screenName === name);
+      });
+
+      if (name !== "viewer") {
+        stopViewerAuto();
+        clearViewerSilence();
+        stopTyping();
+        deferredTypewriter = null;
+        setViewerBlackout(false);
+        setViewerVisualState();
+        setViewerFocus("");
+        setViewerLetterbox("normal");
+        viewerTransitioning = false;
+        viewerTransitionFade.classList.remove("is-active");
+        screens.viewer.classList.remove("is-transitioning", "is-scene-intro");
+      }
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
+
+    function generateId(prefix) {
+      if (crypto.randomUUID) {
+        return `${prefix}_${crypto.randomUUID().replaceAll("-", "").slice(0, 12)}`;
+      }
+      return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+    }
+
+    function sanitizeAssetId(fileName) {
+      const base = fileName
+        .replace(/\.[^.]+$/, "")
+        .normalize("NFKD")
+        .replace(/[^\p{L}\p{N}_-]+/gu, "_")
+        .replace(/^_+|_+$/g, "")
+        .toLowerCase()
+        .slice(0, 42);
+
+      return `${base || "background"}_${Math.random().toString(36).slice(2, 7)}`;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function notify(message) {
+      window.clearTimeout(toastTimer);
+      toast.textContent = message;
+      toast.classList.add("show");
+      toastTimer = window.setTimeout(() => {
+        toast.classList.remove("show");
+      }, 2400);
+    }
+
+    function revokeAssetUrls() {
+      for (const url of assetUrls.values()) {
+        URL.revokeObjectURL(url);
+      }
+      assetUrls.clear();
+    }
+
+    function getAssetUrl(asset) {
+      if (!asset) return "";
+      if (!assetUrls.has(asset.id)) {
+        assetUrls.set(asset.id, URL.createObjectURL(asset.blob));
+      }
+      return assetUrls.get(asset.id);
+    }
+
+    function sortedEpisodes() {
+      return [...episodesCache].sort((a, b) => {
+        const orderDiff = Number(a.order || 0) - Number(b.order || 0);
+        if (orderDiff !== 0) return orderDiff;
+        return String(a.createdAt || "").localeCompare(String(b.createdAt || ""));
+      });
+    }
+
+    function findAsset(id) {
+      return assetsCache.find(asset => asset.id === id) || null;
+    }
+
+    async function refreshCaches() {
+      episodesCache = await storeGetAll(STORES.episodes);
+      assetsCache = await storeGetAll(STORES.assets);
+      glossaryCache = await storeGetAll(STORES.glossary);
+      projectMeta = (await storeGet(STORES.meta, "project")) || { ...DEFAULT_PROJECT };
+    }
+
+    async function seedInitialData() {
+      const initialized = await storeGet(STORES.meta, "initialized");
+      if (initialized) return;
+
+      const existingProject = await storeGet(STORES.meta, "project");
+      if (!existingProject) {
+        await storePut(STORES.meta, { ...DEFAULT_PROJECT });
+      }
+
+      const episodes = await storeGetAll(STORES.episodes);
+      if (!episodes.length) {
+        const now = new Date().toISOString();
+        await storePut(STORES.episodes, {
+          id: generateId("episode"),
+          order: 1,
+          title: "샘플 시나리오",
+          subtitle: "처음 저장된 예시 화",
+          description:
+            "수정 버튼을 눌러 형식을 살펴보거나, 새 화 제작으로 새로운 이야기를 시작하세요.",
+          coverAssetId: "",
+          script: SAMPLE_SCRIPT,
+          createdAt: now,
+          updatedAt: now
+        });
+      }
+
+      await storePut(STORES.meta, {
+        key: "initialized",
+        value: true,
+        createdAt: new Date().toISOString()
+      });
+    }
+
+    async function loadPublishedStorypack() {
+      if (!document.body.classList.contains("published")) return;
+
+      try {
+        const response = await fetch(PUBLISHED_STORYPACK_URL, { cache: "no-store" });
+
+        if (!response.ok) {
+          console.info("published storypack not found", response.status);
+          return;
+        }
+
+        const data = await response.json();
+
+        if (data.format !== "story-dialogue-studio" || !Array.isArray(data.episodes)) {
+          throw new Error("지원하지 않는 storypack 형식입니다.");
+        }
+
+        const signature = data.exportedAt ||
+          JSON.stringify([
+            data.meta?.title || "",
+            data.episodes?.length || 0,
+            data.assets?.length || 0,
+            data.glossary?.length || 0
+          ]);
+
+        const publishedMeta = await storeGet(STORES.meta, "published-storypack");
+        if (publishedMeta?.signature === signature) return;
+
+        await clearStore(STORES.episodes);
+        await clearStore(STORES.assets);
+        await clearStore(STORES.meta);
+        await clearStore(STORES.progress);
+        await clearStore(STORES.glossary);
+
+        await storePut(STORES.meta, {
+          ...DEFAULT_PROJECT,
+          ...(data.meta || {}),
+          key: "project"
+        });
+
+        await storePut(STORES.meta, {
+          key: "published-storypack",
+          signature,
+          loadedAt: new Date().toISOString()
+        });
+
+        await storePut(STORES.meta, {
+          key: "initialized",
+          value: true,
+          createdAt: new Date().toISOString()
+        });
+
+        for (const episode of data.episodes || []) {
+          await storePut(STORES.episodes, episode);
+        }
+
+        for (const asset of data.assets || []) {
+          if (!asset.dataUrl) continue;
+          const blob = await dataUrlToBlob(asset.dataUrl);
+          const restored = { ...asset, blob };
+          delete restored.dataUrl;
+          await storePut(STORES.assets, restored);
+        }
+
+        for (const entry of data.glossary || []) {
+          if (entry.term) {
+            await storePut(STORES.glossary, entry);
+          }
+        }
+
+        revokeAssetUrls();
+      } catch (error) {
+        console.warn("published storypack load failed", error);
+        notify("사이트용 storypack을 불러오지 못했습니다.");
+      }
+    }
+
+    async function initializeApp() {
+      try {
+        await openDatabase();
+        await seedInitialData();
+        await loadPublishedStorypack();
+        await refreshCaches();
+        renderProjectInfo();
+        renderLobby();
+        renderAssetViews();
+        renderGlossaryList();
+      } catch (error) {
+        console.error(error);
+        alert("브라우저 저장소를 초기화하지 못했습니다. 시크릿 모드나 저장소 권한을 확인해주세요.");
+      }
+    }
+
+    function renderProjectInfo() {
+      projectTitleDisplay.textContent = projectMeta.title || DEFAULT_PROJECT.title;
+      projectDescriptionDisplay.textContent =
+        projectMeta.description || DEFAULT_PROJECT.description;
+    }
+
+    function renderLobby() {
+      episodeGrid.innerHTML = "";
+      const episodes = sortedEpisodes();
+
+      if (!episodes.length) {
+        episodeGrid.innerHTML = `
+          <div class="empty-state">
+            저장된 시나리오가 없습니다.<br />
+            <strong>새 화 제작</strong> 버튼으로 첫 이야기를 만들어보세요.
+          </div>
+        `;
+        return;
+      }
+
+      for (const episode of episodes) {
+        const card = document.createElement("article");
+        card.className = "episode-card";
+
+        const cover = document.createElement("div");
+        cover.className = "episode-cover";
+        const coverAsset = findAsset(episode.coverAssetId);
+        if (coverAsset) {
+          cover.style.backgroundImage =
+            `linear-gradient(rgba(8,10,14,0.18), rgba(8,10,14,0.74)), url("${getAssetUrl(coverAsset)}")`;
+        }
+
+        const body = document.createElement("div");
+        body.className = "episode-card-body";
+
+        const order = document.createElement("div");
+        order.className = "episode-order";
+        order.textContent = `${episode.order || 0}화`;
+
+        const title = document.createElement("h3");
+        title.className = "episode-title";
+        title.textContent = episode.title || "제목 없음";
+
+        const subtitle = document.createElement("div");
+        subtitle.className = "episode-subtitle";
+        subtitle.textContent = episode.subtitle || "";
+
+        const description = document.createElement("p");
+        description.className = "episode-description";
+        description.textContent = episode.description || "설명이 없습니다.";
+
+        const actions = document.createElement("div");
+        actions.className = "episode-card-actions";
+
+        const viewButton = document.createElement("button");
+        viewButton.className = "primary small";
+        viewButton.textContent = "감상";
+        viewButton.addEventListener("click", () => openViewer(episode.id));
+
+        const editButton = document.createElement("button");
+        editButton.className = "small";
+        editButton.textContent = "수정";
+        editButton.addEventListener("click", () => openEditor(episode.id));
+
+        const duplicateButton = document.createElement("button");
+        duplicateButton.className = "small";
+        duplicateButton.textContent = "복제";
+        duplicateButton.addEventListener("click", () => duplicateEpisode(episode.id));
+
+        actions.append(viewButton, editButton, duplicateButton);
+        body.append(order, title, subtitle, description, actions);
+        card.append(cover, body);
+        episodeGrid.append(card);
+      }
+    }
+
+    function populateCoverSelect(selectedId = "") {
+      episodeCoverAsset.innerHTML = '<option value="">기본 표지</option>';
+
+      const assets = [...assetsCache].sort((a, b) =>
+        String(a.name).localeCompare(String(b.name), "ko")
+      );
+
+      for (const asset of assets) {
+        const option = document.createElement("option");
+        option.value = asset.id;
+        option.textContent = `${asset.name} · ${asset.id}`;
+        episodeCoverAsset.append(option);
+      }
+
+      episodeCoverAsset.value = selectedId || "";
+    }
+
+    function clearEditorForm() {
+      editingEpisodeId = null;
+      editorHeading.textContent = "새 시나리오 제작";
+      episodeOrder.value = String(
+        Math.max(0, ...episodesCache.map(item => Number(item.order) || 0)) + 1
+      );
+      episodeTitle.value = "";
+      episodeSubtitle.value = "";
+      episodeDescription.value = "";
+      episodeScript.value = "";
+      populateCoverSelect("");
+      deleteEpisodeBtn.disabled = true;
+      duplicateEpisodeBtn.disabled = true;
+    }
+
+    function openEditor(episodeId = null) {
+      previewDraft = null;
+
+      if (!episodeId) {
+        clearEditorForm();
+      } else {
+        const episode = episodesCache.find(item => item.id === episodeId);
+        if (!episode) {
+          notify("해당 화를 찾지 못했습니다.");
+          return;
+        }
+
+        editingEpisodeId = episode.id;
+        editorHeading.textContent = `${episode.order}화 수정`;
+        episodeOrder.value = String(episode.order || 1);
+        episodeTitle.value = episode.title || "";
+        episodeSubtitle.value = episode.subtitle || "";
+        episodeDescription.value = episode.description || "";
+        episodeScript.value = episode.script || "";
+        populateCoverSelect(episode.coverAssetId || "");
+        deleteEpisodeBtn.disabled = false;
+        duplicateEpisodeBtn.disabled = false;
+      }
+
+      renderAssetViews();
+      showScreen("editor");
+    }
+
+    function collectEditorEpisode() {
+      const title = episodeTitle.value.trim();
+      if (!title) {
+        alert("화 제목을 입력해주세요.");
+        episodeTitle.focus();
+        return null;
+      }
+
+      const script = episodeScript.value.trim();
+      if (!script) {
+        alert("시나리오 원문을 입력해주세요.");
+        episodeScript.focus();
+        return null;
+      }
+
+      const now = new Date().toISOString();
+      const existing = episodesCache.find(item => item.id === editingEpisodeId);
+
+      return {
+        id: editingEpisodeId || generateId("episode"),
+        order: Math.max(1, Number(episodeOrder.value) || 1),
+        title,
+        subtitle: episodeSubtitle.value.trim(),
+        description: episodeDescription.value.trim(),
+        coverAssetId: episodeCoverAsset.value || "",
+        script,
+        createdAt: existing?.createdAt || now,
+        updatedAt: now
+      };
+    }
+
+    async function saveEpisode() {
+      const episode = collectEditorEpisode();
+      if (!episode) return null;
+
+      await storePut(STORES.episodes, episode);
+      editingEpisodeId = episode.id;
+      await refreshCaches();
+      renderLobby();
+      populateCoverSelect(episode.coverAssetId);
+      deleteEpisodeBtn.disabled = false;
+      duplicateEpisodeBtn.disabled = false;
+      editorHeading.textContent = `${episode.order}화 수정`;
+      notify("시나리오를 저장했습니다.");
+      return episode;
+    }
+
+    async function deleteEpisode(episodeId = editingEpisodeId) {
+      if (!episodeId) return;
+      const episode = episodesCache.find(item => item.id === episodeId);
+      if (!episode) return;
+
+      if (!confirm(`“${episode.title}” 화를 삭제할까요?`)) return;
+
+      await storeDelete(STORES.episodes, episodeId);
+      await storeDelete(STORES.progress, episodeId);
+      await refreshCaches();
+      renderLobby();
+      clearEditorForm();
+      showScreen("lobby");
+      notify("시나리오를 삭제했습니다.");
+    }
+
+    async function duplicateEpisode(episodeId = editingEpisodeId) {
+      const source = episodesCache.find(item => item.id === episodeId);
+      if (!source) return;
+
+      const now = new Date().toISOString();
+      const duplicate = {
+        ...source,
+        id: generateId("episode"),
+        order: Math.max(0, ...episodesCache.map(item => Number(item.order) || 0)) + 1,
+        title: `${source.title} 복사본`,
+        createdAt: now,
+        updatedAt: now
+      };
+
+      await storePut(STORES.episodes, duplicate);
+      await refreshCaches();
+      renderLobby();
+      notify("화를 복제했습니다.");
+      openEditor(duplicate.id);
+    }
+
+    async function addAssetFiles(files) {
+      const imageFiles = [...files].filter(file => file.type.startsWith("image/"));
+      if (!imageFiles.length) {
+        notify("이미지 파일이 없습니다.");
+        return;
+      }
+
+      for (const file of imageFiles) {
+        const asset = {
+          id: sanitizeAssetId(file.name),
+          name: file.name.replace(/\.[^.]+$/, ""),
+          fileName: file.name,
+          mimeType: file.type,
+          size: file.size,
+          blob: file,
+          createdAt: new Date().toISOString()
+        };
+        await storePut(STORES.assets, asset);
+      }
+
+      revokeAssetUrls();
+      await refreshCaches();
+      populateCoverSelect(episodeCoverAsset.value);
+      renderAssetViews();
+      renderLobby();
+      notify(`${imageFiles.length}개의 배경을 저장했습니다.`);
+    }
+
+    async function renameAsset(assetId) {
+      const asset = findAsset(assetId);
+      if (!asset) return;
+
+      const newName = prompt("배경 표시 이름을 입력하세요.", asset.name);
+      if (!newName?.trim()) return;
+
+      await storePut(STORES.assets, {
+        ...asset,
+        name: newName.trim()
+      });
+
+      await refreshCaches();
+      renderAssetViews();
+      populateCoverSelect(episodeCoverAsset.value);
+      renderLobby();
+      notify("배경 이름을 변경했습니다.");
+    }
+
+    function assetReferencedByEpisodes(assetId) {
+      return episodesCache.filter(episode =>
+        episode.coverAssetId === assetId ||
+        String(episode.script || "").includes(`@배경 ${assetId}`)
+      );
+    }
+
+    async function deleteAsset(assetId) {
+      const asset = findAsset(assetId);
+      if (!asset) return;
+
+      const referenced = assetReferencedByEpisodes(assetId);
+      const warning = referenced.length
+        ? `\n\n이 배경은 ${referenced.length}개의 화에서 참조되고 있습니다. 삭제하면 해당 지점은 기본 배경으로 표시됩니다.`
+        : "";
+
+      if (!confirm(`배경 “${asset.name}”을 삭제할까요?${warning}`)) return;
+
+      await storeDelete(STORES.assets, assetId);
+
+      for (const episode of referenced) {
+        if (episode.coverAssetId === assetId) {
+          await storePut(STORES.episodes, {
+            ...episode,
+            coverAssetId: "",
+            updatedAt: new Date().toISOString()
+          });
+        }
+      }
+
+      const url = assetUrls.get(assetId);
+      if (url) URL.revokeObjectURL(url);
+      assetUrls.delete(assetId);
+
+      await refreshCaches();
+      populateCoverSelect(episodeCoverAsset.value);
+      renderAssetViews();
+      renderLobby();
+      notify("배경을 삭제했습니다.");
+    }
+
+    function insertAtCursor(textarea, value) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const scrollTop = textarea.scrollTop;
+      const scrollLeft = textarea.scrollLeft;
+      const before = textarea.value.slice(0, start);
+      const after = textarea.value.slice(end);
+      const prefix = before && !before.endsWith("\n") ? "\n" : "";
+      const suffix = after && !after.startsWith("\n") ? "\n" : "";
+      const inserted = `${prefix}${value}${suffix}`;
+
+      textarea.value = before + inserted + after;
+      const cursor = before.length + inserted.length;
+
+      try {
+        textarea.focus({ preventScroll: true });
+      } catch (error) {
+        textarea.focus();
+      }
+
+      textarea.setSelectionRange(cursor, cursor);
+      textarea.scrollTop = scrollTop;
+      textarea.scrollLeft = scrollLeft;
+
+      requestAnimationFrame(() => {
+        textarea.scrollTop = scrollTop;
+        textarea.scrollLeft = scrollLeft;
+      });
+    }
+
+    function createAssetItem(asset, mode) {
+      const item = document.createElement("article");
+      item.className = "asset-item";
+
+      const image = document.createElement("img");
+      image.className = "asset-thumb";
+      image.src = getAssetUrl(asset);
+      image.alt = asset.name;
+
+      const info = document.createElement("div");
+      info.className = "asset-info";
+
+      const name = document.createElement("div");
+      name.className = "asset-name";
+      name.textContent = asset.name;
+
+      const id = document.createElement("div");
+      id.className = "asset-id";
+      id.textContent = `ID: ${asset.id}`;
+
+      const actions = document.createElement("div");
+      actions.className = "asset-actions";
+
+      if (mode === "editor") {
+        const insertButton = document.createElement("button");
+        insertButton.className = "small primary";
+        insertButton.textContent = "명령 삽입";
+        insertButton.addEventListener("click", () => {
+          insertAtCursor(episodeScript, `@배경 ${asset.id}`);
+          notify("커서 위치에 배경 명령을 삽입했습니다.");
+        });
+        actions.append(insertButton);
+      }
+
+      const renameButton = document.createElement("button");
+      renameButton.className = "small";
+      renameButton.textContent = "이름 변경";
+      renameButton.addEventListener("click", () => renameAsset(asset.id));
+
+      const deleteButton = document.createElement("button");
+      deleteButton.className = "small danger";
+      deleteButton.textContent = "삭제";
+      deleteButton.addEventListener("click", () => deleteAsset(asset.id));
+
+      actions.append(renameButton, deleteButton);
+      info.append(name, id, actions);
+      item.append(image, info);
+      return item;
+    }
+
+    function renderAssetViews() {
+      const assets = [...assetsCache].sort((a, b) =>
+        String(a.name).localeCompare(String(b.name), "ko")
+      );
+
+      editorAssetList.innerHTML = "";
+      modalAssetList.innerHTML = "";
+
+      if (!assets.length) {
+        const empty = `
+          <div class="asset-empty">
+            저장된 배경이 없습니다.<br />
+            이미지 추가 버튼으로 공용 배경을 등록하세요.
+          </div>
+        `;
+        editorAssetList.innerHTML = empty;
+        modalAssetList.innerHTML = empty;
+        return;
+      }
+
+      for (const asset of assets) {
+        editorAssetList.append(createAssetItem(asset, "editor"));
+        modalAssetList.append(createAssetItem(asset, "modal"));
+      }
+    }
+
+    function glossaryMap() {
+      return new Map(glossaryCache.map(item => [item.term, item]));
+    }
+
+    function clearGlossaryForm() {
+      editingGlossaryTerm = null;
+      glossaryTermInput.value = "";
+      glossaryDescriptionInput.value = "";
+      glossaryTermInput.disabled = false;
+      document.getElementById("saveGlossaryEntryBtn").textContent = "사전 항목 저장";
+    }
+
+    function openGlossaryModal() {
+      clearGlossaryForm();
+      renderGlossaryList();
+      glossaryModal.classList.add("show");
+    }
+
+    function renderGlossaryList() {
+      if (!glossaryList) return;
+
+      const entries = [...glossaryCache].sort((a, b) =>
+        String(a.term).localeCompare(String(b.term), "ko")
+      );
+
+      glossaryList.innerHTML = "";
+
+      if (!entries.length) {
+        glossaryList.innerHTML = `
+          <div class="glossary-empty">
+            저장된 고유명사가 없습니다.<br />
+            항목을 추가한 뒤 대사에 <code>[고유명사]</code> 형식으로 적어보세요.
+          </div>
+        `;
+        return;
+      }
+
+      for (const entry of entries) {
+        const item = document.createElement("article");
+        item.className = "glossary-item";
+
+        const term = document.createElement("div");
+        term.className = "glossary-term";
+        term.textContent = entry.term;
+
+        const description = document.createElement("div");
+        description.className = "glossary-description";
+        description.textContent = entry.description || "설명이 없습니다.";
+
+        const actions = document.createElement("div");
+        actions.className = "glossary-actions";
+
+        const editButton = document.createElement("button");
+        editButton.className = "small";
+        editButton.textContent = "수정";
+        editButton.addEventListener("click", () => editGlossaryEntry(entry.term));
+
+        const deleteButton = document.createElement("button");
+        deleteButton.className = "small danger";
+        deleteButton.textContent = "삭제";
+        deleteButton.addEventListener("click", () => deleteGlossaryEntry(entry.term));
+
+        actions.append(editButton, deleteButton);
+        item.append(term, description, actions);
+        glossaryList.append(item);
+      }
+    }
+
+    function editGlossaryEntry(term) {
+      const entry = glossaryCache.find(item => item.term === term);
+      if (!entry) return;
+
+      editingGlossaryTerm = entry.term;
+      glossaryTermInput.value = entry.term;
+      glossaryDescriptionInput.value = entry.description || "";
+      glossaryTermInput.disabled = true;
+      document.getElementById("saveGlossaryEntryBtn").textContent = "사전 항목 수정";
+      glossaryTermInput.focus();
+    }
+
+    async function saveGlossaryEntry() {
+      const term = glossaryTermInput.value.trim();
+      const description = glossaryDescriptionInput.value.trim();
+
+      if (!term) {
+        alert("고유명사를 입력해주세요.");
+        glossaryTermInput.focus();
+        return;
+      }
+
+      if (!description) {
+        alert("설명을 입력해주세요.");
+        glossaryDescriptionInput.focus();
+        return;
+      }
+
+      const now = new Date().toISOString();
+      const existing = glossaryCache.find(item => item.term === term);
+
+      await storePut(STORES.glossary, {
+        term,
+        description,
+        createdAt: existing?.createdAt || now,
+        updatedAt: now
+      });
+
+      await refreshCaches();
+      renderGlossaryList();
+      clearGlossaryForm();
+      notify("고유명사 사전 항목을 저장했습니다.");
+    }
+
+    async function deleteGlossaryEntry(term) {
+      if (!confirm(`“${term}” 항목을 삭제할까요?`)) return;
+
+      await storeDelete(STORES.glossary, term);
+      await refreshCaches();
+      renderGlossaryList();
+
+      if (editingGlossaryTerm === term) clearGlossaryForm();
+      notify("고유명사 사전 항목을 삭제했습니다.");
+    }
+
+    function showGlossaryPopup(term) {
+      const entry = glossaryMap().get(term);
+      termPopupTitle.textContent = term;
+      termPopupDescription.textContent =
+        entry?.description || "사전에 등록된 설명이 없습니다.";
+      termPopupModal.classList.add("show");
+    }
+
+    function collectGlossaryTermsFromText(rawText, targetMap) {
+      const text = String(rawText || "");
+      const pattern = /\[([^\]\n]+?)\]/g;
+
+      for (const match of text.matchAll(pattern)) {
+        const term = match[1].trim();
+        if (!term) continue;
+
+        if (targetMap.has(term)) {
+          targetMap.get(term).count += 1;
+        } else {
+          targetMap.set(term, {
+            term,
+            count: 1
+          });
+        }
+      }
+    }
+
+    function collectGlossaryTermsFromEntry(entry, targetMap) {
+      if (!entry) return;
+
+      if (entry.type === "scene") {
+        collectGlossaryTermsFromText(entry.text, targetMap);
+        collectGlossaryTermsFromText(entry.caption, targetMap);
+        return;
+      }
+
+      if (
+        entry.type === "dialogue" ||
+        entry.type === "direction" ||
+        entry.type === "narration"
+      ) {
+        collectGlossaryTermsFromText(entry.text, targetMap);
+      }
+    }
+
+    function getVisibleGlossaryTerms() {
+      const terms = new Map();
+
+      if (!viewerEntries.length || !viewerPlayableIndices.length) {
+        return [];
+      }
+
+      const currentEntryIndex = viewerPlayableIndices[viewerPosition] ?? -1;
+
+      for (let index = 0; index <= currentEntryIndex; index += 1) {
+        collectGlossaryTermsFromEntry(viewerEntries[index], terms);
+      }
+
+      return [...terms.values()];
+    }
+
+    function openViewerGlossaryModal() {
+      const visibleTerms = getVisibleGlossaryTerms();
+      const map = glossaryMap();
+
+      viewerGlossaryList.innerHTML = "";
+
+      viewerGlossarySummary.textContent =
+        visibleTerms.length
+          ? `현재 위치까지 등장한 고유명사 ${visibleTerms.length}개입니다.`
+          : "아직 이 시점까지 등장한 고유명사가 없습니다.";
+
+      if (!visibleTerms.length) {
+        viewerGlossaryList.innerHTML = `
+          <div class="glossary-empty">
+            아직 표시할 고유명사가 없습니다.<br />
+            대사에 <code>[고유명사]</code> 형식으로 등장하면 이곳에 추가됩니다.
+          </div>
+        `;
+        viewerGlossaryModal.classList.add("show");
+        return;
+      }
+
+      for (const item of visibleTerms) {
+        const entry = map.get(item.term);
+
+        const article = document.createElement("article");
+        article.className = entry
+          ? "glossary-item"
+          : "glossary-item is-missing";
+
+        const term = document.createElement("div");
+        term.className = "glossary-term";
+        term.textContent = item.term;
+
+        const description = document.createElement("div");
+        description.className = "glossary-description";
+        description.textContent = entry?.description || "사전에 등록된 설명이 없습니다.";
+
+        article.append(term, description);
+        viewerGlossaryList.append(article);
+      }
+
+      viewerGlossaryModal.classList.add("show");
+    }
+
+    function renderRichText(target, rawText) {
+      target.textContent = "";
+
+      const text = String(rawText ?? "");
+      const pattern = /(\#[^#\n]+?\#|\*[^*\n]+?\*|\[[^\]\n]+?\])/g;
+      let lastIndex = 0;
+      const map = glossaryMap();
+
+      for (const match of text.matchAll(pattern)) {
+        if (match.index > lastIndex) {
+          target.append(document.createTextNode(text.slice(lastIndex, match.index)));
+        }
+
+        const token = match[0];
+
+        if (token.startsWith("#") && token.endsWith("#")) {
+          const span = document.createElement("span");
+          span.className = "inline-shout";
+          span.textContent = token.slice(1, -1);
+          target.append(span);
+        } else if (token.startsWith("*") && token.endsWith("*")) {
+          const span = document.createElement("span");
+          span.className = "inline-whisper";
+          span.textContent = token.slice(1, -1);
+          target.append(span);
+        } else if (token.startsWith("[") && token.endsWith("]")) {
+          const term = token.slice(1, -1).trim();
+          const span = document.createElement("span");
+          span.className = map.has(term)
+            ? "glossary-link"
+            : "glossary-link missing";
+          span.textContent = term;
+          span.title = map.has(term)
+            ? "클릭해서 설명 보기"
+            : "사전에 등록되지 않은 고유명사";
+          span.tabIndex = 0;
+          span.role = "button";
+          span.addEventListener("click", event => {
+            event.stopPropagation();
+            showGlossaryPopup(term);
+          });
+          span.addEventListener("keydown", event => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              event.stopPropagation();
+              showGlossaryPopup(term);
+            }
+          });
+          target.append(span);
+        }
+
+        lastIndex = match.index + token.length;
+      }
+
+      if (lastIndex < text.length) {
+        target.append(document.createTextNode(text.slice(lastIndex)));
+      }
+    }
+
+    function getBackgroundCommand(line) {
+      const match = line.match(/^@배경\s+([^\s]+)$/i) ||
+        line.match(/^@bg\s+([^\s]+)$/i) ||
+        line.match(/^\[배경\s*:\s*([^\]]+)\]$/i);
+
+      return match ? match[1].trim() : null;
+    }
+
+    function isShakeCommand(line) {
+      return /^@(흔들림|shake|screen-shake)$/i.test(line) ||
+        /^\[(흔들림|shake)\]$/i.test(line);
+    }
+
+    function getBlackoutCommand(line) {
+      if (/^@(암전|blackout|fadeout)$/i.test(line) ||
+          /^@(암전|blackout)\s+(on|켜기|켬|시작)$/i.test(line) ||
+          /^\[(암전|blackout)\]$/i.test(line)) {
+        return true;
+      }
+
+      if (/^@(조명|암전해제|밝힘|light|fadein)$/i.test(line) ||
+          /^@(암전|blackout)\s+(off|끄기|끔|해제|끝)$/i.test(line) ||
+          /^\[(조명|light|암전해제)\]$/i.test(line)) {
+        return false;
+      }
+
+      return null;
+    }
+
+    function getFocusCommand(line) {
+      const match =
+        line.match(/^@(집중|컷신|일러스트|focus|cutscene)\s+([^\s]+)$/i) ||
+        line.match(/^\[(집중|컷신|focus)\s*:\s*([^\]]+)\]$/i);
+
+      return match ? match[2].trim() : null;
+    }
+
+    function getLetterboxCommand(line) {
+      const match =
+        line.match(/^@(레터박스|letterbox)\s+([^\s]+)$/i) ||
+        line.match(/^\[(레터박스|letterbox)\s*:\s*([^\]]+)\]$/i);
+
+      if (!match) return null;
+
+      const value = match[2].trim().toLowerCase();
+
+      if (["확대", "large", "big", "wide", "강조"].includes(value)) {
+        return "large";
+      }
+
+      if (["축소", "small", "thin", "narrow", "얇게"].includes(value)) {
+        return "small";
+      }
+
+      if (["기본", "normal", "default", "표준", "켜기", "on"].includes(value)) {
+        return "normal";
+      }
+
+      if (["끄기", "off", "없음", "해제"].includes(value)) {
+        return "off";
+      }
+
+      return null;
+    }
+
+    function getCameraCommand(line) {
+      const match =
+        line.match(/^@(카메라|camera)\s+([^\s]+)$/i) ||
+        line.match(/^\[(카메라|camera)\s*:\s*([^\]]+)\]$/i);
+
+      if (!match) return null;
+      const value = match[2].trim().toLowerCase();
+
+      const map = {
+        "확대": "zoom-in",
+        "줌인": "zoom-in",
+        "zoom-in": "zoom-in",
+        "zoomin": "zoom-in",
+        "in": "zoom-in",
+        "축소": "zoom-out",
+        "줌아웃": "zoom-out",
+        "zoom-out": "zoom-out",
+        "zoomout": "zoom-out",
+        "out": "zoom-out",
+        "기본": "normal",
+        "중앙": "normal",
+        "center": "normal",
+        "centre": "normal",
+        "normal": "normal",
+        "default": "normal",
+        "왼쪽": "left",
+        "좌": "left",
+        "left": "left",
+        "오른쪽": "right",
+        "우": "right",
+        "right": "right",
+        "위": "up",
+        "상": "up",
+        "up": "up",
+        "아래": "down",
+        "하": "down",
+        "down": "down"
+      };
+
+      return map[value] || null;
+    }
+
+    function getFilterCommand(line) {
+      const match =
+        line.match(/^@(색감|필터|filter|tone)\s+([^\s]+)$/i) ||
+        line.match(/^\[(색감|필터|filter|tone)\s*:\s*([^\]]+)\]$/i);
+
+      if (!match) return null;
+      const value = match[2].trim().toLowerCase();
+
+      const map = {
+        "기본": "normal",
+        "없음": "normal",
+        "해제": "normal",
+        "normal": "normal",
+        "default": "normal",
+        "off": "normal",
+        "차갑게": "cold",
+        "차가움": "cold",
+        "냉색": "cold",
+        "cold": "cold",
+        "cool": "cold",
+        "푸르게": "cold",
+        "따뜻하게": "warm",
+        "따뜻함": "warm",
+        "온색": "warm",
+        "warm": "warm",
+        "흑백": "mono",
+        "무채색": "mono",
+        "mono": "mono",
+        "monochrome": "mono",
+        "gray": "mono",
+        "grey": "mono",
+        "붉게": "red",
+        "붉은": "red",
+        "red": "red",
+        "alarm": "red"
+      };
+
+      return map[value] || null;
+    }
+
+    function getBlurCommand(line) {
+      const match =
+        line.match(/^@(초점|블러|blur|focus-blur)\s+([^\s]+)$/i) ||
+        line.match(/^@(초점흐림|초점흐리게|blur)$/i) ||
+        line.match(/^@(초점선명|초점복귀|unblur)$/i) ||
+        line.match(/^\[(초점|블러|blur)\s*:\s*([^\]]+)\]$/i);
+
+      if (!match) return null;
+
+      if (!match[2]) {
+        const whole = match[0].toLowerCase();
+        if (/선명|복귀|unblur/.test(whole)) return "off";
+        return "soft";
+      }
+
+      const value = match[2].trim().toLowerCase();
+
+      const map = {
+        "켜기": "soft",
+        "흐림": "soft",
+        "흐리게": "soft",
+        "soft": "soft",
+        "on": "soft",
+        "약": "soft",
+        "강": "strong",
+        "강하게": "strong",
+        "strong": "strong",
+        "heavy": "strong",
+        "끄기": "off",
+        "선명": "off",
+        "선명하게": "off",
+        "기본": "off",
+        "해제": "off",
+        "off": "off",
+        "normal": "off"
+      };
+
+      return map[value] || null;
+    }
+
+    function getVignetteCommand(line) {
+      const match =
+        line.match(/^@(비네트|vignette)\s+([^\s]+)$/i) ||
+        line.match(/^\[(비네트|vignette)\s*:\s*([^\]]+)\]$/i);
+
+      if (!match) return null;
+      const value = match[2].trim().toLowerCase();
+
+      const map = {
+        "약": "soft",
+        "약하게": "soft",
+        "soft": "soft",
+        "small": "soft",
+        "강": "strong",
+        "강하게": "strong",
+        "strong": "strong",
+        "heavy": "strong",
+        "켜기": "strong",
+        "on": "strong",
+        "끄기": "off",
+        "기본": "off",
+        "해제": "off",
+        "없음": "off",
+        "off": "off"
+      };
+
+      return map[value] || null;
+    }
+
+    function getSilenceCommand(line) {
+      const match =
+        line.match(/^@(정적|침묵|silent|silence|pause)(?:\s+([0-9]+(?:\.[0-9]+)?))?$/i) ||
+        line.match(/^\[(정적|침묵|silence|pause)(?:\s*:\s*([0-9]+(?:\.[0-9]+)?))?\]$/i);
+
+      if (!match) return null;
+      const seconds = Number(match[2] || 1);
+      return Number.isFinite(seconds)
+        ? Math.max(0.2, Math.min(seconds, 8))
+        : 1;
+    }
+
+    function getMoodCommand(line) {
+      const match =
+        line.match(/^@(무드|mood)\s+([^\s]+)$/i) ||
+        line.match(/^\[(무드|mood)\s*:\s*([^\]]+)\]$/i);
+
+      if (!match) return null;
+      const value = match[2].trim().toLowerCase();
+
+      const moods = {
+        "기본": {
+          camera: "normal",
+          filter: "normal",
+          blur: "off",
+          vignette: "off"
+        },
+        "default": {
+          camera: "normal",
+          filter: "normal",
+          blur: "off",
+          vignette: "off"
+        },
+        "normal": {
+          camera: "normal",
+          filter: "normal",
+          blur: "off",
+          vignette: "off"
+        },
+        "긴장": {
+          camera: "zoom-in",
+          filter: "cold",
+          blur: "off",
+          vignette: "strong"
+        },
+        "tension": {
+          camera: "zoom-in",
+          filter: "cold",
+          blur: "off",
+          vignette: "strong"
+        },
+        "독백": {
+          camera: "zoom-in",
+          filter: "cold",
+          blur: "soft",
+          vignette: "soft"
+        },
+        "monologue": {
+          camera: "zoom-in",
+          filter: "cold",
+          blur: "soft",
+          vignette: "soft"
+        },
+        "회상": {
+          camera: "zoom-out",
+          filter: "warm",
+          blur: "soft",
+          vignette: "soft"
+        },
+        "memory": {
+          camera: "zoom-out",
+          filter: "warm",
+          blur: "soft",
+          vignette: "soft"
+        },
+        "경보": {
+          camera: "zoom-in",
+          filter: "red",
+          blur: "off",
+          vignette: "strong"
+        },
+        "alarm": {
+          camera: "zoom-in",
+          filter: "red",
+          blur: "off",
+          vignette: "strong"
+        },
+        "기록": {
+          camera: "normal",
+          filter: "mono",
+          blur: "off",
+          vignette: "soft"
+        },
+        "record": {
+          camera: "normal",
+          filter: "mono",
+          blur: "off",
+          vignette: "soft"
+        }
+      };
+
+      return moods[value] || null;
+    }
+
+    function parseScenario(rawText) {
+      const lines = String(rawText || "")
+        .replace(/\r\n/g, "\n")
+        .split("\n")
+        .map(line => line.trim());
+
+      const result = [];
+      let activeSpeaker = null;
+      let activeAffiliation = "";
+      let buffer = [];
+      let shakeNext = false;
+
+      const withShake = entry => {
+        if (shakeNext) {
+          entry.shake = true;
+          shakeNext = false;
+        }
+        return entry;
+      };
+
+      const flushDialogue = () => {
+        const text = buffer.join("\n").trim();
+        if (text && activeSpeaker) {
+          result.push(withShake({
+            type: "dialogue",
+            speaker: activeSpeaker,
+            affiliation: activeAffiliation,
+            text
+          }));
+        }
+        buffer = [];
+      };
+
+      for (const line of lines) {
+        if (!line) {
+          if (buffer.length) buffer.push("");
+          continue;
+        }
+
+        if (isShakeCommand(line)) {
+          flushDialogue();
+          shakeNext = true;
+          continue;
+        }
+
+        const blackout = getBlackoutCommand(line);
+        if (blackout !== null) {
+          flushDialogue();
+          activeSpeaker = null;
+          activeAffiliation = "";
+          result.push({
+            type: "blackout",
+            on: blackout
+          });
+          continue;
+        }
+
+        const focusAssetId = getFocusCommand(line);
+        if (focusAssetId !== null) {
+          flushDialogue();
+          activeSpeaker = null;
+          activeAffiliation = "";
+          result.push(withShake({
+            type: "focus",
+            assetId: focusAssetId
+          }));
+          continue;
+        }
+
+        const letterboxMode = getLetterboxCommand(line);
+        if (letterboxMode !== null) {
+          flushDialogue();
+          activeSpeaker = null;
+          activeAffiliation = "";
+          result.push({
+            type: "letterbox",
+            mode: letterboxMode
+          });
+          continue;
+        }
+
+        const moodState = getMoodCommand(line);
+        if (moodState !== null) {
+          flushDialogue();
+          activeSpeaker = null;
+          activeAffiliation = "";
+          result.push({
+            type: "visual",
+            state: moodState
+          });
+          continue;
+        }
+
+        const cameraMode = getCameraCommand(line);
+        if (cameraMode !== null) {
+          flushDialogue();
+          activeSpeaker = null;
+          activeAffiliation = "";
+          result.push({
+            type: "visual",
+            state: { camera: cameraMode }
+          });
+          continue;
+        }
+
+        const filterMode = getFilterCommand(line);
+        if (filterMode !== null) {
+          flushDialogue();
+          activeSpeaker = null;
+          activeAffiliation = "";
+          result.push({
+            type: "visual",
+            state: { filter: filterMode }
+          });
+          continue;
+        }
+
+        const blurMode = getBlurCommand(line);
+        if (blurMode !== null) {
+          flushDialogue();
+          activeSpeaker = null;
+          activeAffiliation = "";
+          result.push({
+            type: "visual",
+            state: { blur: blurMode }
+          });
+          continue;
+        }
+
+        const vignetteMode = getVignetteCommand(line);
+        if (vignetteMode !== null) {
+          flushDialogue();
+          activeSpeaker = null;
+          activeAffiliation = "";
+          result.push({
+            type: "visual",
+            state: { vignette: vignetteMode }
+          });
+          continue;
+        }
+
+        const silenceSeconds = getSilenceCommand(line);
+        if (silenceSeconds !== null) {
+          flushDialogue();
+          activeSpeaker = null;
+          activeAffiliation = "";
+          result.push(withShake({
+            type: "silence",
+            seconds: silenceSeconds
+          }));
+          continue;
+        }
+
+        const backgroundId = getBackgroundCommand(line);
+        if (backgroundId !== null) {
+          flushDialogue();
+          activeSpeaker = null;
+          activeAffiliation = "";
+          result.push({
+            type: "background",
+            assetId: backgroundId === "0" ? "" : backgroundId
+          });
+          continue;
+        }
+
+        if (/^-\s+/.test(line)) {
+          flushDialogue();
+          activeSpeaker = null;
+          activeAffiliation = "";
+          const sceneRaw = line.replace(/^-\s+/, "").trim();
+          const [sceneTitle, ...sceneCaptionParts] = sceneRaw.split("|");
+          const sceneCaption = sceneCaptionParts.join("|").trim();
+          result.push(withShake({
+            type: "scene",
+            text: sceneTitle.trim(),
+            caption: sceneCaption || "새로운 장면"
+          }));
+          continue;
+        }
+
+        if (/^\(.+\)$/.test(line)) {
+          flushDialogue();
+          result.push(withShake({
+            type: "direction",
+            text: line.slice(1, -1).trim()
+          }));
+          continue;
+        }
+
+        if (line.includes("|") && !line.startsWith("(")) {
+          flushDialogue();
+          const [name, ...rest] = line.split("|");
+          activeSpeaker = name.trim();
+          activeAffiliation = rest.join("|").trim();
+          continue;
+        }
+
+        if (activeSpeaker) {
+          buffer.push(line);
+        } else {
+          result.push(withShake({
+            type: "narration",
+            text: line
+          }));
+        }
+      }
+
+      flushDialogue();
+      return result;
+    }
+
+    function getEntryState(entryIndex) {
+      let scene = "";
+      let backgroundId = "";
+      let blackout = false;
+      let letterbox = "normal";
+      const visual = {
+        camera: "normal",
+        filter: "normal",
+        blur: "off",
+        vignette: "off"
+      };
+
+      for (let index = 0; index <= entryIndex; index += 1) {
+        const entry = viewerEntries[index];
+        if (entry?.type === "scene") scene = entry.text;
+        if (entry?.type === "background") backgroundId = entry.assetId;
+        if (entry?.type === "blackout") blackout = Boolean(entry.on);
+        if (entry?.type === "letterbox") letterbox = entry.mode || "normal";
+        if (entry?.type === "visual") {
+          Object.assign(visual, entry.state || {});
+        }
+      }
+
+      return { scene, backgroundId, blackout, letterbox, visual };
+    }
+
+    function setViewerVisualState(visual = {}) {
+      const camera = visual.camera || "normal";
+      const filter = visual.filter || "normal";
+      const blur = visual.blur || "off";
+      const vignette = visual.vignette || "off";
+
+      const cameraMap = {
+        normal: { scale: "1", position: "center" },
+        "zoom-in": { scale: "1.085", position: "center" },
+        "zoom-out": { scale: "1.015", position: "center" },
+        left: { scale: "1.095", position: "37% 50%" },
+        right: { scale: "1.095", position: "63% 50%" },
+        up: { scale: "1.095", position: "50% 36%" },
+        down: { scale: "1.095", position: "50% 64%" }
+      };
+
+      const filterMap = {
+        normal: "none",
+        cold: "saturate(0.82) contrast(1.08) brightness(0.92) hue-rotate(185deg)",
+        warm: "sepia(0.22) saturate(1.08) brightness(1.03) contrast(1.02)",
+        mono: "grayscale(1) contrast(1.08) brightness(0.96)",
+        red: "sepia(0.34) saturate(1.48) hue-rotate(-24deg) brightness(0.92) contrast(1.08)"
+      };
+
+      const blurMap = {
+        off: "0px",
+        soft: "2.2px",
+        strong: "5px"
+      };
+
+      const vignetteMap = {
+        off: "0",
+        soft: "0.34",
+        strong: "0.62"
+      };
+
+      const cameraState = cameraMap[camera] || cameraMap.normal;
+
+      viewerContent.style.setProperty("--camera-scale", cameraState.scale);
+      viewerContent.style.setProperty("--camera-position", cameraState.position);
+      viewerContent.style.setProperty("--visual-filter", filterMap[filter] || filterMap.normal);
+      viewerContent.style.setProperty("--visual-blur", blurMap[blur] || blurMap.off);
+      viewerContent.style.setProperty("--vignette-opacity", vignetteMap[vignette] || vignetteMap.off);
+    }
+
+    function clearViewerSilence() {
+      if (viewerSilenceTimer) {
+        clearTimeout(viewerSilenceTimer);
+        viewerSilenceTimer = null;
+      }
+      viewerSilenceActive = false;
+      screens.viewer.classList.remove("is-silent");
+    }
+
+    function startViewerSilence(seconds = 1) {
+      clearViewerSilence();
+      clearViewerSilence();
+      stopTyping();
+      deferredTypewriter = null;
+      viewerSilenceActive = true;
+      screens.viewer.classList.add("is-silent");
+      dialogueSpeaker.textContent = "";
+      dialogueAffiliation.textContent = "";
+      dialogueText.textContent = "";
+      viewerStageMessage.innerHTML = "";
+
+      viewerSilenceTimer = window.setTimeout(() => {
+        viewerSilenceTimer = null;
+        viewerSilenceActive = false;
+        screens.viewer.classList.remove("is-silent");
+        viewerNext();
+      }, Math.max(0.2, Math.min(Number(seconds) || 1, 8)) * 1000);
+    }
+
+    function stopViewerAuto() {
+      if (viewerAutoTimer) {
+        clearInterval(viewerAutoTimer);
+        viewerAutoTimer = null;
+      }
+      viewerAutoBtn.textContent = "자동 재생";
+    }
+
+    function stopTyping() {
+      if (typingTimer) {
+        clearTimeout(typingTimer);
+        typingTimer = null;
+      }
+      typingState = null;
+      dialogueText.classList.remove("is-typing");
+    }
+
+    function getTypingSpeedForEntry(entry) {
+      if (!entry) return 26;
+      if (entry.type === "direction") return 22;
+      if (entry.type === "scene") return 34;
+      return 26;
+    }
+
+    function splitRichText(rawText) {
+      const text = String(rawText ?? "");
+      const pattern = /(\#[^#\n]+?\#|\*[^*\n]+?\*|\[[^\]\n]+?\])/g;
+      const segments = [];
+      let lastIndex = 0;
+
+      for (const match of text.matchAll(pattern)) {
+        if (match.index > lastIndex) {
+          segments.push({
+            type: "plain",
+            text: text.slice(lastIndex, match.index)
+          });
+        }
+
+        const token = match[0];
+
+        if (token.startsWith("#") && token.endsWith("#")) {
+          segments.push({
+            type: "shout",
+            text: token.slice(1, -1)
+          });
+        } else if (token.startsWith("*") && token.endsWith("*")) {
+          segments.push({
+            type: "whisper",
+            text: token.slice(1, -1)
+          });
+        } else if (token.startsWith("[") && token.endsWith("]")) {
+          segments.push({
+            type: "glossary",
+            text: token.slice(1, -1).trim()
+          });
+        }
+
+        lastIndex = match.index + token.length;
+      }
+
+      if (lastIndex < text.length) {
+        segments.push({
+          type: "plain",
+          text: text.slice(lastIndex)
+        });
+      }
+
+      return segments;
+    }
+
+    function richTextLength(segments) {
+      return segments.reduce(
+        (sum, segment) => sum + Array.from(segment.text).length,
+        0
+      );
+    }
+
+    function getVisibleCharacterInfo(segments, characterIndex) {
+      let cursor = characterIndex;
+
+      for (const segment of segments) {
+        const chars = Array.from(segment.text);
+        if (cursor < chars.length) {
+          return {
+            char: chars[cursor],
+            type: segment.type || "normal"
+          };
+        }
+        cursor -= chars.length;
+      }
+
+      return {
+        char: "",
+        type: "normal"
+      };
+    }
+
+    function getVisibleCharacter(segments, characterIndex) {
+      return getVisibleCharacterInfo(segments, characterIndex).char;
+    }
+
+    function buildTypingProfile(segments) {
+      const chars = [];
+      const types = [];
+
+      for (const segment of segments) {
+        for (const char of Array.from(segment.text)) {
+          chars.push(char);
+          types.push(segment.type || "normal");
+        }
+      }
+
+      const quoteStack = [];
+      const insideQuote = new Array(chars.length).fill(false);
+      const openingQuotes = new Set(["‘", "“", "'", "\""]);
+      const closingPairs = {
+        "‘": "’",
+        "“": "”",
+        "'": "'",
+        "\"": "\""
+      };
+
+      for (let index = 0; index < chars.length; index += 1) {
+        const char = chars[index];
+
+        if (quoteStack.length) {
+          insideQuote[index] = true;
+        }
+
+        const top = quoteStack[quoteStack.length - 1];
+
+        if (top && char === closingPairs[top]) {
+          quoteStack.pop();
+          insideQuote[index] = true;
+          continue;
+        }
+
+        if (openingQuotes.has(char)) {
+          if ((char === "'" || char === "\"") && top === char) {
+            quoteStack.pop();
+            insideQuote[index] = true;
+          } else {
+            quoteStack.push(char);
+            insideQuote[index] = true;
+          }
+        }
+      }
+
+      return {
+        chars,
+        types,
+        insideQuote
+      };
+    }
+
+    function isOpeningQuote(char) {
+      return ["‘", "“", "'", "\""].includes(char);
+    }
+
+    function isClosingQuote(char) {
+      return ["’", "”", "'", "\""].includes(char);
+    }
+
+    function getTypingDelayAfterCharacter(profile, charIndex, baseSpeed) {
+      const currentChar = profile.chars[charIndex] || "";
+      const nextChar = profile.chars[charIndex + 1] || "";
+      const currentType = profile.types[charIndex] || "normal";
+      const nextType = profile.types[charIndex + 1] || "normal";
+      const currentInsideQuote = Boolean(profile.insideQuote[charIndex]);
+      const nextInsideQuote = Boolean(profile.insideQuote[charIndex + 1]);
+
+      if (!currentChar) return baseSpeed;
+
+      if (currentType === "shout" || nextType === "shout") {
+        return Math.max(18, Math.floor(baseSpeed * 0.88));
+      }
+
+      if (isOpeningQuote(nextChar) && !currentInsideQuote) {
+        return baseSpeed + 180;
+      }
+
+      if (currentInsideQuote || nextInsideQuote) {
+        if (isClosingQuote(currentChar) && !nextInsideQuote) {
+          return baseSpeed + 190;
+        }
+
+        if (isOpeningQuote(currentChar)) {
+          return Math.max(14, Math.floor(baseSpeed * 0.54));
+        }
+
+        return Math.max(14, Math.floor(baseSpeed * 0.48));
+      }
+
+      const nextIsQuestionOrExclamation = /[?!？！]/.test(nextChar || "");
+      const currentIsQuestionOrExclamation = /[?!？！]/.test(currentChar);
+      const currentIsEllipsisDot = currentChar === "." && nextChar === ".";
+      const currentIsLastEllipsisDot = currentChar === "." && nextChar !== ".";
+      const currentIsComma = /[,，、]/.test(currentChar);
+      const currentIsSentenceEnd = /[.。]/.test(currentChar);
+
+      if (currentChar === "…" || currentChar === "⋯") {
+        return baseSpeed + 260;
+      }
+
+      if (currentIsEllipsisDot) {
+        return baseSpeed + 210;
+      }
+
+      if (currentIsLastEllipsisDot) {
+        return baseSpeed + 260;
+      }
+
+      if (currentIsComma) {
+        return baseSpeed + 150;
+      }
+
+      if (currentIsQuestionOrExclamation) {
+        return nextIsQuestionOrExclamation
+          ? Math.max(16, Math.floor(baseSpeed * 0.72))
+          : baseSpeed + 260;
+      }
+
+      if (currentIsSentenceEnd) {
+        return baseSpeed + 230;
+      }
+
+      if (/[;；:：]/.test(currentChar)) {
+        return baseSpeed + 170;
+      }
+
+      if (/[—–-]/.test(currentChar)) {
+        return baseSpeed + 120;
+      }
+
+      return baseSpeed;
+    }
+
+    function appendCursor(target) {
+      const cursor = document.createElement("span");
+      cursor.className = "typing-cursor";
+      cursor.textContent = "▌";
+      target.append(cursor);
+    }
+
+    function renderRichSegments(target, segments, visibleCount = Infinity, showCursor = false) {
+      target.textContent = "";
+      const map = glossaryMap();
+      let remaining = visibleCount;
+
+      for (const segment of segments) {
+        if (remaining <= 0) break;
+
+        const chars = Array.from(segment.text);
+        const visibleText = chars.slice(0, remaining).join("");
+        remaining -= chars.length;
+
+        if (!visibleText) continue;
+
+        if (segment.type === "plain") {
+          target.append(document.createTextNode(visibleText));
+          continue;
+        }
+
+        const span = document.createElement("span");
+
+        if (segment.type === "shout") {
+          span.className = "inline-shout";
+          span.textContent = visibleText;
+        }
+
+        if (segment.type === "whisper") {
+          span.className = "inline-whisper";
+          span.textContent = visibleText;
+        }
+
+        if (segment.type === "glossary") {
+          const isFullyVisible = visibleText === segment.text;
+          span.className = map.has(segment.text)
+            ? "glossary-link"
+            : "glossary-link missing";
+          span.textContent = visibleText;
+          span.title = map.has(segment.text)
+            ? "클릭해서 설명 보기"
+            : "사전에 등록되지 않은 고유명사";
+
+          if (isFullyVisible) {
+            span.tabIndex = 0;
+            span.role = "button";
+            span.addEventListener("click", event => {
+              event.stopPropagation();
+              showGlossaryPopup(segment.text);
+            });
+            span.addEventListener("keydown", event => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                event.stopPropagation();
+                showGlossaryPopup(segment.text);
+              }
+            });
+          }
+        }
+
+        target.append(span);
+      }
+
+      if (showCursor) appendCursor(target);
+    }
+
+    function startTypewriter(rawText, entry) {
+      stopTyping();
+
+      const segments = splitRichText(rawText);
+      const total = richTextLength(segments);
+
+      if (total === 0) {
+        renderRichSegments(dialogueText, segments, Infinity, false);
+        return;
+      }
+
+      typingState = {
+        segments,
+        profile: buildTypingProfile(segments),
+        total,
+        visible: 0,
+        speed: getTypingSpeedForEntry(entry)
+      };
+
+      dialogueText.classList.add("is-typing");
+      renderRichSegments(dialogueText, segments, 0, true);
+
+      const step = () => {
+        if (!typingState) return;
+
+        typingState.visible += 1;
+        const done = typingState.visible >= typingState.total;
+
+        renderRichSegments(
+          dialogueText,
+          typingState.segments,
+          typingState.visible,
+          !done
+        );
+
+        if (done) {
+          stopTyping();
+          renderRichSegments(dialogueText, segments, Infinity, false);
+          return;
+        }
+
+        const delay = getTypingDelayAfterCharacter(
+          typingState.profile,
+          typingState.visible - 1,
+          typingState.speed
+        );
+
+        typingTimer = window.setTimeout(step, delay);
+      };
+
+      typingTimer = window.setTimeout(step, typingState.speed);
+    }
+
+    function finishTypewriter() {
+      if (!typingState) return false;
+
+      const segments = typingState.segments;
+      stopTyping();
+      renderRichSegments(dialogueText, segments, Infinity, false);
+      return true;
+    }
+
+    function triggerScreenShake() {
+      screens.viewer.classList.remove("is-shaking");
+      void screens.viewer.offsetWidth;
+      screens.viewer.classList.add("is-shaking");
+
+      window.setTimeout(() => {
+        screens.viewer.classList.remove("is-shaking");
+      }, 420);
+    }
+
+    function wait(ms) {
+      return new Promise(resolve => window.setTimeout(resolve, ms));
+    }
+
+    function runDeferredTypewriter() {
+      if (!deferredTypewriter) return;
+
+      const task = deferredTypewriter;
+      deferredTypewriter = null;
+      startTypewriter(task.text, task.entry);
+    }
+
+    function queueTypewriter(rawText, entry) {
+      if (viewerTransitioning) {
+        stopTyping();
+        deferredTypewriter = {
+          text: rawText,
+          entry
+        };
+        dialogueText.textContent = "";
+        return;
+      }
+
+      startTypewriter(rawText, entry);
+    }
+
+    async function setViewerBackground(assetId, animate = true) {
+      if (viewerBackgroundId === assetId) return;
+
+      const previousBackgroundId = viewerBackgroundId;
+      viewerBackgroundId = assetId;
+      const token = ++viewerTransitionToken;
+
+      const applyImage = () => {
+        if (token !== viewerTransitionToken) return;
+        const asset = findAsset(assetId);
+
+        if (!assetId) {
+          viewerBackground.style.backgroundImage = "none";
+          viewerBackgroundLabel.textContent = "배경: 기본";
+        } else if (!asset) {
+          viewerBackground.style.backgroundImage = "none";
+          viewerBackgroundLabel.textContent = `배경 없음: ${assetId}`;
+        } else {
+          viewerBackground.style.backgroundImage =
+            `url("${getAssetUrl(asset)}")`;
+          viewerBackgroundLabel.textContent = `배경: ${asset.name}`;
+        }
+      };
+
+      if (!animate) {
+        applyImage();
+        runDeferredTypewriter();
+        return;
+      }
+
+      viewerTransitioning = true;
+      screens.viewer.classList.add("is-transitioning");
+      viewerTransitionFade.classList.add("is-active");
+
+      await wait(720);
+      if (token !== viewerTransitionToken) return;
+
+      applyImage();
+      await wait(180);
+
+      if (token !== viewerTransitionToken) return;
+      viewerTransitionFade.classList.remove("is-active");
+
+      await wait(720);
+      if (token !== viewerTransitionToken) return;
+
+      viewerTransitioning = false;
+      screens.viewer.classList.remove("is-transitioning");
+
+      if (isSceneEntryCurrent()) {
+        const entryIndex = viewerPlayableIndices[viewerPosition];
+        const entry = viewerEntries[entryIndex];
+        renderSceneReveal(entry);
+      }
+
+      runDeferredTypewriter();
+    }
+
+    function setViewerBlackout(isOn) {
+      screens.viewer.classList.toggle("is-blackout", Boolean(isOn));
+    }
+
+    function setViewerLetterbox(mode) {
+      const normalized = mode || "normal";
+      viewerLetterboxMode = normalized;
+
+      const heights = {
+        off: "0px",
+        small: "clamp(58px, 7vh, 92px)",
+        normal: "clamp(88px, 10vh, 132px)",
+        large: "clamp(128px, 14vh, 184px)"
+      };
+
+      document.documentElement.style.setProperty(
+        "--letterbox-height",
+        heights[normalized] || heights.normal
+      );
+    }
+
+    function setViewerFocus(assetId) {
+      const normalized = assetId || "";
+      if (viewerFocusAssetId === normalized) {
+        screens.viewer.classList.toggle("is-focus", Boolean(normalized));
+        return;
+      }
+
+      viewerFocusAssetId = normalized;
+      screens.viewer.classList.toggle("is-focus", Boolean(normalized));
+
+      if (!normalized) {
+        viewerFocusImage.style.backgroundImage = "none";
+        return;
+      }
+
+      const asset = findAsset(normalized);
+      if (!asset) {
+        viewerFocusImage.style.backgroundImage = "none";
+        viewerBackgroundLabel.textContent = `컷신 이미지 없음: ${normalized}`;
+        notify(`컷신 이미지 “${normalized}”를 찾지 못했습니다.`);
+        return;
+      }
+
+      viewerFocusImage.style.backgroundImage = `url("${getAssetUrl(asset)}")`;
+      viewerBackgroundLabel.textContent = `컷신: ${asset.name}`;
+    }
+
+    async function saveViewerProgress() {
+      if (!viewerEpisodeId || previewDraft) return;
+
+      await storePut(STORES.progress, {
+        episodeId: viewerEpisodeId,
+        position: viewerPosition,
+        updatedAt: new Date().toISOString()
+      });
+    }
+
+    function isSceneEntryCurrent() {
+      if (!viewerPlayableIndices.length) return false;
+      const entryIndex = viewerPlayableIndices[viewerPosition];
+      return viewerEntries[entryIndex]?.type === "scene";
+    }
+
+    function renderSceneReveal(entry) {
+      screens.viewer.classList.add("is-scene-intro");
+      dialogueSpeaker.textContent = "SCENE";
+      dialogueAffiliation.textContent = "";
+      dialogueText.textContent = "";
+      dialogueText.className = "dialogue-text scene";
+
+      if (viewerTransitioning) {
+        viewerStageMessage.innerHTML = "";
+        return;
+      }
+
+      if (sceneRevealPhase <= 0) {
+        viewerStageMessage.innerHTML = "";
+        return;
+      }
+
+      if (sceneRevealPhase === 1) {
+        viewerStageMessage.innerHTML =
+          `<strong>${escapeHtml(entry.text)}</strong>`;
+        return;
+      }
+
+      viewerStageMessage.innerHTML =
+        `<strong>${escapeHtml(entry.text)}</strong><span>${escapeHtml(entry.caption || "새로운 장면")}</span>`;
+    }
+
+    function advanceSceneReveal() {
+      if (!isSceneEntryCurrent()) return false;
+      if (viewerTransitioning) return true;
+
+      const entryIndex = viewerPlayableIndices[viewerPosition];
+      const entry = viewerEntries[entryIndex];
+
+      if (sceneRevealPhase < 2) {
+        sceneRevealPhase += 1;
+        renderSceneReveal(entry);
+        return true;
+      }
+
+      screens.viewer.classList.remove("is-scene-intro");
+      return false;
+    }
+
+    function renderViewerEntry() {
+      if (!viewerPlayableIndices.length) return;
+
+      stopTyping();
+      deferredTypewriter = null;
+
+      viewerPosition = Math.max(
+        0,
+        Math.min(viewerPosition, viewerPlayableIndices.length - 1)
+      );
+
+      const entryIndex = viewerPlayableIndices[viewerPosition];
+      const entry = viewerEntries[entryIndex];
+      const state = getEntryState(entryIndex);
+
+      if (entryIndex !== sceneRevealEntryIndex) {
+        sceneRevealEntryIndex = entryIndex;
+        sceneRevealPhase = entry.type === "scene" ? 0 : 2;
+      }
+
+      setViewerBackground(state.backgroundId);
+      setViewerBlackout(state.blackout);
+      setViewerLetterbox(state.letterbox);
+      setViewerVisualState(state.visual);
+      setViewerFocus(entry.type === "focus" ? entry.assetId : "");
+      screens.viewer.classList.toggle("is-scene-intro", entry.type === "scene");
+
+      if (entry.shake) {
+        triggerScreenShake();
+      }
+
+      viewerSceneName.textContent = state.scene || "장면 미지정";
+      dialogueText.className = "dialogue-text";
+      dialogueAffiliation.textContent = "";
+
+      if (entry.type === "scene") {
+        stopTyping();
+        renderSceneReveal(entry);
+      }
+
+      if (entry.type === "dialogue") {
+        screens.viewer.classList.remove("is-scene-intro");
+        dialogueSpeaker.textContent = entry.speaker || "???";
+        dialogueAffiliation.textContent = entry.affiliation || "";
+        queueTypewriter(entry.text, entry);
+        viewerStageMessage.innerHTML = "";
+      }
+
+      if (entry.type === "direction") {
+        screens.viewer.classList.remove("is-scene-intro");
+        dialogueSpeaker.textContent = "연출";
+        dialogueAffiliation.textContent = "";
+        queueTypewriter(`(${entry.text})`, entry);
+        dialogueText.classList.add("direction");
+        viewerStageMessage.innerHTML = "";
+      }
+
+      if (entry.type === "narration") {
+        screens.viewer.classList.remove("is-scene-intro");
+        dialogueSpeaker.textContent = "NARRATION";
+        queueTypewriter(entry.text, entry);
+        viewerStageMessage.innerHTML = "<strong>내레이션</strong>";
+      }
+
+      if (entry.type === "silence") {
+        screens.viewer.classList.remove("is-scene-intro");
+        startViewerSilence(entry.seconds || 1);
+      }
+
+      if (entry.type === "focus") {
+        screens.viewer.classList.remove("is-scene-intro");
+        const asset = findAsset(entry.assetId);
+        dialogueSpeaker.textContent = "CUTSCENE";
+        dialogueText.textContent = "";
+        viewerSceneName.textContent = asset
+          ? `컷신 · ${asset.name}`
+          : `컷신 · ${entry.assetId}`;
+        viewerStageMessage.innerHTML =
+          `<strong>컷신</strong>${escapeHtml(asset?.name || entry.assetId)}`;
+      }
+
+      const current = viewerPosition + 1;
+      const total = viewerPlayableIndices.length;
+      dialogueCounter.textContent = `${current} / ${total}`;
+      viewerProgress.style.width = `${(current / total) * 100}%`;
+      viewerPrevBtn.disabled = viewerPosition <= 0;
+      viewerNextBtn.disabled = viewerPosition >= total - 1;
+
+      saveViewerProgress().catch(console.error);
+    }
+
+    async function openViewer(episodeId, options = {}) {
+      previewDraft = options.previewDraft || null;
+      const episode = previewDraft ||
+        episodesCache.find(item => item.id === episodeId);
+
+      if (!episode) {
+        notify("감상할 화를 찾지 못했습니다.");
+        return;
+      }
+
+      viewerEpisodeId = previewDraft ? null : episode.id;
+      viewerEpisodeTitle.textContent =
+        `${episode.order || ""}화 · ${episode.title || "제목 없음"}`;
+
+      viewerEntries = parseScenario(episode.script);
+      viewerPlayableIndices = viewerEntries
+        .map((entry, index) =>
+          entry.type === "background" ||
+          entry.type === "blackout" ||
+          entry.type === "letterbox" ||
+          entry.type === "visual"
+            ? -1
+            : index
+        )
+        .filter(index => index >= 0);
+
+      if (!viewerPlayableIndices.length) {
+        alert("출력할 대사가 없습니다.");
+        return;
+      }
+
+      if (Number.isInteger(options.position)) {
+        viewerPosition = options.position;
+      } else if (!previewDraft) {
+        const progress = await storeGet(STORES.progress, episode.id);
+        viewerPosition = Math.min(
+          Number(progress?.position) || 0,
+          viewerPlayableIndices.length - 1
+        );
+      } else {
+        viewerPosition = 0;
+      }
+
+      viewerBackgroundId = null;
+      viewerFocusAssetId = null;
+      sceneRevealPhase = 0;
+      sceneRevealEntryIndex = -1;
+      clearViewerSilence();
+      setViewerBlackout(false);
+      setViewerFocus("");
+      setViewerLetterbox("normal");
+      setViewerVisualState();
+      configureEpisodeNavigation(episode);
+      showScreen("viewer");
+      renderViewerEntry();
+      dialogueBox.focus();
+    }
+
+    function configureEpisodeNavigation(currentEpisode) {
+      const episodes = sortedEpisodes();
+      const currentIndex = previewDraft
+        ? -1
+        : episodes.findIndex(item => item.id === currentEpisode.id);
+
+      previousEpisodeBtn.disabled = currentIndex <= 0;
+      nextEpisodeBtn.disabled =
+        currentIndex < 0 || currentIndex >= episodes.length - 1;
+    }
+
+    function viewerNext() {
+      if (viewerTransitioning || viewerSilenceActive) return;
+      if (finishTypewriter()) return;
+      if (advanceSceneReveal()) return;
+
+      if (viewerPosition < viewerPlayableIndices.length - 1) {
+        viewerPosition += 1;
+        renderViewerEntry();
+      } else {
+        stopViewerAuto();
+      }
+    }
+
+    function viewerPrevious() {
+      if (viewerTransitioning) return;
+      clearViewerSilence();
+      stopTyping();
+
+      if (viewerPosition > 0) {
+        viewerPosition -= 1;
+        sceneRevealEntryIndex = -1;
+        renderViewerEntry();
+      }
+    }
+
+    function toggleViewerAuto() {
+      if (viewerAutoTimer) {
+        stopViewerAuto();
+        return;
+      }
+
+      viewerAutoBtn.textContent = "자동 정지";
+      viewerAutoTimer = setInterval(() => {
+        if (viewerTransitioning || viewerSilenceActive) return;
+
+        if (viewerPosition >= viewerPlayableIndices.length - 1 &&
+            !isSceneEntryCurrent()) {
+          stopViewerAuto();
+          return;
+        }
+
+        viewerNext();
+      }, 2600);
+    }
+
+    function navigateEpisode(offset) {
+      if (!viewerEpisodeId || previewDraft) return;
+
+      const episodes = sortedEpisodes();
+      const index = episodes.findIndex(item => item.id === viewerEpisodeId);
+      const target = episodes[index + offset];
+      if (target) openViewer(target.id, { position: 0 });
+    }
+
+    async function exportProject() {
+      notify("프로젝트 파일을 만드는 중입니다.");
+
+      const episodes = await storeGetAll(STORES.episodes);
+      const assets = await storeGetAll(STORES.assets);
+      const meta = (await storeGet(STORES.meta, "project")) || { ...DEFAULT_PROJECT };
+      const progress = await storeGetAll(STORES.progress);
+      const glossary = await storeGetAll(STORES.glossary);
+
+      const serializedAssets = [];
+      for (const asset of assets) {
+        serializedAssets.push({
+          ...asset,
+          blob: undefined,
+          dataUrl: await blobToDataUrl(asset.blob)
+        });
+      }
+
+      const packageData = {
+        format: "story-dialogue-studio",
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        meta,
+        episodes,
+        assets: serializedAssets,
+        progress,
+        glossary
+      };
+
+      const blob = new Blob(
+        [JSON.stringify(packageData, null, 2)],
+        { type: "application/json;charset=utf-8" }
+      );
+
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `${safeFileName(meta.title || "story-project")}.storypack`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      notify("프로젝트를 내보냈습니다.");
+    }
+
+    function blobToDataUrl(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    async function dataUrlToBlob(dataUrl) {
+      const response = await fetch(dataUrl);
+      return response.blob();
+    }
+
+    function safeFileName(value) {
+      return String(value)
+        .replace(/[\\/:*?"<>|]+/g, "_")
+        .trim()
+        .slice(0, 80) || "story-project";
+    }
+
+    async function importProject(file) {
+      const text = await file.text();
+      const data = JSON.parse(text);
+
+      if (data.format !== "story-dialogue-studio" || !Array.isArray(data.episodes)) {
+        throw new Error("지원하지 않는 프로젝트 파일입니다.");
+      }
+
+      if (!confirm(
+        "현재 브라우저에 저장된 시나리오와 배경을 모두 지우고 이 프로젝트로 교체할까요?"
+      )) {
+        return;
+      }
+
+      await clearStore(STORES.episodes);
+      await clearStore(STORES.assets);
+      await clearStore(STORES.meta);
+      await clearStore(STORES.progress);
+      await clearStore(STORES.glossary);
+
+      await storePut(STORES.meta, {
+        ...DEFAULT_PROJECT,
+        ...(data.meta || {}),
+        key: "project"
+      });
+
+      for (const episode of data.episodes || []) {
+        await storePut(STORES.episodes, episode);
+      }
+
+      for (const asset of data.assets || []) {
+        if (!asset.dataUrl) continue;
+        const blob = await dataUrlToBlob(asset.dataUrl);
+        const restored = { ...asset, blob };
+        delete restored.dataUrl;
+        await storePut(STORES.assets, restored);
+      }
+
+      for (const progress of data.progress || []) {
+        await storePut(STORES.progress, progress);
+      }
+
+      for (const entry of data.glossary || []) {
+        if (entry.term) {
+          await storePut(STORES.glossary, entry);
+        }
+      }
+
+      revokeAssetUrls();
+      await refreshCaches();
+      renderProjectInfo();
+      renderLobby();
+      renderAssetViews();
+      renderGlossaryList();
+      showScreen("lobby");
+      notify("프로젝트를 불러왔습니다.");
+    }
+
+    function openProjectSettings() {
+      projectTitleInput.value = projectMeta.title || "";
+      projectDescriptionInput.value = projectMeta.description || "";
+      projectSettingsModal.classList.add("show");
+    }
+
+    async function saveProjectSettings() {
+      projectMeta = {
+        key: "project",
+        title: projectTitleInput.value.trim() || DEFAULT_PROJECT.title,
+        description:
+          projectDescriptionInput.value.trim() || DEFAULT_PROJECT.description
+      };
+
+      await storePut(STORES.meta, projectMeta);
+      renderProjectInfo();
+      projectSettingsModal.classList.remove("show");
+      notify("작품 정보를 저장했습니다.");
+    }
+
+    document.getElementById("newEpisodeBtn").addEventListener("click", () => openEditor());
+    document.getElementById("editorBackBtn").addEventListener("click", () => {
+      showScreen("lobby");
+      renderLobby();
+    });
+
+    document.getElementById("saveEpisodeBtn").addEventListener("click", saveEpisode);
+    document.getElementById("previewEpisodeBtn").addEventListener("click", () => {
+      const draft = collectEditorEpisode();
+      if (!draft) return;
+      openViewer(null, { previewDraft: draft, position: 0 });
+    });
+
+    deleteEpisodeBtn.addEventListener("click", () => deleteEpisode());
+    duplicateEpisodeBtn.addEventListener("click", () => duplicateEpisode());
+
+    document.getElementById("editorAddAssetsBtn").addEventListener(
+      "click",
+      () => assetFileInput.click()
+    );
+
+    document.getElementById("modalAddAssetsBtn").addEventListener(
+      "click",
+      () => assetFileInput.click()
+    );
+
+    assetFileInput.addEventListener("change", async event => {
+      try {
+        await addAssetFiles(event.target.files || []);
+      } catch (error) {
+        console.error(error);
+        alert("배경 이미지를 저장하지 못했습니다.");
+      } finally {
+        assetFileInput.value = "";
+      }
+    });
+
+    document.getElementById("editorRefreshAssetsBtn").addEventListener(
+      "click",
+      async () => {
+        await refreshCaches();
+        renderAssetViews();
+        populateCoverSelect(episodeCoverAsset.value);
+        notify("배경 목록을 새로고침했습니다.");
+      }
+    );
+
+    document.getElementById("projectSettingsBtn").addEventListener(
+      "click",
+      openProjectSettings
+    );
+
+    document.getElementById("saveProjectSettingsBtn").addEventListener(
+      "click",
+      saveProjectSettings
+    );
+
+    document.getElementById("assetLibraryBtn").addEventListener("click", () => {
+      renderAssetViews();
+      assetLibraryModal.classList.add("show");
+    });
+
+    document.getElementById("glossaryBtn").addEventListener("click", openGlossaryModal);
+
+    document.getElementById("saveGlossaryEntryBtn").addEventListener(
+      "click",
+      () => saveGlossaryEntry().catch(error => {
+        console.error(error);
+        alert("고유명사 사전 항목을 저장하지 못했습니다.");
+      })
+    );
+
+    document.getElementById("clearGlossaryFormBtn").addEventListener(
+      "click",
+      clearGlossaryForm
+    );
+
+    document.getElementById("closeAssetLibraryBtn").addEventListener("click", () => {
+      assetLibraryModal.classList.remove("show");
+    });
+
+    document.querySelectorAll("[data-close-modal]").forEach(button => {
+      button.addEventListener("click", () => {
+        document
+          .getElementById(button.dataset.closeModal)
+          ?.classList.remove("show");
+      });
+    });
+
+    [projectSettingsModal, assetLibraryModal, glossaryModal, termPopupModal].forEach(modal => {
+      modal.addEventListener("click", event => {
+        if (event.target === modal) modal.classList.remove("show");
+      });
+    });
+
+    document.getElementById("exportProjectBtn").addEventListener(
+      "click",
+      () => exportProject().catch(error => {
+        console.error(error);
+        alert("프로젝트를 내보내지 못했습니다.");
+      })
+    );
+
+    document.getElementById("importProjectBtn").addEventListener(
+      "click",
+      () => importProjectInput.click()
+    );
+
+    importProjectInput.addEventListener("change", async event => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      try {
+        await importProject(file);
+      } catch (error) {
+        console.error(error);
+        alert(error.message || "프로젝트를 불러오지 못했습니다.");
+      } finally {
+        importProjectInput.value = "";
+      }
+    });
+
+    document.getElementById("viewerLobbyBtn").addEventListener("click", () => {
+      showScreen("lobby");
+      renderLobby();
+    });
+
+    document.getElementById("viewerEditBtn").addEventListener("click", () => {
+      if (previewDraft) {
+        showScreen("editor");
+      } else if (viewerEpisodeId) {
+        openEditor(viewerEpisodeId);
+      }
+    });
+
+    viewerPrevBtn.addEventListener("click", viewerPrevious);
+    viewerNextBtn.addEventListener("click", viewerNext);
+    dialogueBox.addEventListener("click", viewerNext);
+
+    screens.viewer.addEventListener("click", event => {
+      if (event.target.closest(".modal")) return;
+
+      if (screens.viewer.classList.contains("is-focus")) {
+        viewerNext();
+        return;
+      }
+
+      if (event.target.closest(".viewer-content") &&
+          screens.viewer.classList.contains("is-scene-intro")) {
+        viewerNext();
+      }
+    });
+
+    viewerAutoBtn.addEventListener("click", toggleViewerAuto);
+    viewerGlossaryBtn.addEventListener("click", openViewerGlossaryModal);
+
+    document.getElementById("viewerRestartBtn").addEventListener("click", () => {
+      stopViewerAuto();
+      clearViewerSilence();
+      stopTyping();
+      viewerPosition = 0;
+      viewerBackgroundId = null;
+      viewerFocusAssetId = null;
+      sceneRevealPhase = 0;
+      sceneRevealEntryIndex = -1;
+      setViewerFocus("");
+      renderViewerEntry();
+    });
+
+    previousEpisodeBtn.addEventListener("click", () => navigateEpisode(-1));
+    nextEpisodeBtn.addEventListener("click", () => navigateEpisode(1));
+
+    viewerFit.addEventListener("change", event => {
+      document.documentElement.style.setProperty("--viewer-fit", event.target.value);
+    });
+
+    viewerDarkness.addEventListener("input", event => {
+      document.documentElement.style.setProperty(
+        "--viewer-darkness",
+        event.target.value
+      );
+    });
+
+    document.addEventListener("keydown", event => {
+      if (!screens.viewer.classList.contains("active")) return;
+      if (["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName)) return;
+
+      if (["Enter", " ", "ArrowRight"].includes(event.key)) {
+        event.preventDefault();
+        viewerNext();
+      }
+
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        viewerPrevious();
+      }
+
+      if (event.key.toLowerCase() === "a") {
+        event.preventDefault();
+        toggleViewerAuto();
+      }
+
+      if (event.key === "Escape") {
+        event.preventDefault();
+        showScreen("lobby");
+        renderLobby();
+      }
+    });
+
+    document.addEventListener("dragover", event => {
+      if (
+        screens.editor.classList.contains("active") ||
+        assetLibraryModal.classList.contains("show")
+      ) {
+        event.preventDefault();
+      }
+    });
+
+    document.addEventListener("drop", event => {
+      if (
+        screens.editor.classList.contains("active") ||
+        assetLibraryModal.classList.contains("show")
+      ) {
+        event.preventDefault();
+        addAssetFiles(event.dataTransfer?.files || []).catch(console.error);
+      }
+    });
+
+    window.addEventListener("beforeunload", revokeAssetUrls);
+
+    initializeApp();
+  </script>
+</body>
+</html>
