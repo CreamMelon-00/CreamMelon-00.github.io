@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>세계관 스토리 플레이어</title>
+  <title>스토리 다이얼로그 스튜디오 v13.4</title>
   <style>
     :root {
       --bg: #0f1116;
@@ -562,7 +562,7 @@
       --character-zoom: 1.38;
       --character-y: 0px;
       position: absolute;
-      bottom: clamp(96px, 7vw, 138px);
+      bottom: clamp(64px, 5vw, 104px);
       width: clamp(190px, 18vw, 320px);
       height: clamp(320px, 29vw, 500px);
       display: flex;
@@ -572,10 +572,16 @@
       opacity: 0;
       transform: translateX(-50%) translateY(24px) scale(0.98);
       transition:
+        left 720ms cubic-bezier(0.22, 1, 0.36, 1),
+        width 520ms ease,
+        height 520ms ease,
+        bottom 520ms ease,
         opacity 380ms ease,
-        transform 520ms ease,
+        transform 620ms cubic-bezier(0.22, 1, 0.36, 1),
         filter 240ms ease;
+      left: 50%;
       pointer-events: none;
+      will-change: left, transform, opacity;
       filter:
         brightness(0)
         saturate(0)
@@ -609,7 +615,7 @@
       --character-zoom: 1;
       --character-y: 0px;
       height: clamp(400px, 38vw, 620px);
-      bottom: clamp(78px, 6vw, 112px);
+      bottom: clamp(52px, 4vw, 82px);
     }
 
     .viewer-character.is-visible {
@@ -630,6 +636,11 @@
     .viewer-character.is-muted {
       opacity: 0.42;
       transform: translateX(-50%) translateY(5px) scale(0.96);
+    }
+
+    .viewer-character.is-leaving {
+      opacity: 0;
+      transform: translateX(-50%) translateY(24px) scale(0.98);
     }
 
     .viewer-character.position-left {
@@ -686,14 +697,14 @@
 
     @media (max-width: 720px) {
       .viewer-character {
-        bottom: clamp(132px, 24vw, 190px);
+        bottom: clamp(108px, 20vw, 164px);
         width: clamp(150px, 42vw, 260px);
         height: clamp(250px, 66vw, 410px);
       }
 
       .viewer-character.view-full {
         height: clamp(310px, 82vw, 520px);
-        bottom: clamp(102px, 20vw, 160px);
+        bottom: clamp(84px, 17vw, 136px);
       }
 
       .viewer-character.position-left,
@@ -718,7 +729,7 @@
 
     @media (max-height: 700px) and (min-width: 721px) {
       .viewer-character {
-        bottom: 88px;
+        bottom: 58px;
         height: clamp(270px, 27vw, 410px);
       }
 
@@ -1264,26 +1275,6 @@
       transform: translate(-50%, 0);
     }
 
-    body.published #newEpisodeBtn,
-    body.published #exportProjectBtn,
-    body.published #importProjectBtn,
-    body.published #projectSettingsBtn,
-    body.published #assetLibraryBtn,
-    body.published #characterLibraryBtn,
-    body.published #glossaryBtn,
-    body.published #viewerEditBtn,
-    body.published .episode-card-actions button:not(.primary) {
-      display: none !important;
-    }
-
-    body.published .brand p {
-      max-width: 780px;
-    }
-
-    body.published .episode-card-actions {
-      justify-content: flex-start;
-    }
-
     .modal-backdrop {
       position: fixed;
       inset: 0;
@@ -1397,13 +1388,13 @@
     }
   </style>
 </head>
-<body class="published">
+<body>
   <section id="lobbyScreen" class="screen active">
     <div class="app-shell">
       <nav class="top-nav">
         <div class="brand">
           <h1>스토리 다이얼로그 스튜디오</h1>
-          <p>링크로 감상하는 세계관 시나리오 플레이어입니다.</p>
+          <p>편별 시나리오 제작, 보관, 감상을 한 파일에서 관리합니다.</p>
         </div>
         <button id="newEpisodeBtn" class="primary">새 화 제작</button>
         <button id="exportProjectBtn">프로젝트 내보내기</button>
@@ -1415,8 +1406,8 @@
         <div>
           <h2 id="projectTitleDisplay">가문과 가족</h2>
           <p id="projectDescriptionDisplay">
-            로비에서 화를 선택해 감상하세요.
-            작품 데이터는 사이트에 포함된 storypack에서 자동으로 불러옵니다.
+            로비에서 화를 선택해 감상하거나, 제작실에서 새로운 시나리오를 작성하세요.
+            모든 데이터와 배경 이미지는 이 브라우저의 IndexedDB에 저장됩니다.
           </p>
         </div>
         <div class="toolbar right">
@@ -1746,7 +1737,6 @@
 
     const DB_NAME = "story-dialogue-studio-v4";
     const DB_VERSION = 3;
-    const PUBLISHED_STORYPACK_URL = "data/storypack.json";
     const STORES = {
       episodes: "episodes",
       assets: "assets",
@@ -2148,99 +2138,10 @@
       });
     }
 
-    async function loadPublishedStorypack() {
-      if (!document.body.classList.contains("published")) return;
-
-      try {
-        const response = await fetch(PUBLISHED_STORYPACK_URL, { cache: "no-store" });
-        if (!response.ok) {
-          console.info("published storypack not found", response.status);
-          return;
-        }
-
-        const data = await response.json();
-
-        if (data.format !== "story-dialogue-studio" || !Array.isArray(data.episodes)) {
-          throw new Error("지원하지 않는 storypack 형식입니다.");
-        }
-
-        const signature =
-          data.exportedAt ||
-          JSON.stringify([
-            data.meta?.title || "",
-            data.episodes?.length || 0,
-            data.assets?.length || 0,
-            data.characters?.length || 0,
-            data.glossary?.length || 0
-          ]);
-
-        const publishedMeta = await storeGet(STORES.meta, "published-storypack");
-        if (publishedMeta?.signature === signature) return;
-
-        await clearStore(STORES.episodes);
-        await clearStore(STORES.assets);
-        await clearStore(STORES.characters);
-        await clearStore(STORES.meta);
-        await clearStore(STORES.progress);
-        await clearStore(STORES.glossary);
-
-        await storePut(STORES.meta, {
-          ...DEFAULT_PROJECT,
-          ...(data.meta || {}),
-          key: "project"
-        });
-
-        await storePut(STORES.meta, {
-          key: "published-storypack",
-          signature,
-          loadedAt: new Date().toISOString()
-        });
-
-        await storePut(STORES.meta, {
-          key: "initialized",
-          value: true,
-          createdAt: new Date().toISOString()
-        });
-
-        for (const episode of data.episodes || []) {
-          await storePut(STORES.episodes, episode);
-        }
-
-        for (const asset of data.assets || []) {
-          if (!asset.dataUrl) continue;
-          const blob = await dataUrlToBlob(asset.dataUrl);
-          const restored = { ...asset, blob };
-          delete restored.dataUrl;
-          await storePut(STORES.assets, restored);
-        }
-
-        for (const character of data.characters || []) {
-          if (!character.dataUrl) continue;
-          const blob = await dataUrlToBlob(character.dataUrl);
-          const restored = { ...character, blob };
-          delete restored.dataUrl;
-          await storePut(STORES.characters, restored);
-        }
-
-        for (const entry of data.glossary || []) {
-          if (entry.term) {
-            await storePut(STORES.glossary, entry);
-          }
-        }
-
-        revokeAssetUrls();
-        revokeCharacterUrls();
-      } catch (error) {
-        console.warn("published storypack load failed", error);
-        notify("사이트용 storypack을 불러오지 못했습니다.");
-      }
-    }
-
     async function initializeApp() {
       try {
         await openDatabase();
         await seedInitialData();
-        await loadPublishedStorypack();
         await refreshCaches();
         renderProjectInfo();
         renderLobby();
@@ -4517,7 +4418,6 @@
     function renderViewerCharacters(characterState = [], activeSpeaker = "") {
       if (!viewerCharacters) return;
 
-      viewerCharacters.innerHTML = "";
       const activeCharacter = findCharacterByKey(activeSpeaker);
       const activeId = activeCharacter?.id || "";
 
@@ -4533,32 +4433,90 @@
         (positionOrder[a.position] ?? 9) - (positionOrder[b.position] ?? 9)
       );
 
+      const visibleIds = new Set();
+
       for (const item of items) {
         const character = findCharacterByKey(item.characterId);
         if (!character?.blob) continue;
 
         const position = getCharacterPosition(item.position);
         const view = getCharacterView(item.view);
-        const wrapper = document.createElement("div");
-        wrapper.className = [
-          "viewer-character",
-          `position-${position}`,
-          `view-${view}`,
-          "is-visible",
-          activeId && character.id === activeId ? "is-speaking" : "is-muted"
-        ].join(" ");
+        visibleIds.add(character.id);
 
-        if (!activeId) {
-          wrapper.classList.remove("is-muted");
+        let wrapper = Array.from(viewerCharacters.children)
+          .find(element => element.dataset.characterId === character.id);
+
+        if (!wrapper) {
+          wrapper = document.createElement("div");
+          wrapper.dataset.characterId = character.id;
+          wrapper.className = "viewer-character";
+
+          const image = document.createElement("img");
+          image.src = getCharacterUrl(character);
+          image.alt = character.name || character.id;
+
+          wrapper.append(image);
+          viewerCharacters.append(wrapper);
+
+          requestAnimationFrame(() => {
+            wrapper.classList.add("is-visible");
+          });
+        } else {
+          const image = wrapper.querySelector("img");
+          if (image) {
+            const url = getCharacterUrl(character);
+            if (image.src !== url) image.src = url;
+            image.alt = character.name || character.id;
+          }
         }
 
-        const image = document.createElement("img");
-        image.src = getCharacterUrl(character);
-        image.alt = character.name || character.id;
+        wrapper.classList.remove(
+          "position-left",
+          "position-center",
+          "position-right",
+          "position-far-left",
+          "position-far-right",
+          "view-bust",
+          "view-half",
+          "view-full",
+          "is-speaking",
+          "is-muted",
+          "is-leaving"
+        );
 
-        wrapper.append(image);
-        viewerCharacters.append(wrapper);
+        wrapper.classList.add(
+          `position-${position}`,
+          `view-${view}`,
+          "is-visible"
+        );
+
+        if (activeId) {
+          wrapper.classList.add(character.id === activeId ? "is-speaking" : "is-muted");
+        }
+
+        wrapper.style.zIndex = String(10 + (positionOrder[position] ?? 9));
       }
+
+      Array.from(viewerCharacters.children).forEach(wrapper => {
+        const characterId = wrapper.dataset.characterId;
+        if (!visibleIds.has(characterId)) {
+          wrapper.classList.remove("is-visible", "is-speaking", "is-muted");
+          wrapper.classList.add("is-leaving");
+
+          window.setTimeout(() => {
+            if (!Array.from(viewerCharacters.children).includes(wrapper)) return;
+            const stillVisible = Array.from(viewerCharacters.children)
+              .some(element =>
+                element.dataset.characterId === characterId &&
+                element.classList.contains("is-visible")
+              );
+
+            if (!stillVisible) {
+              wrapper.remove();
+            }
+          }, 420);
+        }
+      });
     }
 
     function renderViewerEntry() {
