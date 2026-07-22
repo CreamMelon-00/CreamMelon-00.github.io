@@ -8,7 +8,7 @@ if errorlevel 1 goto :fail
 
 echo.
 echo [2/3] git commit ...
-git add data resource
+git add data resource script
 git commit -m "story content update"
 
 echo.

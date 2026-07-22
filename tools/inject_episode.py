@@ -164,7 +164,7 @@ def cmd_list(pack):
 
 
 BG_DIR = PACK_PATH.parent.parent / "resource" / "bg"
-DRAFT_DIR = Path("C:/Users/Superplanet/Desktop/Story/드래프트")
+DRAFT_DIR = PACK_PATH.parent.parent / "script"
 MIME_EXT = {"image/png": ".png", "image/jpeg": ".jpg", "image/webp": ".webp"}
 
 
@@ -325,7 +325,7 @@ def cmd_inject(pack, md_path, order, subtitle, cover, description, chapter, dry_
 
 
 def cmd_inject_all(pack, dry_run):
-    """드래프트 폴더의 모든 md를 반영하고 한 번만 저장한다."""
+    """script 폴더의 모든 md를 반영하고 한 번만 저장한다."""
     md_files = sorted(DRAFT_DIR.glob("*.md"),
                       key=lambda p: (len(p.stem.split("편")[0]), p.stem))
     if not md_files:

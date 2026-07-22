@@ -35,7 +35,7 @@ from pathlib import Path
 EXTRACT_DIR = Path("C:/Users/Superplanet/Desktop/Story/_extract")
 STORY_DIR = Path("C:/Users/Superplanet/Desktop/Story")
 PACK_PATH = Path(__file__).resolve().parent.parent / "data" / "storypack.json"
-DEFAULT_OUT_DIR = STORY_DIR / "드래프트"
+DEFAULT_OUT_DIR = Path(__file__).resolve().parent.parent / "script"
 
 PREFIX = {"main": "main_p", "ex": "ex_p", "re": "re_p", "char": "char_p"}
 
@@ -512,7 +512,7 @@ def main():
     ap.add_argument("--source", choices=PREFIX, required=True, help="원본 PDF 종류")
     ap.add_argument("--pages", required=True, help="페이지 범위 (예: 2-14 또는 2-5,8)")
     ap.add_argument("--title", required=True, help="대본 제목 (예: '1편. 아버지의 그림자 上')")
-    ap.add_argument("--out", help="출력 경로 (기본: Desktop/Story/드래프트/제목.md)")
+    ap.add_argument("--out", help="출력 경로 (기본: StoryProject/script/제목.md)")
     args = ap.parse_args()
 
     try:
