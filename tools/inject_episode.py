@@ -1,0 +1,240 @@
+# -*- coding: utf-8 -*-
+"""storypack.json 직접 주입 CLI — 스튜디오를 거치지 않고 에피소드/배경을 반영한다.
+
+사용법:
+  python tools/inject_episode.py 대본.md [--order N] [--subtitle "부제"] [--cover asset_id]
+  python tools/inject_episode.py --add-bg resource/bg/bg_A-1.png [--id-name bg_11]
+  python tools/inject_episode.py --list
+  python tools/inject_episode.py 대본.md --dry-run
+
+동작:
+  - md 첫 줄 "N편. 제목" 에서 제목을 읽는다 (전체 줄이 title이 됨).
+  - 같은 title의 에피소드가 있으면 script/updatedAt만 갱신 (id 유지 → 방문자 진행도 보존).
+  - 없으면 신규 추가. order 기본값은 (기존 최대 order + 1). "N편"의 N은 order로 쓰지 않는다
+    (기존 팩이 1편 上/下를 order 1, 2로 나눠 쓰고 있어 편 번호와 order가 일치하지 않음).
+  - 저장 전 storypack.json.bak 백업 생성, exportedAt 갱신 (플레이어가 이 값으로 변경을 감지함).
+"""
+import argparse
+import base64
+import json
+import re
+import secrets
+import shutil
+import string
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+PACK_PATH = Path(__file__).resolve().parent.parent / "data" / "storypack.json"
+
+TITLE_RE = re.compile(r"^(\d+)편\s*[.:]\s*(.+)$")
+BG_CMD_RE = re.compile(r"^@(?:배경|bg|집중|컷신|일러스트|focus|cutscene)\s+(\S+)\s*$", re.IGNORECASE)
+# 파이프 없는 화자 줄로 흔히 쓰이는 표현 (스튜디오 문법은 "이름 | 소속"만 화자로 인식)
+BARE_SPEAKER_RE = re.compile(r"^(일동|모두|전원)\s*$")
+
+
+def now_iso():
+    return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+
+
+def load_pack():
+    if not PACK_PATH.exists():
+        sys.exit(f"storypack을 찾을 수 없습니다: {PACK_PATH}")
+    with open(PACK_PATH, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def save_pack(pack):
+    backup = PACK_PATH.with_suffix(".json.bak")
+    shutil.copy2(PACK_PATH, backup)
+    tmp = PACK_PATH.with_suffix(".json.tmp")
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(pack, f, ensure_ascii=False)
+    tmp.replace(PACK_PATH)
+    print(f"저장 완료: {PACK_PATH} (백업: {backup.name})")
+
+
+def parse_md(md_path):
+    """대본 md → (title, script, ep_num).
+
+    첫 비어있지 않은 줄을 제목으로 사용한다. "N편. 제목" 꼴이면 접두어를 떼어
+    제목만 남기고 (기존 팩의 제목 관례), N은 order 기본값으로 쓴다.
+    """
+    text = Path(md_path).read_text(encoding="utf-8").replace("\r\n", "\n")
+    lines = text.split("\n")
+
+    title = None
+    ep_num = None
+    body_start = 0
+    for i, line in enumerate(lines):
+        if line.strip():
+            title = line.strip().lstrip("#").strip()
+            body_start = i + 1
+            break
+    if not title:
+        sys.exit("대본이 비어 있습니다.")
+
+    m = TITLE_RE.match(title)
+    if m:
+        ep_num = int(m.group(1))
+        title = m.group(2).strip()
+
+    body = []
+    for line in lines[body_start:]:
+        stripped = line.strip()
+        # 스튜디오는 "이름 | 소속" 형식만 화자로 인식 → 파이프 없는 화자 줄 보정
+        if BARE_SPEAKER_RE.match(stripped):
+            stripped = f"{stripped} |"
+        body.append(stripped)
+
+    script = "\n".join(body).strip("\n")
+    return title, script, ep_num
+
+
+def check_assets(script, pack):
+    """@배경/@집중 명령이 참조하는 asset id가 팩에 있는지 검사."""
+    asset_ids = {a["id"] for a in pack.get("assets", [])}
+    missing = []
+    for line in script.split("\n"):
+        m = BG_CMD_RE.match(line.strip())
+        if m and m.group(1) not in asset_ids and m.group(1) != "0":
+            missing.append(m.group(1))
+    return sorted(set(missing))
+
+
+def cmd_list(pack):
+    print(f"작품: {pack.get('meta', {}).get('title', '?')}  (exportedAt: {pack.get('exportedAt')})")
+    print(f"\n에피소드 {len(pack.get('episodes', []))}개:")
+    for ep in sorted(pack.get("episodes", []), key=lambda e: (int(e.get("order") or 0), e.get("createdAt", ""))):
+        print(f"  [{ep.get('order')}] {ep.get('title')}  — {ep.get('subtitle') or '(부제 없음)'}"
+              f"  (id: {ep.get('id')}, script {len(ep.get('script', ''))}자)")
+    print(f"\n배경 에셋 {len(pack.get('assets', []))}개:")
+    for a in pack.get("assets", []):
+        print(f"  {a['id']}  ({a.get('fileName')}, {a.get('size', 0) / 1024 / 1024:.1f}MB)")
+    print(f"\n용어사전 {len(pack.get('glossary', []))}개")
+
+
+def cmd_add_bg(pack, image_path, id_name, dry_run):
+    img = Path(image_path)
+    if not img.exists():
+        sys.exit(f"이미지를 찾을 수 없습니다: {img}")
+
+    mime = {"png": "image/png", "jpg": "image/jpeg", "jpeg": "image/jpeg", "webp": "image/webp"}.get(
+        img.suffix.lower().lstrip("."))
+    if not mime:
+        sys.exit(f"지원하지 않는 이미지 형식입니다: {img.suffix}")
+
+    name = id_name or img.stem
+    # 기존 관례: bg_1_z0dv8 (이름 + 5자리 랜덤 영숫자)
+    alphabet = string.ascii_lowercase + string.digits
+    asset_id = f"{name}_" + "".join(secrets.choice(alphabet) for _ in range(5))
+
+    data = img.read_bytes()
+    asset = {
+        "id": asset_id,
+        "name": name,
+        "fileName": img.name,
+        "mimeType": mime,
+        "size": len(data),
+        "createdAt": now_iso(),
+        "dataUrl": f"data:{mime};base64," + base64.b64encode(data).decode("ascii"),
+    }
+    print(f"배경 추가: {asset_id}  ({img.name}, {len(data) / 1024 / 1024:.1f}MB)")
+    print(f"대본에서 사용법: @배경 {asset_id}")
+    if dry_run:
+        print("(dry-run: 저장하지 않음)")
+        return
+    pack["assets"].append(asset)
+    pack["exportedAt"] = now_iso()
+    save_pack(pack)
+
+
+def cmd_inject(pack, md_path, order, subtitle, cover, description, dry_run):
+    title, script, ep_num = parse_md(md_path)
+
+    missing = check_assets(script, pack)
+    if missing:
+        print(f"경고: 팩에 없는 배경 id 참조 {len(missing)}건 → {', '.join(missing)}")
+        print("  (--add-bg 로 배경을 먼저 추가하거나, 대본의 @배경 id를 확인하세요. 주입은 계속 진행합니다.)")
+
+    episodes = pack.setdefault("episodes", [])
+    existing = next((e for e in episodes if e.get("title") == title), None)
+    now = now_iso()
+
+    if existing:
+        action = "갱신"
+        existing["script"] = script
+        existing["updatedAt"] = now
+        if order is not None:
+            existing["order"] = order
+        if subtitle is not None:
+            existing["subtitle"] = subtitle
+        if cover is not None:
+            existing["coverAssetId"] = cover
+        if description is not None:
+            existing["description"] = description
+        target = existing
+    else:
+        action = "신규 추가"
+        if order is None:
+            order = ep_num if ep_num else max((int(e.get("order") or 0) for e in episodes), default=0) + 1
+        clash = next((e for e in episodes if int(e.get("order") or 0) == order), None)
+        if clash:
+            print(f"경고: order {order}는 이미 '{clash.get('title')}'가 사용 중입니다. "
+                  f"같은 order는 등록순으로 정렬됩니다.")
+        target = {
+            "id": "episode_" + secrets.token_hex(6),
+            "order": order,
+            "title": title,
+            "subtitle": subtitle or "",
+            "description": description or "",
+            "coverAssetId": cover or "",
+            "script": script,
+            "createdAt": now,
+            "updatedAt": now,
+        }
+        episodes.append(target)
+
+    speakers = sorted({line.split("|")[0].strip() for line in script.split("\n")
+                       if "|" in line and not line.startswith(("(", "@", "-"))})
+    print(f"{action}: [{target['order']}] {title}")
+    print(f"  script {len(script)}자, 화자: {', '.join(speakers) or '(없음)'}")
+    if dry_run:
+        print("(dry-run: 저장하지 않음)")
+        return
+    pack["exportedAt"] = now_iso()
+    save_pack(pack)
+
+
+def main():
+    ap = argparse.ArgumentParser(description="storypack.json 에피소드/배경 주입 CLI")
+    ap.add_argument("md", nargs="?", help="주입할 대본 md 파일")
+    ap.add_argument("--order", type=int, help="에피소드 순서 (기본: 기존 최대+1, 갱신 시 유지)")
+    ap.add_argument("--subtitle", help="부제")
+    ap.add_argument("--description", help="설명")
+    ap.add_argument("--cover", help="커버 배경 asset id")
+    ap.add_argument("--add-bg", metavar="IMAGE", help="배경 이미지를 에셋으로 추가")
+    ap.add_argument("--id-name", help="--add-bg 시 에셋 이름 (기본: 파일명)")
+    ap.add_argument("--list", action="store_true", help="현재 팩의 에피소드/에셋 목록 출력")
+    ap.add_argument("--dry-run", action="store_true", help="변경 내용만 출력하고 저장하지 않음")
+    args = ap.parse_args()
+
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except AttributeError:
+        pass
+
+    pack = load_pack()
+
+    if args.list:
+        cmd_list(pack)
+    elif args.add_bg:
+        cmd_add_bg(pack, args.add_bg, args.id_name, args.dry_run)
+    elif args.md:
+        cmd_inject(pack, args.md, args.order, args.subtitle, args.cover, args.description, args.dry_run)
+    else:
+        ap.print_help()
+
+
+if __name__ == "__main__":
+    main()
