@@ -102,12 +102,37 @@ def check_assets(script, pack):
     return sorted(set(missing))
 
 
+def default_chapter(pack):
+    chapters = pack.get("meta", {}).get("chapters") or []
+    return chapters[0]["key"] if chapters else ""
+
+
+def ensure_chapter(pack, chapter):
+    """meta.chapters에 없는 챕터명이면 자동 등록한다."""
+    if not chapter:
+        return
+    chapters = pack.setdefault("meta", {}).setdefault("chapters", [])
+    if any(c.get("key") == chapter for c in chapters):
+        return
+    order = max((int(c.get("order") or 0) for c in chapters), default=0) + 1
+    chapters.append({"key": chapter, "title": chapter, "description": "",
+                     "coverAssetId": "", "order": order})
+    print(f"새 챕터 등록: {chapter} (order {order})")
+
+
 def cmd_list(pack):
     print(f"작품: {pack.get('meta', {}).get('title', '?')}  (exportedAt: {pack.get('exportedAt')})")
-    print(f"\n에피소드 {len(pack.get('episodes', []))}개:")
-    for ep in sorted(pack.get("episodes", []), key=lambda e: (int(e.get("order") or 0), e.get("createdAt", ""))):
-        print(f"  [{ep.get('order')}] {ep.get('title')}  — {ep.get('subtitle') or '(부제 없음)'}"
-              f"  (id: {ep.get('id')}, script {len(ep.get('script', ''))}자)")
+    episodes = sorted(pack.get("episodes", []),
+                      key=lambda e: (int(e.get("order") or 0), e.get("createdAt", "")))
+    by_chapter = {}
+    for ep in episodes:
+        by_chapter.setdefault(ep.get("chapter") or "(미분류)", []).append(ep)
+    print(f"\n에피소드 {len(episodes)}개:")
+    for chapter, eps in by_chapter.items():
+        print(f" 《{chapter}》")
+        for ep in eps:
+            print(f"  [{ep.get('order')}] {ep.get('title')}  — {ep.get('subtitle') or '(부제 없음)'}"
+                  f"  (id: {ep.get('id')}, script {len(ep.get('script', ''))}자)")
     print(f"\n배경 에셋 {len(pack.get('assets', []))}개:")
     for a in pack.get("assets", []):
         where = a.get("src") or "내장(base64)"
@@ -194,7 +219,7 @@ def cmd_externalize(pack, dry_run):
     print(f"완료: 배경 {changed}개 분리")
 
 
-def cmd_inject(pack, md_path, order, subtitle, cover, description, dry_run):
+def cmd_inject(pack, md_path, order, subtitle, cover, description, chapter, dry_run):
     title, script, ep_num = parse_md(md_path)
 
     missing = check_assets(script, pack)
@@ -218,6 +243,8 @@ def cmd_inject(pack, md_path, order, subtitle, cover, description, dry_run):
             existing["coverAssetId"] = cover
         if description is not None:
             existing["description"] = description
+        if chapter is not None:
+            existing["chapter"] = chapter
         target = existing
     else:
         action = "신규 추가"
@@ -230,6 +257,7 @@ def cmd_inject(pack, md_path, order, subtitle, cover, description, dry_run):
         target = {
             "id": "episode_" + secrets.token_hex(6),
             "order": order,
+            "chapter": chapter if chapter is not None else default_chapter(pack),
             "title": title,
             "subtitle": subtitle or "",
             "description": description or "",
@@ -240,9 +268,11 @@ def cmd_inject(pack, md_path, order, subtitle, cover, description, dry_run):
         }
         episodes.append(target)
 
+    ensure_chapter(pack, target.get("chapter"))
+
     speakers = sorted({line.split("|")[0].strip() for line in script.split("\n")
                        if "|" in line and not line.startswith(("(", "@", "-"))})
-    print(f"{action}: [{target['order']}] {title}")
+    print(f"{action}: [{target['order']}] {title}  (챕터: {target.get('chapter') or '미분류'})")
     print(f"  script {len(script)}자, 화자: {', '.join(speakers) or '(없음)'}")
     if dry_run:
         print("(dry-run: 저장하지 않음)")
@@ -255,6 +285,7 @@ def main():
     ap = argparse.ArgumentParser(description="storypack.json 에피소드/배경 주입 CLI")
     ap.add_argument("md", nargs="?", help="주입할 대본 md 파일")
     ap.add_argument("--order", type=int, help="에피소드 순서 (기본: 기존 최대+1, 갱신 시 유지)")
+    ap.add_argument("--chapter", help="챕터명 (신규 기본: 팩의 첫 챕터, 갱신 시 유지)")
     ap.add_argument("--subtitle", help="부제")
     ap.add_argument("--description", help="설명")
     ap.add_argument("--cover", help="커버 배경 asset id")
@@ -280,7 +311,8 @@ def main():
     elif args.add_bg:
         cmd_add_bg(pack, args.add_bg, args.id_name, args.dry_run)
     elif args.md:
-        cmd_inject(pack, args.md, args.order, args.subtitle, args.cover, args.description, args.dry_run)
+        cmd_inject(pack, args.md, args.order, args.subtitle, args.cover, args.description,
+                   args.chapter, args.dry_run)
     else:
         ap.print_help()
 

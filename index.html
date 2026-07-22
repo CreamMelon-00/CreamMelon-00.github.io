@@ -330,6 +330,91 @@
       line-height: 1.8;
     }
 
+    .chapter-card {
+      cursor: pointer;
+      transition: transform 0.14s ease, border-color 0.14s ease;
+    }
+
+    .chapter-card:hover {
+      transform: translateY(-3px);
+      border-color: #5a6679;
+    }
+
+    .chapter-card .episode-cover {
+      height: 150px;
+    }
+
+    .chapter-back-bar {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+      margin-bottom: 4px;
+    }
+
+    .chapter-back-bar h3 {
+      margin: 0;
+      font-size: 21px;
+    }
+
+    .chapter-episode-count {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .episode-list {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .episode-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 15px 18px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface);
+      cursor: pointer;
+      transition: border-color 0.12s ease, background 0.12s ease;
+    }
+
+    .episode-row:hover {
+      border-color: #5a6679;
+      background: var(--surface-2);
+    }
+
+    .episode-row-order {
+      flex: none;
+      min-width: 42px;
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+    }
+
+    .episode-row-title {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .episode-row-subtitle {
+      color: var(--muted);
+      font-size: 13px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .episode-row-actions {
+      margin-left: auto;
+      display: flex;
+      gap: 8px;
+      flex: none;
+    }
+
     .editor-layout {
       display: grid;
       grid-template-columns: minmax(0, 1fr) 360px;
@@ -1413,10 +1498,9 @@
 
       <section class="lobby-hero">
         <div>
-          <h2 id="projectTitleDisplay">가문과 가족</h2>
+          <h2 id="projectTitleDisplay">세계관 스토리 플레이어</h2>
           <p id="projectDescriptionDisplay">
-            로비에서 화를 선택해 감상하세요.
-            작품 데이터는 사이트에 포함된 storypack에서 자동으로 불러옵니다.
+            챕터를 선택해 이야기를 감상하세요.
           </p>
         </div>
         <div class="toolbar right">
@@ -1465,6 +1549,12 @@
               </div>
 
               <div class="field">
+                <label for="episodeChapter">챕터</label>
+                <input id="episodeChapter" type="text" list="chapterOptions" placeholder="가문과 가족" />
+                <datalist id="chapterOptions"></datalist>
+              </div>
+
+              <div class="field full">
                 <label for="episodeTitle">화 제목</label>
                 <input id="episodeTitle" type="text" placeholder="아버지의 그림자 上" />
               </div>
@@ -1758,9 +1848,8 @@
 
     const DEFAULT_PROJECT = {
       key: "project",
-      title: "가문과 가족",
-      description:
-        "로비에서 화를 선택해 감상하거나, 제작실에서 새로운 시나리오를 작성하세요."
+      title: "세계관 스토리 플레이어",
+      description: "챕터를 선택해 이야기를 감상하세요."
     };
 
     const SAMPLE_SCRIPT = `- 연방 북방주, 골목길
@@ -1788,6 +1877,7 @@
 
     const editorHeading = document.getElementById("editorHeading");
     const episodeOrder = document.getElementById("episodeOrder");
+    const episodeChapter = document.getElementById("episodeChapter");
     const episodeTitle = document.getElementById("episodeTitle");
     const episodeSubtitle = document.getElementById("episodeSubtitle");
     const episodeDescription = document.getElementById("episodeDescription");
@@ -2264,11 +2354,40 @@
         projectMeta.description || DEFAULT_PROJECT.description;
     }
 
+    let currentChapterKey = null;
+
+    function chapterList() {
+      const defined = Array.isArray(projectMeta.chapters)
+        ? projectMeta.chapters.map(item => ({ ...item }))
+        : [];
+      const known = new Set(defined.map(item => String(item.key)));
+
+      // 목록에 없는 챕터명을 쓰는 화가 있으면 자동으로 챕터를 만들어준다
+      for (const episode of episodesCache) {
+        const key = String(episode.chapter || "").trim();
+        if (key && !known.has(key)) {
+          known.add(key);
+          defined.push({ key, title: key, order: 100 + defined.length });
+        }
+      }
+
+      if (defined.length && episodesCache.some(item => !String(item.chapter || "").trim())) {
+        defined.push({ key: "", title: "미분류", order: 9999 });
+      }
+
+      return defined.sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
+    }
+
+    function episodesOfChapter(chapterKey) {
+      return sortedEpisodes().filter(
+        item => String(item.chapter || "").trim() === chapterKey
+      );
+    }
+
     function renderLobby() {
       episodeGrid.innerHTML = "";
-      const episodes = sortedEpisodes();
 
-      if (!episodes.length) {
+      if (!episodesCache.length) {
         episodeGrid.innerHTML = `
           <div class="empty-state">
             저장된 시나리오가 없습니다.<br />
@@ -2278,13 +2397,36 @@
         return;
       }
 
-      for (const episode of episodes) {
+      const chapters = chapterList();
+
+      // 챕터 정보가 전혀 없는 옛 프로젝트는 전체 화 리스트로 보여준다
+      if (!chapters.length) {
+        renderEpisodeList(sortedEpisodes());
+        return;
+      }
+
+      if (currentChapterKey !== null) {
+        const chapter = chapters.find(item => String(item.key) === currentChapterKey);
+        if (chapter) {
+          renderChapterEpisodes(chapter);
+          return;
+        }
+        currentChapterKey = null;
+      }
+
+      renderChapterCards(chapters);
+    }
+
+    function renderChapterCards(chapters) {
+      for (const chapter of chapters) {
+        const episodes = episodesOfChapter(String(chapter.key));
+
         const card = document.createElement("article");
-        card.className = "episode-card";
+        card.className = "episode-card chapter-card";
 
         const cover = document.createElement("div");
         cover.className = "episode-cover";
-        const coverAsset = findAsset(episode.coverAssetId);
+        const coverAsset = findAsset(chapter.coverAssetId);
         if (coverAsset) {
           cover.style.backgroundImage =
             `linear-gradient(rgba(8,10,14,0.18), rgba(8,10,14,0.74)), url("${getAssetUrl(coverAsset)}")`;
@@ -2293,45 +2435,104 @@
         const body = document.createElement("div");
         body.className = "episode-card-body";
 
-        const order = document.createElement("div");
-        order.className = "episode-order";
-        order.textContent = `${episode.order || 0}화`;
+        const label = document.createElement("div");
+        label.className = "episode-order";
+        label.textContent = `${episodes.length}개 화 수록`;
 
         const title = document.createElement("h3");
         title.className = "episode-title";
-        title.textContent = episode.title || "제목 없음";
-
-        const subtitle = document.createElement("div");
-        subtitle.className = "episode-subtitle";
-        subtitle.textContent = episode.subtitle || "";
+        title.textContent = chapter.title || "제목 없음";
 
         const description = document.createElement("p");
         description.className = "episode-description";
-        description.textContent = episode.description || "설명이 없습니다.";
+        description.textContent = chapter.description || "";
+
+        body.append(label, title, description);
+        card.append(cover, body);
+        card.addEventListener("click", () => {
+          currentChapterKey = String(chapter.key);
+          renderLobby();
+        });
+        episodeGrid.append(card);
+      }
+    }
+
+    function renderChapterEpisodes(chapter) {
+      const episodes = episodesOfChapter(String(chapter.key));
+
+      const bar = document.createElement("div");
+      bar.className = "chapter-back-bar";
+
+      const backButton = document.createElement("button");
+      backButton.className = "small";
+      backButton.textContent = "← 챕터 목록";
+      backButton.addEventListener("click", () => {
+        currentChapterKey = null;
+        renderLobby();
+      });
+
+      const heading = document.createElement("h3");
+      heading.textContent = chapter.title || "미분류";
+
+      const count = document.createElement("span");
+      count.className = "chapter-episode-count";
+      count.textContent = `${episodes.length}개 화`;
+
+      bar.append(backButton, heading, count);
+      episodeGrid.append(bar);
+      renderEpisodeList(episodes);
+    }
+
+    function renderEpisodeList(episodes) {
+      const list = document.createElement("div");
+      list.className = "episode-list";
+
+      if (!episodes.length) {
+        list.innerHTML = `<div class="empty-state">이 챕터에는 아직 수록된 화가 없습니다.</div>`;
+      }
+
+      episodes.forEach((episode, index) => {
+        const row = document.createElement("div");
+        row.className = "episode-row";
+
+        const orderEl = document.createElement("span");
+        orderEl.className = "episode-row-order";
+        orderEl.textContent = `${index + 1}화`;
+
+        const titleEl = document.createElement("span");
+        titleEl.className = "episode-row-title";
+        titleEl.textContent = episode.title || "제목 없음";
+
+        const subtitleEl = document.createElement("span");
+        subtitleEl.className = "episode-row-subtitle";
+        subtitleEl.textContent = episode.subtitle || "";
 
         const actions = document.createElement("div");
-        actions.className = "episode-card-actions";
+        actions.className = "episode-row-actions";
 
         const viewButton = document.createElement("button");
         viewButton.className = "primary small";
         viewButton.textContent = "감상";
-        viewButton.addEventListener("click", () => openViewer(episode.id));
+        viewButton.addEventListener("click", event => {
+          event.stopPropagation();
+          openViewer(episode.id);
+        });
 
         const editButton = document.createElement("button");
         editButton.className = "small";
         editButton.textContent = "수정";
-        editButton.addEventListener("click", () => openEditor(episode.id));
+        editButton.addEventListener("click", event => {
+          event.stopPropagation();
+          openEditor(episode.id);
+        });
 
-        const duplicateButton = document.createElement("button");
-        duplicateButton.className = "small";
-        duplicateButton.textContent = "복제";
-        duplicateButton.addEventListener("click", () => duplicateEpisode(episode.id));
+        actions.append(viewButton, editButton);
+        row.append(orderEl, titleEl, subtitleEl, actions);
+        row.addEventListener("click", () => openViewer(episode.id));
+        list.append(row);
+      });
 
-        actions.append(viewButton, editButton, duplicateButton);
-        body.append(order, title, subtitle, description, actions);
-        card.append(cover, body);
-        episodeGrid.append(card);
-      }
+      episodeGrid.append(list);
     }
 
     function populateCoverSelect(selectedId = "") {
@@ -2351,12 +2552,25 @@
       episodeCoverAsset.value = selectedId || "";
     }
 
+    function populateChapterOptions() {
+      const datalist = document.getElementById("chapterOptions");
+      datalist.innerHTML = "";
+      for (const chapter of chapterList()) {
+        if (!chapter.key) continue;
+        const option = document.createElement("option");
+        option.value = String(chapter.key);
+        datalist.append(option);
+      }
+    }
+
     function clearEditorForm() {
       editingEpisodeId = null;
       editorHeading.textContent = "새 시나리오 제작";
       episodeOrder.value = String(
         Math.max(0, ...episodesCache.map(item => Number(item.order) || 0)) + 1
       );
+      populateChapterOptions();
+      episodeChapter.value = currentChapterKey || "";
       episodeTitle.value = "";
       episodeSubtitle.value = "";
       episodeDescription.value = "";
@@ -2381,6 +2595,8 @@
         editingEpisodeId = episode.id;
         editorHeading.textContent = `${episode.order}화 수정`;
         episodeOrder.value = String(episode.order || 1);
+        populateChapterOptions();
+        episodeChapter.value = episode.chapter || "";
         episodeTitle.value = episode.title || "";
         episodeSubtitle.value = episode.subtitle || "";
         episodeDescription.value = episode.description || "";
@@ -2413,8 +2629,10 @@
       const existing = episodesCache.find(item => item.id === editingEpisodeId);
 
       return {
+        ...existing,
         id: editingEpisodeId || generateId("episode"),
         order: Math.max(1, Number(episodeOrder.value) || 1),
+        chapter: episodeChapter.value.trim(),
         title,
         subtitle: episodeSubtitle.value.trim(),
         description: episodeDescription.value.trim(),
@@ -4942,6 +5160,7 @@
 
     async function saveProjectSettings() {
       projectMeta = {
+        ...projectMeta,
         key: "project",
         title: projectTitleInput.value.trim() || DEFAULT_PROJECT.title,
         description:

@@ -1456,6 +1456,11 @@
               </div>
 
               <div class="field">
+                <label for="episodeChapter">챕터</label>
+                <input id="episodeChapter" type="text" placeholder="가문과 가족" />
+              </div>
+
+              <div class="field full">
                 <label for="episodeTitle">화 제목</label>
                 <input id="episodeTitle" type="text" placeholder="아버지의 그림자 上" />
               </div>
@@ -1778,6 +1783,7 @@
 
     const editorHeading = document.getElementById("editorHeading");
     const episodeOrder = document.getElementById("episodeOrder");
+    const episodeChapter = document.getElementById("episodeChapter");
     const episodeTitle = document.getElementById("episodeTitle");
     const episodeSubtitle = document.getElementById("episodeSubtitle");
     const episodeDescription = document.getElementById("episodeDescription");
@@ -2255,6 +2261,7 @@
       episodeOrder.value = String(
         Math.max(0, ...episodesCache.map(item => Number(item.order) || 0)) + 1
       );
+      episodeChapter.value = "";
       episodeTitle.value = "";
       episodeSubtitle.value = "";
       episodeDescription.value = "";
@@ -2279,6 +2286,7 @@
         editingEpisodeId = episode.id;
         editorHeading.textContent = `${episode.order}화 수정`;
         episodeOrder.value = String(episode.order || 1);
+        episodeChapter.value = episode.chapter || "";
         episodeTitle.value = episode.title || "";
         episodeSubtitle.value = episode.subtitle || "";
         episodeDescription.value = episode.description || "";
@@ -2311,8 +2319,10 @@
       const existing = episodesCache.find(item => item.id === editingEpisodeId);
 
       return {
+        ...existing,
         id: editingEpisodeId || generateId("episode"),
         order: Math.max(1, Number(episodeOrder.value) || 1),
+        chapter: episodeChapter.value.trim(),
         title,
         subtitle: episodeSubtitle.value.trim(),
         description: episodeDescription.value.trim(),
@@ -4897,6 +4907,7 @@
 
     async function saveProjectSettings() {
       projectMeta = {
+        ...projectMeta,
         key: "project",
         title: projectTitleInput.value.trim() || DEFAULT_PROJECT.title,
         description:
