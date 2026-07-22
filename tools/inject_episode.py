@@ -54,11 +54,18 @@ def save_pack(pack):
     print(f"저장 완료: {PACK_PATH} (백업: {backup.name})")
 
 
+META_KEYS = {"부제": "subtitle", "설명": "description", "커버": "cover",
+              "챕터": "chapter", "순서": "order"}
+
+
 def parse_md(md_path):
-    """대본 md → (title, script, ep_num).
+    """대본 md → (title, script, ep_num, meta).
 
     첫 비어있지 않은 줄을 제목으로 사용한다. "N편. 제목" 꼴이면 접두어를 떼어
     제목만 남기고 (기존 팩의 제목 관례), N은 order 기본값으로 쓴다.
+
+    제목 바로 다음에 "부제: ...", "커버: ...", "챕터: ...", "순서: ...",
+    "설명: ..." 메타 줄을 적을 수 있다 (선택). 본문이 시작되면 더 읽지 않는다.
     """
     text = Path(md_path).read_text(encoding="utf-8").replace("\r\n", "\n")
     lines = text.split("\n")
@@ -79,6 +86,22 @@ def parse_md(md_path):
         ep_num = int(m.group(1))
         title = m.group(2).strip()
 
+    # 제목 뒤 메타 줄 수집
+    meta = {}
+    i = body_start
+    while i < len(lines):
+        s = lines[i].strip()
+        if not s:
+            i += 1
+            continue
+        key, sep, value = s.partition(":")
+        if sep and key.strip() in META_KEYS:
+            meta[META_KEYS[key.strip()]] = value.strip()
+            i += 1
+            continue
+        break
+    body_start = i
+
     body = []
     for line in lines[body_start:]:
         stripped = line.strip()
@@ -88,7 +111,7 @@ def parse_md(md_path):
         body.append(stripped)
 
     script = "\n".join(body).strip("\n")
-    return title, script, ep_num
+    return title, script, ep_num, meta
 
 
 def check_assets(script, pack):
@@ -141,6 +164,7 @@ def cmd_list(pack):
 
 
 BG_DIR = PACK_PATH.parent.parent / "resource" / "bg"
+DRAFT_DIR = Path("C:/Users/Superplanet/Desktop/Story/드래프트")
 MIME_EXT = {"image/png": ".png", "image/jpeg": ".jpg", "image/webp": ".webp"}
 
 
@@ -221,8 +245,24 @@ def cmd_externalize(pack, dry_run):
     print(f"완료: 배경 {changed}개 분리")
 
 
-def cmd_inject(pack, md_path, order, subtitle, cover, description, chapter, dry_run):
-    title, script, ep_num = parse_md(md_path)
+def cmd_inject(pack, md_path, order, subtitle, cover, description, chapter, dry_run,
+               save=True):
+    title, script, ep_num, md_meta = parse_md(md_path)
+
+    # 우선순위: CLI 플래그 > md 메타 줄 > 기존 값 유지
+    if subtitle is None:
+        subtitle = md_meta.get("subtitle")
+    if cover is None:
+        cover = md_meta.get("cover")
+    if description is None:
+        description = md_meta.get("description")
+    if chapter is None:
+        chapter = md_meta.get("chapter")
+    if order is None and "order" in md_meta:
+        try:
+            order = int(md_meta["order"])
+        except ValueError:
+            print(f"경고: 순서 값이 숫자가 아닙니다: {md_meta['order']}")
 
     missing = check_assets(script, pack)
     if missing:
@@ -279,8 +319,25 @@ def cmd_inject(pack, md_path, order, subtitle, cover, description, chapter, dry_
     if dry_run:
         print("(dry-run: 저장하지 않음)")
         return
+    if save:
+        pack["exportedAt"] = now_iso()
+        save_pack(pack)
+
+
+def cmd_inject_all(pack, dry_run):
+    """드래프트 폴더의 모든 md를 반영하고 한 번만 저장한다."""
+    md_files = sorted(DRAFT_DIR.glob("*.md"),
+                      key=lambda p: (len(p.stem.split("편")[0]), p.stem))
+    if not md_files:
+        sys.exit(f"드래프트 폴더에 md가 없습니다: {DRAFT_DIR}")
+    for md in md_files:
+        cmd_inject(pack, md, None, None, None, None, None, dry_run, save=False)
+    if dry_run:
+        print(f"\n(dry-run: {len(md_files)}개 파일 확인만 함)")
+        return
     pack["exportedAt"] = now_iso()
     save_pack(pack)
+    print(f"\n총 {len(md_files)}개 대본 반영 완료")
 
 
 def main():
@@ -293,6 +350,8 @@ def main():
     ap.add_argument("--cover", help="커버 배경 asset id")
     ap.add_argument("--add-bg", metavar="IMAGE", help="배경 이미지를 에셋으로 추가 (resource/bg 경로 참조)")
     ap.add_argument("--id-name", help="--add-bg 시 에셋 이름 (기본: 파일명)")
+    ap.add_argument("--all", action="store_true",
+                    help="드래프트 폴더의 모든 md를 한 번에 반영")
     ap.add_argument("--externalize", action="store_true",
                     help="팩에 base64로 내장된 배경들을 resource/bg/ 파일로 분리")
     ap.add_argument("--list", action="store_true", help="현재 팩의 에피소드/에셋 목록 출력")
@@ -308,6 +367,8 @@ def main():
 
     if args.list:
         cmd_list(pack)
+    elif args.all:
+        cmd_inject_all(pack, args.dry_run)
     elif args.externalize:
         cmd_externalize(pack, args.dry_run)
     elif args.add_bg:
