@@ -156,9 +156,11 @@ def cmd_add_bg(pack, image_path, id_name, dry_run):
         sys.exit(f"지원하지 않는 이미지 형식입니다: {img.suffix}")
 
     name = id_name or img.stem
-    # 기존 관례: bg_1_z0dv8 (이름 + 5자리 랜덤 영숫자)
-    alphabet = string.ascii_lowercase + string.digits
-    asset_id = f"{name}_" + "".join(secrets.choice(alphabet) for _ in range(5))
+    # id 관례: 지역명 기반 슬러그 ("북방주 술집_저녁" → "북방주_술집_저녁"), 중복 시 랜덤 접미사
+    asset_id = name.replace(" ", "_")
+    if any(a["id"] == asset_id for a in pack.get("assets", [])):
+        alphabet = string.ascii_lowercase + string.digits
+        asset_id += "_" + "".join(secrets.choice(alphabet) for _ in range(5))
 
     data = img.read_bytes()
     target = BG_DIR / img.name

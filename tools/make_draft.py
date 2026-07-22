@@ -41,8 +41,8 @@ PREFIX = {"main": "main_p", "ex": "ex_p", "re": "re_p", "char": "char_p"}
 
 # 대사가 끝났다고 볼 수 있는 꼬리 문자들 (이 뒤에 오는 토큰이 화자 이름 후보)
 # 따옴표는 제외한다: 문장 중간의 ‘인용구’ 뒤 단어를 화자로 오인하게 만든다
-# "*"는 행동 표기 꼬리("*큭큭*")로 대사가 끝나는 경우를 위해 포함한다
-SENT_END = ".?!…~)】]』」》*"
+# "*"는 행동 표기 꼬리("*큭큭*"), "—–"는 말이 끊기는 연출("아직 작업은 —")용
+SENT_END = ".?!…~)】]』」》*—–"
 PUNCT_ONLY_RE = re.compile(r"^[.?!…,~]+$")
 CHECK = "<<확인>>"
 MAX_ROLE_PARTS = 3
@@ -354,7 +354,9 @@ class Converter:
             cand = " ".join(tokens[-take:])
             rest = tokens[:-take]
             before = rest[-1] if rest else ""
-            boundary_ok = relax_boundary or (not before) or ends_sentence(before)
+            # "|"가 있으면 쉼표로 끊긴 대사 뒤의 화자도 인정한다 ("...들일 뿐,  앤드루 |")
+            boundary_ok = (relax_boundary or (not before) or ends_sentence(before)
+                           or (has_pipe and before[-1] == ","))
             if not boundary_ok:
                 continue
             if not rest and mid_sentence:
@@ -435,8 +437,12 @@ class Converter:
         text = text.strip()
         scene_break = False
         if text.endswith(("–", "—")):
-            text = text[:-1].rstrip()
-            scene_break = True
+            stripped = text[:-1].rstrip()
+            # 문장이 끝난 뒤의 대시만 씬 구분자다.
+            # 문장 중간이면 말이 끊기는 연출("아직 작업은 —")이므로 대사에 남긴다.
+            if not stripped or ends_sentence(stripped):
+                text = stripped
+                scene_break = True
 
         # 조각 꼬리의 효과음 괄호를 별도 줄로 분리: "저 새끼들이…! ( 파열음 )"
         trailing_sfx = None
@@ -511,7 +517,20 @@ def main():
     conv = Converter(known)
     conv.feed_pages(pages_lines, skip_lines)
 
-    body = "\n".join(conv.out)
+    # 원본의 씬 구분자(–)를 현행 문법으로 변환:
+    # 바로 뒤에 씬 헤더/@배경/<시간 표시>가 오면 불필요하므로 제거,
+    # 장면 안의 시간 경과 표시면 @정적 1.5 로 대체한다.
+    processed = []
+    for i, line in enumerate(conv.out):
+        if line.strip() in ("–", "—", "--"):
+            nxt = next((l.strip() for l in conv.out[i + 1:] if l.strip()), "")
+            if (not nxt or nxt.startswith("- ") or nxt.startswith("@배경")
+                    or (nxt.startswith("<") and nxt.endswith(">")) or nxt.startswith("##")):
+                continue
+            processed.append("@정적 1.5")
+        else:
+            processed.append(line)
+    body = "\n".join(processed)
     body = re.sub(r"\n{3,}", "\n\n", body).strip("\n")
 
     out_path = Path(args.out) if args.out else DEFAULT_OUT_DIR / f"{args.title}.md"
