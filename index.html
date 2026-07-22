@@ -25,6 +25,7 @@
       --success: #94b476;
       --shadow: 0 18px 60px rgba(0, 0, 0, 0.34);
       --viewer-darkness: 0.5;
+      --viewer-blur: 3px;
       --viewer-fit: cover;
       --letterbox-height: clamp(88px, 10vh, 132px);
       --glass: rgba(23, 17, 11, 0.84);
@@ -621,9 +622,11 @@
       background-position: var(--camera-position);
       background-repeat: no-repeat;
       opacity: 1;
-      transform: scale(var(--camera-scale));
+      /* 배경 그림의 밀도가 높아 시선을 뺏지 않도록 기본 흐림을 준다.
+         가장자리 블러 번짐은 살짝 확대해서 가린다. */
+      transform: scale(calc(var(--camera-scale) * 1.03));
       transform-origin: center;
-      filter: var(--visual-filter) blur(var(--visual-blur));
+      filter: var(--visual-filter) blur(calc(var(--visual-blur) + var(--viewer-blur)));
       transition:
         opacity 240ms ease,
         transform 4600ms ease,
@@ -996,7 +999,8 @@
     .viewer-content {
       --camera-scale: 1;
       --camera-position: center;
-      --visual-filter: none;
+      /* "none"은 blur()와 조합하면 필터 전체가 무효가 되므로 항등 필터를 쓴다 */
+      --visual-filter: brightness(1);
       --visual-blur: 0px;
       --vignette-opacity: 0;
       position: relative;
@@ -1700,6 +1704,9 @@
 
           <label for="viewerDarkness">어둡기</label>
           <input id="viewerDarkness" type="range" min="0" max="0.9" step="0.05" value="0.5" />
+
+          <label for="viewerBlur">흐림</label>
+          <input id="viewerBlur" type="range" min="0" max="10" step="1" value="3" />
 
           <span id="viewerBackgroundLabel">배경: 기본</span>
         </div>
@@ -4124,7 +4131,7 @@
       };
 
       const filterMap = {
-        normal: "none",
+        normal: "brightness(1)",
         cold: "saturate(0.82) contrast(1.08) brightness(0.92) hue-rotate(185deg)",
         warm: "sepia(0.22) saturate(1.08) brightness(1.03) contrast(1.02)",
         mono: "grayscale(1) contrast(1.08) brightness(0.96)",
@@ -5388,6 +5395,13 @@
       document.documentElement.style.setProperty(
         "--viewer-darkness",
         event.target.value
+      );
+    });
+
+    document.getElementById("viewerBlur").addEventListener("input", event => {
+      document.documentElement.style.setProperty(
+        "--viewer-blur",
+        `${event.target.value}px`
       );
     });
 
