@@ -1514,7 +1514,7 @@
           <h1>스토리 다이얼로그 스튜디오</h1>
           <p>링크로 감상하는 세계관 시나리오 플레이어입니다.</p>
         </div>
-        <button id="newEpisodeBtn" class="primary">새 화 제작</button>
+        <button id="newEpisodeBtn" class="primary" hidden>새 화 제작</button>
         <button id="exportProjectBtn">프로젝트 내보내기</button>
         <button id="importProjectBtn">프로젝트 불러오기</button>
         <input id="importProjectInput" type="file" accept=".storypack,.json,application/json" hidden />
@@ -2542,15 +2542,7 @@
           openViewer(episode.id);
         });
 
-        const editButton = document.createElement("button");
-        editButton.className = "small";
-        editButton.textContent = "수정";
-        editButton.addEventListener("click", event => {
-          event.stopPropagation();
-          openEditor(episode.id);
-        });
-
-        actions.append(viewButton, editButton);
+        actions.append(viewButton);
         row.append(orderEl, titleEl, subtitleEl, actions);
         row.addEventListener("click", () => openViewer(episode.id));
         list.append(row);
