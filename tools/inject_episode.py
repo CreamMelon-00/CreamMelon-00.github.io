@@ -110,11 +110,17 @@ def cmd_list(pack):
               f"  (id: {ep.get('id')}, script {len(ep.get('script', ''))}자)")
     print(f"\n배경 에셋 {len(pack.get('assets', []))}개:")
     for a in pack.get("assets", []):
-        print(f"  {a['id']}  ({a.get('fileName')}, {a.get('size', 0) / 1024 / 1024:.1f}MB)")
+        where = a.get("src") or "내장(base64)"
+        print(f"  {a['id']}  ({a.get('fileName')}, {a.get('size', 0) / 1024 / 1024:.1f}MB, {where})")
     print(f"\n용어사전 {len(pack.get('glossary', []))}개")
 
 
+BG_DIR = PACK_PATH.parent.parent / "resource" / "bg"
+MIME_EXT = {"image/png": ".png", "image/jpeg": ".jpg", "image/webp": ".webp"}
+
+
 def cmd_add_bg(pack, image_path, id_name, dry_run):
+    """이미지를 resource/bg/ 에 두고 storypack에는 경로(src)만 등록한다."""
     img = Path(image_path)
     if not img.exists():
         sys.exit(f"이미지를 찾을 수 없습니다: {img}")
@@ -130,23 +136,62 @@ def cmd_add_bg(pack, image_path, id_name, dry_run):
     asset_id = f"{name}_" + "".join(secrets.choice(alphabet) for _ in range(5))
 
     data = img.read_bytes()
+    target = BG_DIR / img.name
+    if target.exists() and target.read_bytes() != data:
+        target = BG_DIR / f"{name}_{asset_id.rsplit('_', 1)[-1]}{img.suffix.lower()}"
+
     asset = {
         "id": asset_id,
         "name": name,
-        "fileName": img.name,
+        "fileName": target.name,
         "mimeType": mime,
         "size": len(data),
         "createdAt": now_iso(),
-        "dataUrl": f"data:{mime};base64," + base64.b64encode(data).decode("ascii"),
+        "src": f"resource/bg/{target.name}",
     }
-    print(f"배경 추가: {asset_id}  ({img.name}, {len(data) / 1024 / 1024:.1f}MB)")
+    print(f"배경 추가: {asset_id}  ({target.name}, {len(data) / 1024 / 1024:.1f}MB) → {asset['src']}")
     print(f"대본에서 사용법: @배경 {asset_id}")
     if dry_run:
         print("(dry-run: 저장하지 않음)")
         return
+    if img.resolve() != target.resolve():
+        BG_DIR.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(data)
     pack["assets"].append(asset)
     pack["exportedAt"] = now_iso()
     save_pack(pack)
+
+
+def cmd_externalize(pack, dry_run):
+    """base64로 내장된 배경들을 resource/bg/ 파일로 추출하고 src 참조로 바꾼다."""
+    changed = 0
+    for a in pack.get("assets", []):
+        data_url = a.get("dataUrl")
+        if not data_url:
+            continue
+        ext = MIME_EXT.get(a.get("mimeType"), ".png")
+        data = base64.b64decode(data_url.partition(",")[2])
+        file_name = a.get("fileName") or f"{a['id']}{ext}"
+        target = BG_DIR / file_name
+        if target.exists() and target.read_bytes() != data:
+            target = BG_DIR / f"{a['id']}{ext}"
+        print(f"  {a['id']}: {len(data) / 1024 / 1024:.1f}MB → resource/bg/{target.name}")
+        if not dry_run:
+            BG_DIR.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(data)
+            a["src"] = f"resource/bg/{target.name}"
+            a["fileName"] = target.name
+            del a["dataUrl"]
+        changed += 1
+    if not changed:
+        print("내장(base64) 배경이 없습니다 — 변환할 것이 없습니다.")
+        return
+    if dry_run:
+        print(f"(dry-run: {changed}개 변환 예정, 저장하지 않음)")
+        return
+    pack["exportedAt"] = now_iso()
+    save_pack(pack)
+    print(f"완료: 배경 {changed}개 분리")
 
 
 def cmd_inject(pack, md_path, order, subtitle, cover, description, dry_run):
@@ -213,8 +258,10 @@ def main():
     ap.add_argument("--subtitle", help="부제")
     ap.add_argument("--description", help="설명")
     ap.add_argument("--cover", help="커버 배경 asset id")
-    ap.add_argument("--add-bg", metavar="IMAGE", help="배경 이미지를 에셋으로 추가")
+    ap.add_argument("--add-bg", metavar="IMAGE", help="배경 이미지를 에셋으로 추가 (resource/bg 경로 참조)")
     ap.add_argument("--id-name", help="--add-bg 시 에셋 이름 (기본: 파일명)")
+    ap.add_argument("--externalize", action="store_true",
+                    help="팩에 base64로 내장된 배경들을 resource/bg/ 파일로 분리")
     ap.add_argument("--list", action="store_true", help="현재 팩의 에피소드/에셋 목록 출력")
     ap.add_argument("--dry-run", action="store_true", help="변경 내용만 출력하고 저장하지 않음")
     args = ap.parse_args()
@@ -228,6 +275,8 @@ def main():
 
     if args.list:
         cmd_list(pack)
+    elif args.externalize:
+        cmd_externalize(pack, args.dry_run)
     elif args.add_bg:
         cmd_add_bg(pack, args.add_bg, args.id_name, args.dry_run)
     elif args.md:

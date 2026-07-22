@@ -1,0 +1,3 @@
+# 주입 CLI가 만드는 로컬 백업/임시 파일 (저장소에 불필요)
+data/storypack.json.bak
+data/*.tmp

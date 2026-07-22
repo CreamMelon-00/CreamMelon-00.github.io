@@ -2060,6 +2060,8 @@
 
     function getAssetUrl(asset) {
       if (!asset) return "";
+      if (asset.src) return asset.src;
+      if (!asset.blob) return "";
       if (!assetUrls.has(asset.id)) {
         assetUrls.set(asset.id, URL.createObjectURL(asset.blob));
       }
@@ -2207,11 +2209,14 @@
         }
 
         for (const asset of data.assets || []) {
-          if (!asset.dataUrl) continue;
-          const blob = await dataUrlToBlob(asset.dataUrl);
-          const restored = { ...asset, blob };
-          delete restored.dataUrl;
-          await storePut(STORES.assets, restored);
+          if (asset.dataUrl) {
+            const blob = await dataUrlToBlob(asset.dataUrl);
+            const restored = { ...asset, blob };
+            delete restored.dataUrl;
+            await storePut(STORES.assets, restored);
+          } else if (asset.src) {
+            await storePut(STORES.assets, { ...asset });
+          }
         }
 
         for (const character of data.characters || []) {
@@ -4790,6 +4795,10 @@
 
       const serializedAssets = [];
       for (const asset of assets) {
+        if (asset.src && !asset.blob) {
+          serializedAssets.push({ ...asset, blob: undefined });
+          continue;
+        }
         serializedAssets.push({
           ...asset,
           blob: undefined,
@@ -4885,11 +4894,14 @@
       }
 
       for (const asset of data.assets || []) {
-        if (!asset.dataUrl) continue;
-        const blob = await dataUrlToBlob(asset.dataUrl);
-        const restored = { ...asset, blob };
-        delete restored.dataUrl;
-        await storePut(STORES.assets, restored);
+        if (asset.dataUrl) {
+          const blob = await dataUrlToBlob(asset.dataUrl);
+          const restored = { ...asset, blob };
+          delete restored.dataUrl;
+          await storePut(STORES.assets, restored);
+        } else if (asset.src) {
+          await storePut(STORES.assets, { ...asset });
+        }
       }
 
       for (const character of data.characters || []) {
