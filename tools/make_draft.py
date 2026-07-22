@@ -347,8 +347,25 @@ class Converter:
 
         1토큰 이름을 먼저 시도한다 — 2토큰을 먼저 잡으면 장소/대사 꼬리가
         이름에 딸려 들어가는 과확장이 생긴다 ("저택 앤드루").
+        "|"가 있으면 마지막 문장부호 뒤 전체를 이름으로 본다 ("연방 의원 A |"
+        같은 3토큰 이름 대응). 3토큰은 그 외엔 사전 일치로만 인정한다.
         """
-        for take in (1, 2):
+        if has_pipe:
+            split_at = -1
+            for idx, token in enumerate(tokens):
+                if ends_sentence(token):
+                    split_at = idx
+            cand = " ".join(tokens[split_at + 1:])
+            rest = tokens[:split_at + 1]
+            if cand and is_name_like(cand) and not (not rest and mid_sentence):
+                known = ((cand, role_line) in self.known_pairs
+                         or (cand in self.known_names and role_line in self.known_roles))
+                if known:
+                    return cand, rest, "known"
+                if not require_known:
+                    return cand, rest, "pipe"
+
+        for take in (1, 2, 3):
             if len(tokens) < take:
                 continue
             cand = " ".join(tokens[-take:])
@@ -366,7 +383,7 @@ class Converter:
                      or (cand in self.known_names and role_line in self.known_roles))
             if known:
                 return cand, rest, "known"
-            if require_known:
+            if take >= 3 or require_known:
                 continue
             if has_pipe and is_name_like(cand):
                 return cand, rest, "pipe"
@@ -413,6 +430,11 @@ class Converter:
         self.speaker = None
         body = re.sub(r"^-\s+", "", line).strip()
 
+        # 헤더에 붙은 <시간 표시>는 별도 줄로 분리한다
+        time_cues = [fix_spacing(m) for m in re.findall(r"<[^<>]+>", body)]
+        if time_cues:
+            body = re.sub(r"\s*<[^<>]+>\s*", " ", body).strip()
+
         nxt_idx = self.next_nonempty(lines, i)
         if nxt_idx is not None:
             role_line, role_end = self.absorb_role(lines, nxt_idx)
@@ -423,14 +445,19 @@ class Converter:
                                            False, require_known=True, relax_boundary=True)
                 if found:
                     cand, rest, confidence = found
-                    self.out.append(f"- {fix_spacing(' '.join(rest))}")
-                    self.out.append("")
+                    self.emit_scene_header(" ".join(rest), time_cues)
                     self.set_speaker(cand, role_line, confidence)
                     return role_end
 
+        self.emit_scene_header(body, time_cues)
+        return i + 1
+
+    def emit_scene_header(self, body, time_cues):
         self.out.append(f"- {fix_spacing(body)}")
         self.out.append("")
-        return i + 1
+        for cue in time_cues:
+            self.out.append(cue)
+            self.out.append("")
 
     def consume_fragment(self, text):
         """대사/나레이션 조각을 버퍼에 쌓는다. 효과음 괄호·씬 구분 꼬리는 분리."""
