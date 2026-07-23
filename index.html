@@ -3714,14 +3714,16 @@
           target.append(span);
         } else if (token.startsWith("[") && token.endsWith("]")) {
           const term = token.slice(1, -1).trim();
+          if (!map.has(term)) {
+            // 사전에 없는 대괄호는 통신/메시지 표기이므로 평문 그대로 둔다
+            target.append(document.createTextNode(token));
+            lastIndex = match.index + token.length;
+            continue;
+          }
           const span = document.createElement("span");
-          span.className = map.has(term)
-            ? "glossary-link"
-            : "glossary-link missing";
+          span.className = "glossary-link";
           span.textContent = term;
-          span.title = map.has(term)
-            ? "클릭해서 설명 보기"
-            : "사전에 등록되지 않은 고유명사";
+          span.title = "클릭해서 설명 보기";
           span.tabIndex = 0;
           span.role = "button";
           span.addEventListener("click", event => {
@@ -4797,13 +4799,18 @@
 
         if (segment.type === "glossary") {
           const isFullyVisible = visibleText === segment.text;
-          span.className = map.has(segment.text)
-            ? "glossary-link"
-            : "glossary-link missing";
+
+          if (!map.has(segment.text)) {
+            // 사전에 없는 대괄호는 통신/메시지 표기 — 대괄호째 평문으로
+            span.className = "";
+            span.textContent = `[${visibleText}${isFullyVisible ? "]" : ""}`;
+            target.append(span);
+            continue;
+          }
+
+          span.className = "glossary-link";
           span.textContent = visibleText;
-          span.title = map.has(segment.text)
-            ? "클릭해서 설명 보기"
-            : "사전에 등록되지 않은 고유명사";
+          span.title = "클릭해서 설명 보기";
 
           if (isFullyVisible) {
             span.tabIndex = 0;
