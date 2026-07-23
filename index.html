@@ -1230,7 +1230,7 @@
     .dialogue-text {
       min-height: 126px;
       padding: 19px 22px 24px;
-      font-size: clamp(15px, 1.45vw, 18px);
+      font-size: calc(clamp(15px, 1.45vw, 18px) * var(--dialogue-scale, 1));
       line-height: 1.82;
       letter-spacing: -0.01em;
       white-space: pre-wrap;
@@ -1241,7 +1241,7 @@
       color: rgba(216, 203, 178, 0.82);
       font-style: italic;
       text-align: center;
-      font-size: clamp(14px, 1.25vw, 17px);
+      font-size: calc(clamp(14px, 1.25vw, 17px) * var(--dialogue-scale, 1));
     }
 
     .dialogue-text.scene {
@@ -1522,6 +1522,92 @@
       color: var(--text);
     }
 
+    .backlog-list {
+      max-height: min(58vh, 520px);
+      overflow-y: auto;
+    }
+
+    .backlog-scene {
+      margin: 14px 0 8px;
+      color: var(--accent);
+      font-family: var(--serif);
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .backlog-entry {
+      margin: 0 0 10px;
+      font-size: 13.5px;
+      line-height: 1.65;
+      color: var(--text);
+    }
+
+    .backlog-entry .backlog-speaker {
+      color: var(--accent-strong);
+      font-weight: 800;
+      margin-right: 7px;
+    }
+
+    .backlog-entry.backlog-direction {
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    .continue-bar {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 18px;
+      border: 1px solid rgba(207, 159, 78, 0.4);
+      border-radius: 9px;
+      background: linear-gradient(135deg, rgba(207, 159, 78, 0.12), transparent 50%), var(--surface);
+      cursor: pointer;
+      transition: border-color 0.12s ease;
+    }
+
+    .continue-bar:hover {
+      border-color: var(--accent);
+    }
+
+    .continue-bar .continue-label {
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      flex: none;
+    }
+
+    .continue-bar .continue-title {
+      font-family: var(--serif);
+      font-weight: 700;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .continue-bar .continue-percent {
+      margin-left: auto;
+      color: var(--muted);
+      font-size: 12px;
+      flex: none;
+    }
+
+    .episode-row-progress {
+      flex: none;
+      font-size: 11.5px;
+      font-weight: 800;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 3px 9px;
+    }
+
+    .episode-row-progress.is-done {
+      color: var(--accent);
+      border-color: rgba(207, 159, 78, 0.45);
+    }
+
     .modal-actions {
       display: flex;
       justify-content: flex-end;
@@ -1781,6 +1867,7 @@
           <button id="viewerNextBtn" class="primary">다음</button>
           <button id="viewerAutoBtn">자동 재생</button>
           <button id="viewerRestartBtn">처음부터</button>
+          <button id="viewerBacklogBtn">대사 기록</button>
           <button id="viewerGlossaryBtn">고유명사 목록</button>
         </div>
 
@@ -1798,11 +1885,35 @@
           <label for="viewerBlur">흐림</label>
           <input id="viewerBlur" type="range" min="0" max="10" step="1" value="3" />
 
+          <label for="viewerTextScale">글자</label>
+          <input id="viewerTextScale" type="range" min="0.85" max="1.4" step="0.05" value="1" />
+
+          <label for="viewerTypeSpeed">속도</label>
+          <select id="viewerTypeSpeed">
+            <option value="slow">느리게</option>
+            <option value="normal" selected>보통</option>
+            <option value="fast">빠르게</option>
+            <option value="instant">즉시</option>
+          </select>
+
           <span id="viewerBackgroundLabel">배경: 기본</span>
         </div>
       </div>
     </div>
   </section>
+
+  <div id="backlogModal" class="modal-backdrop">
+    <section class="modal" style="width: min(640px, 100%);">
+      <header class="panel-header">
+        <h3>대사 기록</h3>
+        <p>지금까지 지나온 장면과 대사입니다.</p>
+      </header>
+      <div id="backlogList" class="modal-body backlog-list"></div>
+      <div class="modal-actions">
+        <button id="backlogCloseBtn" class="small">닫기</button>
+      </div>
+    </section>
+  </div>
 
   <div id="episodeEndModal" class="modal-backdrop">
     <section class="modal" style="width: min(420px, 100%);">
@@ -2075,6 +2186,7 @@
 
     let dbPromise = null;
     let episodesCache = [];
+    let progressCache = [];
     let assetsCache = [];
     let charactersCache = [];
     let assetUrls = new Map();
@@ -2341,6 +2453,7 @@
       assetsCache = await storeGetAll(STORES.assets);
       charactersCache = await storeGetAll(STORES.characters);
       glossaryCache = await storeGetAll(STORES.glossary);
+      progressCache = await storeGetAll(STORES.progress);
       projectMeta = (await storeGet(STORES.meta, "project")) || { ...DEFAULT_PROJECT };
     }
 
@@ -2406,11 +2519,12 @@
         const publishedMeta = await storeGet(STORES.meta, "published-storypack");
         if (publishedMeta?.signature === signature) return;
 
+        // 진행도(progress)는 지우지 않는다 — 에피소드 id가 유지되므로
+        // 콘텐츠가 업데이트되어도 방문자의 감상 위치를 보존할 수 있다.
         await clearStore(STORES.episodes);
         await clearStore(STORES.assets);
         await clearStore(STORES.characters);
         await clearStore(STORES.meta);
-        await clearStore(STORES.progress);
         await clearStore(STORES.glossary);
 
         await storePut(STORES.meta, {
@@ -2472,13 +2586,16 @@
       try {
         await openDatabase();
         await seedInitialData();
+        const initialHash = location.hash;
         await loadPublishedStorypack();
         await refreshCaches();
         renderProjectInfo();
+        applyViewerSettings();
         renderLobby();
         renderAssetViews();
         renderCharacterList();
         renderGlossaryList();
+        applyHashRoute(initialHash);
       } catch (error) {
         console.error(error);
         alert("브라우저 저장소를 초기화하지 못했습니다. 시크릿 모드나 저장소 권한을 확인해주세요.");
@@ -2555,6 +2672,8 @@
     }
 
     function renderChapterCards(chapters) {
+      setRouteHash("");
+      renderContinueBar();
       for (const chapter of chapters) {
         const episodes = episodesOfChapter(String(chapter.key));
 
@@ -2594,7 +2713,49 @@
       }
     }
 
+    function renderContinueBar() {
+      const candidates = progressCache
+        .filter(item => Number(item.position) > 0)
+        .map(item => ({
+          record: item,
+          episode: episodesCache.find(ep => ep.id === item.episodeId)
+        }))
+        .filter(item => item.episode)
+        .sort((a, b) =>
+          String(b.record.updatedAt || "").localeCompare(String(a.record.updatedAt || "")));
+
+      const latest = candidates[0];
+      if (!latest) return;
+
+      const total = Number(latest.record.total) || 0;
+      const done = total > 1 && latest.record.position >= total - 1;
+      const percent = total > 1
+        ? Math.min(100, Math.round((latest.record.position / (total - 1)) * 100))
+        : 0;
+      if (done) return;
+
+      const bar = document.createElement("div");
+      bar.className = "continue-bar";
+
+      const label = document.createElement("span");
+      label.className = "continue-label";
+      label.textContent = "이어보기";
+
+      const title = document.createElement("span");
+      title.className = "continue-title";
+      title.textContent = latest.episode.title || "제목 없음";
+
+      const percentEl = document.createElement("span");
+      percentEl.className = "continue-percent";
+      percentEl.textContent = total > 1 ? `${percent}%` : "";
+
+      bar.append(label, title, percentEl);
+      bar.addEventListener("click", () => openViewer(latest.episode.id));
+      episodeGrid.append(bar);
+    }
+
     function renderChapterEpisodes(chapter) {
+      setRouteHash(`ch=${encodeURIComponent(String(chapter.key))}`);
       const episodes = episodesOfChapter(String(chapter.key));
 
       const bar = document.createElement("div");
@@ -2690,6 +2851,23 @@
 
         const actions = document.createElement("div");
         actions.className = "episode-row-actions";
+
+        const record = progressCache.find(item => item.episodeId === episode.id);
+        const total = Number(record?.total) || 0;
+        if (record && record.position > 0) {
+          const badge = document.createElement("span");
+          badge.className = "episode-row-progress";
+          if (total > 1 && record.position >= total - 1) {
+            badge.classList.add("is-done");
+            badge.textContent = "읽음 ✓";
+          } else if (total > 1) {
+            badge.textContent =
+              `${Math.min(100, Math.round((record.position / (total - 1)) * 100))}%`;
+          } else {
+            badge.textContent = "읽는 중";
+          }
+          actions.append(badge);
+        }
 
         const viewButton = document.createElement("button");
         viewButton.className = "primary small";
@@ -4355,11 +4533,15 @@
       dialogueText.classList.remove("is-typing");
     }
 
+    const TYPE_SPEED_FACTORS = { slow: 1.7, normal: 1, fast: 0.5, instant: 0 };
+    let typingSpeedSetting = "normal";
+
     function getTypingSpeedForEntry(entry) {
-      if (!entry) return 26;
-      if (entry.type === "direction") return 22;
-      if (entry.type === "scene") return 34;
-      return 26;
+      const factor = TYPE_SPEED_FACTORS[typingSpeedSetting] ?? 1;
+      if (!entry) return 26 * factor;
+      if (entry.type === "direction") return 22 * factor;
+      if (entry.type === "scene") return 34 * factor;
+      return 26 * factor;
     }
 
     function splitRichText(rawText) {
@@ -4652,7 +4834,7 @@
       const segments = splitRichText(rawText);
       const total = richTextLength(segments);
 
-      if (total === 0) {
+      if (total === 0 || typingSpeedSetting === "instant") {
         renderRichSegments(dialogueText, segments, Infinity, false);
         return;
       }
@@ -4853,11 +5035,16 @@
     async function saveViewerProgress() {
       if (!viewerEpisodeId || previewDraft) return;
 
-      await storePut(STORES.progress, {
+      const record = {
         episodeId: viewerEpisodeId,
         position: viewerPosition,
+        total: viewerPlayableIndices.length,
         updatedAt: new Date().toISOString()
-      });
+      };
+      const cached = progressCache.findIndex(item => item.episodeId === viewerEpisodeId);
+      if (cached >= 0) progressCache[cached] = record;
+      else progressCache.push(record);
+      await storePut(STORES.progress, record);
     }
 
     function isSceneEntryCurrent() {
@@ -5093,6 +5280,10 @@
         viewerPosition = 0;
       }
 
+      if (!previewDraft && episode.order) {
+        setRouteHash(`ep=${episode.order}`);
+      }
+
       viewerBackgroundId = null;
       viewerFocusAssetId = null;
       sceneRevealPhase = 0;
@@ -5131,6 +5322,113 @@
       } else {
         stopViewerAuto();
         openEpisodeEndModal();
+      }
+    }
+
+    const VIEWER_SETTINGS_KEY = "viewer-settings-v1";
+
+    function loadViewerSettings() {
+      try {
+        return JSON.parse(localStorage.getItem(VIEWER_SETTINGS_KEY)) || {};
+      } catch (error) {
+        return {};
+      }
+    }
+
+    function saveViewerSetting(key, value) {
+      const settings = loadViewerSettings();
+      settings[key] = value;
+      try {
+        localStorage.setItem(VIEWER_SETTINGS_KEY, JSON.stringify(settings));
+      } catch (error) {
+        /* 저장 불가(시크릿 모드 등)여도 감상은 계속 */
+      }
+    }
+
+    function applyViewerSettings() {
+      const settings = loadViewerSettings();
+      const rootStyle = document.documentElement.style;
+
+      if (settings.fit) {
+        rootStyle.setProperty("--viewer-fit", settings.fit);
+        viewerFit.value = settings.fit;
+      }
+      if (settings.darkness !== undefined) {
+        rootStyle.setProperty("--viewer-darkness", settings.darkness);
+        viewerDarkness.value = settings.darkness;
+      }
+      if (settings.blur !== undefined) {
+        rootStyle.setProperty("--viewer-blur", `${settings.blur}px`);
+        document.getElementById("viewerBlur").value = settings.blur;
+      }
+      if (settings.textScale !== undefined) {
+        rootStyle.setProperty("--dialogue-scale", settings.textScale);
+        document.getElementById("viewerTextScale").value = settings.textScale;
+      }
+      if (settings.typeSpeed && settings.typeSpeed in TYPE_SPEED_FACTORS) {
+        typingSpeedSetting = settings.typeSpeed;
+        document.getElementById("viewerTypeSpeed").value = settings.typeSpeed;
+      }
+    }
+
+    function openBacklogModal() {
+      const list = document.getElementById("backlogList");
+      list.innerHTML = "";
+      const limit = viewerPlayableIndices[viewerPosition] ?? -1;
+
+      for (let index = 0; index <= limit; index += 1) {
+        const entry = viewerEntries[index];
+        if (!entry) continue;
+        if (entry.type === "scene") {
+          const scene = document.createElement("div");
+          scene.className = "backlog-scene";
+          scene.textContent = `— ${entry.text}${entry.caption ? ` · ${entry.caption}` : ""}`;
+          list.append(scene);
+        } else if (entry.type === "dialogue") {
+          const line = document.createElement("p");
+          line.className = "backlog-entry";
+          const speaker = document.createElement("span");
+          speaker.className = "backlog-speaker";
+          speaker.textContent = entry.speaker || "?";
+          line.append(speaker, document.createTextNode(
+            String(entry.text || "").replace(/[#\[\]]/g, "")));
+          list.append(line);
+        } else if (entry.type === "direction" || entry.type === "narration") {
+          const line = document.createElement("p");
+          line.className = "backlog-entry backlog-direction";
+          line.textContent = entry.type === "direction" ? `(${entry.text})` : entry.text;
+          list.append(line);
+        }
+      }
+
+      if (!list.children.length) {
+        list.innerHTML = '<p class="backlog-entry backlog-direction">아직 지나온 대사가 없습니다.</p>';
+      }
+      document.getElementById("backlogModal").classList.add("show");
+      list.scrollTop = list.scrollHeight;
+    }
+
+    function setRouteHash(hash) {
+      const base = location.pathname + location.search;
+      history.replaceState(null, "", hash ? `${base}#${hash}` : base);
+    }
+
+    function applyHashRoute(rawHash = location.hash) {
+      const hash = decodeURIComponent(String(rawHash).replace(/^#/, ""));
+      if (!hash) return;
+
+      const epMatch = hash.match(/^ep=(\d+)$/);
+      if (epMatch) {
+        const target = episodesCache.find(
+          item => Number(item.order) === Number(epMatch[1]));
+        if (target) openViewer(target.id);
+        return;
+      }
+
+      const chMatch = hash.match(/^ch=(.+)$/);
+      if (chMatch) {
+        currentChapterKey = chMatch[1];
+        renderLobby();
       }
     }
 
@@ -5593,6 +5891,7 @@
 
     viewerFit.addEventListener("change", event => {
       document.documentElement.style.setProperty("--viewer-fit", event.target.value);
+      saveViewerSetting("fit", event.target.value);
     });
 
     viewerDarkness.addEventListener("input", event => {
@@ -5600,6 +5899,7 @@
         "--viewer-darkness",
         event.target.value
       );
+      saveViewerSetting("darkness", event.target.value);
     });
 
     document.getElementById("viewerBlur").addEventListener("input", event => {
@@ -5607,6 +5907,27 @@
         "--viewer-blur",
         `${event.target.value}px`
       );
+      saveViewerSetting("blur", event.target.value);
+    });
+
+    document.getElementById("viewerTextScale").addEventListener("input", event => {
+      document.documentElement.style.setProperty("--dialogue-scale", event.target.value);
+      saveViewerSetting("textScale", event.target.value);
+    });
+
+    document.getElementById("viewerTypeSpeed").addEventListener("change", event => {
+      typingSpeedSetting = event.target.value;
+      saveViewerSetting("typeSpeed", event.target.value);
+    });
+
+    document.getElementById("viewerBacklogBtn").addEventListener("click", openBacklogModal);
+    document.getElementById("backlogCloseBtn").addEventListener("click", () => {
+      document.getElementById("backlogModal").classList.remove("show");
+    });
+    document.getElementById("backlogModal").addEventListener("click", event => {
+      if (event.target === event.currentTarget) {
+        event.currentTarget.classList.remove("show");
+      }
     });
 
     document.addEventListener("keydown", event => {
