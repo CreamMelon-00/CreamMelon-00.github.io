@@ -390,6 +390,82 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
+      min-width: 0;
+    }
+
+    .chapter-layout {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 300px;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .chapter-layout .episode-list {
+      grid-column: auto;
+    }
+
+    .chapter-side-panel {
+      position: sticky;
+      top: 16px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      overflow: hidden;
+      background: var(--surface);
+      box-shadow:
+        0 10px 36px rgba(0, 0, 0, 0.24),
+        inset 0 1px 0 rgba(236, 194, 116, 0.07);
+    }
+
+    .chapter-side-cover {
+      height: 170px;
+      border-bottom: 1px solid rgba(207, 159, 78, 0.24);
+      background:
+        linear-gradient(rgba(16, 11, 6, 0.12), rgba(16, 11, 6, 0.55)),
+        radial-gradient(circle at 50% 20%, #5a4a33, #2e241a 48%, #191410);
+      background-size: cover;
+      background-position: center;
+    }
+
+    .chapter-side-body {
+      padding: 16px 18px 18px;
+    }
+
+    .chapter-side-body h3 {
+      margin: 0;
+      font-family: var(--serif);
+      font-weight: 700;
+      font-size: 19px;
+    }
+
+    .chapter-side-count {
+      margin-top: 5px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+    }
+
+    .chapter-side-description {
+      margin: 12px 0 0;
+      color: #d8cbb2;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 840px) {
+      .chapter-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .chapter-side-panel {
+        position: static;
+        order: -1;
+      }
+
+      .chapter-side-cover {
+        height: 120px;
+      }
     }
 
     .episode-row {
@@ -419,6 +495,13 @@
       letter-spacing: 0.04em;
     }
 
+    .episode-row-text {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+    }
+
     .episode-row-title {
       font-size: 16px;
       font-weight: 700;
@@ -426,7 +509,7 @@
 
     .episode-row-subtitle {
       color: var(--muted);
-      font-size: 13px;
+      font-size: 12.5px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -1432,6 +1515,13 @@
       line-height: 1.65;
     }
 
+    #episodeEndText {
+      margin: 0;
+      white-space: pre-line;
+      font-size: 14px;
+      color: var(--text);
+    }
+
     .modal-actions {
       display: flex;
       justify-content: flex-end;
@@ -1713,6 +1803,22 @@
       </div>
     </div>
   </section>
+
+  <div id="episodeEndModal" class="modal-backdrop">
+    <section class="modal" style="width: min(420px, 100%);">
+      <header class="panel-header">
+        <h3 id="episodeEndTitle">감상 완료</h3>
+      </header>
+      <div class="modal-body">
+        <p id="episodeEndText">다음 화를 감상하시겠습니까?</p>
+      </div>
+      <div class="modal-actions">
+        <button id="episodeEndStayBtn" class="small">여기 머무르기</button>
+        <button id="episodeEndListBtn" class="small">목록으로</button>
+        <button id="episodeEndNextBtn" class="primary small">다음 화 감상</button>
+      </div>
+    </section>
+  </div>
 
   <div id="glossaryModal" class="modal-backdrop">
     <section class="modal" style="width: min(780px, 100%);">
@@ -2511,10 +2617,47 @@
 
       bar.append(backButton, heading, count);
       episodeGrid.append(bar);
-      renderEpisodeList(episodes);
+
+      const layout = document.createElement("div");
+      layout.className = "chapter-layout";
+
+      const panel = document.createElement("aside");
+      panel.className = "chapter-side-panel";
+
+      const panelCover = document.createElement("div");
+      panelCover.className = "chapter-side-cover";
+      const coverAsset = findAsset(chapter.coverAssetId);
+      if (coverAsset) {
+        panelCover.style.backgroundImage =
+          `linear-gradient(rgba(16,11,6,0.12), rgba(16,11,6,0.55)), url("${getAssetUrl(coverAsset)}")`;
+      }
+
+      const panelBody = document.createElement("div");
+      panelBody.className = "chapter-side-body";
+
+      const panelTitle = document.createElement("h3");
+      panelTitle.textContent = chapter.title || "미분류";
+
+      const panelCount = document.createElement("div");
+      panelCount.className = "chapter-side-count";
+      panelCount.textContent = `${episodes.length}개 화 수록`;
+
+      panelBody.append(panelTitle, panelCount);
+
+      if (chapter.description) {
+        const panelDescription = document.createElement("p");
+        panelDescription.className = "chapter-side-description";
+        panelDescription.textContent = chapter.description;
+        panelBody.append(panelDescription);
+      }
+
+      panel.append(panelCover, panelBody);
+      episodeGrid.append(layout);
+      renderEpisodeList(episodes, layout);
+      layout.append(panel);
     }
 
-    function renderEpisodeList(episodes) {
+    function renderEpisodeList(episodes, container = episodeGrid) {
       const list = document.createElement("div");
       list.className = "episode-list";
 
@@ -2530,13 +2673,20 @@
         orderEl.className = "episode-row-order";
         orderEl.textContent = `${index + 1}화`;
 
+        const textCol = document.createElement("div");
+        textCol.className = "episode-row-text";
+
         const titleEl = document.createElement("span");
         titleEl.className = "episode-row-title";
         titleEl.textContent = episode.title || "제목 없음";
+        textCol.append(titleEl);
 
-        const subtitleEl = document.createElement("span");
-        subtitleEl.className = "episode-row-subtitle";
-        subtitleEl.textContent = episode.subtitle || "";
+        if (episode.subtitle) {
+          const subtitleEl = document.createElement("span");
+          subtitleEl.className = "episode-row-subtitle";
+          subtitleEl.textContent = episode.subtitle;
+          textCol.append(subtitleEl);
+        }
 
         const actions = document.createElement("div");
         actions.className = "episode-row-actions";
@@ -2550,12 +2700,12 @@
         });
 
         actions.append(viewButton);
-        row.append(orderEl, titleEl, subtitleEl, actions);
+        row.append(orderEl, textCol, actions);
         row.addEventListener("click", () => openViewer(episode.id));
         list.append(row);
       });
 
-      episodeGrid.append(list);
+      container.append(list);
     }
 
     function populateCoverSelect(selectedId = "") {
@@ -4980,7 +5130,41 @@
         renderViewerEntry();
       } else {
         stopViewerAuto();
+        openEpisodeEndModal();
       }
+    }
+
+    function findNextEpisode(episodeId) {
+      const current = episodesCache.find(item => item.id === episodeId);
+      if (!current) return null;
+      const siblings = chapterList().length
+        ? episodesOfChapter(String(current.chapter || "").trim())
+        : sortedEpisodes();
+      const index = siblings.findIndex(item => item.id === episodeId);
+      if (index < 0) return null;
+      return siblings[index + 1] || null;
+    }
+
+    function openEpisodeEndModal() {
+      if (previewDraft || !viewerEpisodeId) return;
+      const modal = document.getElementById("episodeEndModal");
+      const nextEpisode = findNextEpisode(viewerEpisodeId);
+      const nextButton = document.getElementById("episodeEndNextBtn");
+      const text = document.getElementById("episodeEndText");
+
+      if (nextEpisode) {
+        text.textContent = `다음 화를 감상하시겠습니까?\n다음 화: ${nextEpisode.title}`;
+        nextButton.hidden = false;
+        nextButton.onclick = () => {
+          modal.classList.remove("show");
+          openViewer(nextEpisode.id, { position: 0 });
+        };
+      } else {
+        text.textContent = "이 챕터의 마지막 화까지 모두 감상하셨습니다.";
+        nextButton.hidden = true;
+        nextButton.onclick = null;
+      }
+      modal.classList.add("show");
     }
 
     function viewerPrevious() {
@@ -5340,6 +5524,26 @@
     document.getElementById("viewerLobbyBtn").addEventListener("click", () => {
       showScreen("lobby");
       renderLobby();
+    });
+
+    document.getElementById("episodeEndStayBtn").addEventListener("click", () => {
+      document.getElementById("episodeEndModal").classList.remove("show");
+    });
+
+    document.getElementById("episodeEndListBtn").addEventListener("click", () => {
+      document.getElementById("episodeEndModal").classList.remove("show");
+      const current = episodesCache.find(item => item.id === viewerEpisodeId);
+      if (current && chapterList().length) {
+        currentChapterKey = String(current.chapter || "").trim();
+      }
+      showScreen("lobby");
+      renderLobby();
+    });
+
+    document.getElementById("episodeEndModal").addEventListener("click", event => {
+      if (event.target === event.currentTarget) {
+        event.currentTarget.classList.remove("show");
+      }
     });
 
     document.getElementById("viewerEditBtn").addEventListener("click", () => {
