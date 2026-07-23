@@ -3725,7 +3725,7 @@
             // 사전에 없는 대괄호는 통신/메시지 표기 — 앰버 단말 스타일
             const tx = document.createElement("span");
             tx.className = "inline-transmission";
-            tx.textContent = token;
+            tx.textContent = term;
             target.append(tx);
             lastIndex = match.index + token.length;
             continue;
@@ -4813,7 +4813,7 @@
           if (!map.has(segment.text)) {
             // 사전에 없는 대괄호는 통신/메시지 표기 — 앰버 단말 스타일
             span.className = "inline-transmission";
-            span.textContent = `[${visibleText}${isFullyVisible ? "]" : ""}`;
+            span.textContent = visibleText;
             target.append(span);
             continue;
           }
