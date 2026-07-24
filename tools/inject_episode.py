@@ -56,7 +56,8 @@ def save_pack(pack):
 
 META_KEYS = {"부제": "subtitle", "설명": "description", "커버": "cover",
               "챕터": "chapter", "순서": "order", "역할": "role",
-              "주역": "focal", "기호": "motif"}
+              "주역": "focal", "기호": "motif",
+              "사건": "event", "날짜": "eventDate"}
 ROLE_MAP = {"프롤로그": "prologue", "에필로그": "epilogue",
             "prologue": "prologue", "epilogue": "epilogue"}
 
@@ -304,6 +305,10 @@ def cmd_inject(pack, md_path, order, subtitle, cover, description, chapter, dry_
             existing["role"] = role
         if "focal" in md_meta:
             existing["focal"] = md_meta["focal"]
+        if "event" in md_meta:
+            existing["event"] = md_meta["event"]
+        if "eventDate" in md_meta:
+            existing["eventDate"] = md_meta["eventDate"]
         target = existing
     else:
         action = "신규 추가"
@@ -319,6 +324,8 @@ def cmd_inject(pack, md_path, order, subtitle, cover, description, chapter, dry_
             "chapter": chapter if chapter is not None else default_chapter(pack),
             **({"role": role} if role else {}),
             **({"focal": md_meta["focal"]} if "focal" in md_meta else {}),
+            **({"event": md_meta["event"]} if "event" in md_meta else {}),
+            **({"eventDate": md_meta["eventDate"]} if "eventDate" in md_meta else {}),
             "title": title,
             "subtitle": subtitle or "",
             "description": description or "",

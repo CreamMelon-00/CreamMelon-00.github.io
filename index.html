@@ -1534,6 +1534,65 @@
       overflow-y: auto;
     }
 
+    .timeline-list {
+      max-height: min(58vh, 520px);
+      overflow-y: auto;
+    }
+
+    .timeline-day {
+      margin: 16px 0 8px;
+      padding-bottom: 5px;
+      border-bottom: 1px solid rgba(207, 159, 78, 0.3);
+      color: var(--accent);
+      font-family: var(--serif);
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .timeline-day:first-child {
+      margin-top: 2px;
+    }
+
+    .timeline-event {
+      display: flex;
+      align-items: baseline;
+      gap: 9px;
+      margin: 0 0 9px;
+      padding: 7px 9px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      line-height: 1.6;
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .timeline-event:hover {
+      background: rgba(207, 159, 78, 0.08);
+    }
+
+    .timeline-event-motif {
+      flex: none;
+      width: 18px;
+      text-align: center;
+      opacity: 0.5;
+      filter: sepia(0.6) saturate(0.7);
+    }
+
+    .timeline-event-ref {
+      flex: none;
+      margin-left: auto;
+      color: var(--muted);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .timeline-empty {
+      margin: 8px 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
     .backlog-scene {
       margin: 14px 0 8px;
       color: var(--accent);
@@ -1795,6 +1854,7 @@
           <button id="viewerAutoBtn">자동 재생</button>
           <button id="viewerRestartBtn">처음부터</button>
           <button id="viewerBacklogBtn">대사 기록</button>
+          <button id="viewerTimelineBtn">연표</button>
           <button id="viewerGlossaryBtn">고유명사 목록</button>
         </div>
 
@@ -1828,6 +1888,19 @@
       </div>
     </div>
   </section>
+
+  <div id="timelineModal" class="modal-backdrop">
+    <section class="modal" style="width: min(640px, 100%);">
+      <header class="panel-header">
+        <h3>연표</h3>
+        <p>지금까지 읽은 이야기의 사건들입니다. 이야기를 읽을수록 연표가 채워집니다.</p>
+      </header>
+      <div id="timelineList" class="modal-body timeline-list"></div>
+      <div class="modal-actions">
+        <button id="timelineCloseBtn" class="small">닫기</button>
+      </div>
+    </section>
+  </div>
 
   <div id="backlogModal" class="modal-backdrop">
     <section class="modal" style="width: min(640px, 100%);">
@@ -2747,6 +2820,13 @@
       panelCount.textContent = `${episodes.filter(item => !item.role).length}개 화 수록`;
 
       panelBody.append(panelTitle, panelCount);
+
+      const timelineButton = document.createElement("button");
+      timelineButton.className = "small";
+      timelineButton.style.marginTop = "12px";
+      timelineButton.textContent = "연표 보기";
+      timelineButton.addEventListener("click", openTimelineModal);
+      panelBody.append(timelineButton);
 
       if (chapter.description) {
         const panelDescription = document.createElement("p");
@@ -5380,6 +5460,94 @@
       list.scrollTop = list.scrollHeight;
     }
 
+    function isEpisodeRead(episodeId) {
+      const record = progressCache.find(item => item.episodeId === episodeId);
+      const total = Number(record?.total) || 0;
+      return Boolean(record && total > 1 && record.position >= total - 1);
+    }
+
+    function episodeEventDate(episode) {
+      if (episode.eventDate) {
+        const custom = String(episode.eventDate).match(/(\d+)\s*일/);
+        return custom ? `${Number(custom[1])}일` : episode.eventDate;
+      }
+      const match = String(episode.script || "").match(/xx월\s*(\d+)\s*일/);
+      if (match) return `${Number(match[1])}일`;
+      if (/며칠 뒤/.test(episode.script || "")) return "며칠 뒤";
+      return null;
+    }
+
+    function timelineDayWeight(day) {
+      const match = String(day).match(/(\d+)일/);
+      if (match) return Number(match[1]);
+      return 9999; // "며칠 뒤" 같은 서술형은 맨 뒤
+    }
+
+    function openTimelineModal() {
+      const list = document.getElementById("timelineList");
+      list.innerHTML = "";
+      const motifs = projectMeta.motifs || {};
+      const days = new Map(); // day -> [{episode, number, chapterTitle}]
+
+      for (const chapter of chapterList()) {
+        const episodes = episodesOfChapter(String(chapter.key));
+        let numbered = 0;
+        for (const episode of episodes) {
+          if (!episode.role) numbered += 1;
+          if (!episode.event || !isEpisodeRead(episode.id)) continue;
+          const day = episodeEventDate(episode) || "시기 미상";
+          if (!days.has(day)) days.set(day, []);
+          days.get(day).push({
+            episode,
+            ref: episode.role
+              ? episodeDisplayName(episode)
+              : `${numbered}화 · ${episode.title}`
+          });
+        }
+      }
+
+      const orderedDays = [...days.keys()].sort(
+        (a, b) => timelineDayWeight(a) - timelineDayWeight(b));
+
+      for (const day of orderedDays) {
+        const header = document.createElement("div");
+        header.className = "timeline-day";
+        header.textContent = /\d+일/.test(day) ? `xx월 ${day}` : day;
+        list.append(header);
+
+        for (const item of days.get(day)) {
+          const row = document.createElement("div");
+          row.className = "timeline-event";
+
+          const motif = document.createElement("span");
+          motif.className = "timeline-event-motif";
+          motif.textContent =
+            (item.episode.focal && motifs[item.episode.focal]) || "·";
+
+          const text = document.createElement("span");
+          text.textContent = item.episode.event;
+
+          const ref = document.createElement("span");
+          ref.className = "timeline-event-ref";
+          ref.textContent = item.ref;
+
+          row.append(motif, text, ref);
+          row.addEventListener("click", () => {
+            document.getElementById("timelineModal").classList.remove("show");
+            openViewer(item.episode.id);
+          });
+          list.append(row);
+        }
+      }
+
+      if (!orderedDays.length) {
+        list.innerHTML =
+          '<p class="timeline-empty">아직 기록된 사건이 없습니다.<br />이야기를 끝까지 읽은 화의 사건이 이곳에 기록됩니다.</p>';
+      }
+
+      document.getElementById("timelineModal").classList.add("show");
+    }
+
     function setRouteHash(hash) {
       const base = location.pathname + location.search;
       history.replaceState(null, "", hash ? `${base}#${hash}` : base);
@@ -5853,6 +6021,15 @@
     });
 
     document.getElementById("viewerBacklogBtn").addEventListener("click", openBacklogModal);
+    document.getElementById("viewerTimelineBtn").addEventListener("click", openTimelineModal);
+    document.getElementById("timelineCloseBtn").addEventListener("click", () => {
+      document.getElementById("timelineModal").classList.remove("show");
+    });
+    document.getElementById("timelineModal").addEventListener("click", event => {
+      if (event.target === event.currentTarget) {
+        event.currentTarget.classList.remove("show");
+      }
+    });
     document.getElementById("backlogCloseBtn").addEventListener("click", () => {
       document.getElementById("backlogModal").classList.remove("show");
     });
