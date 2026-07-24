@@ -1598,6 +1598,16 @@
       flex: none;
     }
 
+    .episode-row-motif {
+      flex: none;
+      font-size: 15px;
+      line-height: 1;
+      opacity: 0.45;
+      filter: sepia(0.6) saturate(0.7);
+      user-select: none;
+      pointer-events: none;
+    }
+
     .episode-row-progress {
       flex: none;
       font-size: 11.5px;
@@ -2779,6 +2789,16 @@
 
         const actions = document.createElement("div");
         actions.className = "episode-row-actions";
+
+        // 주동인물 각인 — 이름은 노출하지 않고 기호만 은은하게 새긴다
+        const motifs = projectMeta.motifs || {};
+        if (episode.focal && motifs[episode.focal]) {
+          const motif = document.createElement("span");
+          motif.className = "episode-row-motif";
+          motif.textContent = motifs[episode.focal];
+          motif.setAttribute("aria-hidden", "true");
+          actions.append(motif);
+        }
 
         const record = progressCache.find(item => item.episodeId === episode.id);
         const total = Number(record?.total) || 0;

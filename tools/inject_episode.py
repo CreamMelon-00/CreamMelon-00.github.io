@@ -55,7 +55,8 @@ def save_pack(pack):
 
 
 META_KEYS = {"부제": "subtitle", "설명": "description", "커버": "cover",
-              "챕터": "chapter", "순서": "order", "역할": "role"}
+              "챕터": "chapter", "순서": "order", "역할": "role",
+              "주역": "focal", "기호": "motif"}
 ROLE_MAP = {"프롤로그": "prologue", "에필로그": "epilogue",
             "prologue": "prologue", "epilogue": "epilogue"}
 
@@ -301,6 +302,8 @@ def cmd_inject(pack, md_path, order, subtitle, cover, description, chapter, dry_
             existing["chapter"] = chapter
         if role is not None:
             existing["role"] = role
+        if "focal" in md_meta:
+            existing["focal"] = md_meta["focal"]
         target = existing
     else:
         action = "신규 추가"
@@ -315,6 +318,7 @@ def cmd_inject(pack, md_path, order, subtitle, cover, description, chapter, dry_
             "order": order,
             "chapter": chapter if chapter is not None else default_chapter(pack),
             **({"role": role} if role else {}),
+            **({"focal": md_meta["focal"]} if "focal" in md_meta else {}),
             "title": title,
             "subtitle": subtitle or "",
             "description": description or "",
@@ -326,6 +330,13 @@ def cmd_inject(pack, md_path, order, subtitle, cover, description, chapter, dry_
         episodes.append(target)
 
     ensure_chapter(pack, target.get("chapter"))
+
+    # 주역 인물의 기호를 팩 공용 매핑(meta.motifs)에 등록
+    if "motif" in md_meta and target.get("focal"):
+        motifs = pack.setdefault("meta", {}).setdefault("motifs", {})
+        if motifs.get(target["focal"]) != md_meta["motif"]:
+            motifs[target["focal"]] = md_meta["motif"]
+            print(f"기호 등록: {target['focal']} → {md_meta['motif']}")
 
     speakers = sorted({line.split("|")[0].strip() for line in script.split("\n")
                        if "|" in line and not line.startswith(("(", "@", "-"))})
