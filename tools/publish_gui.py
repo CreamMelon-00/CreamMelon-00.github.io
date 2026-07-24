@@ -134,12 +134,20 @@ class PublishApp:
         if not SCRIPT_DIR.exists():
             self._append_log(f"script 폴더가 없습니다: {SCRIPT_DIR}\n")
             return
-        for path in sorted(SCRIPT_DIR.glob("*.md"), key=episode_sort_key):
+        files = sorted(SCRIPT_DIR.rglob("*.md"),
+                       key=lambda p: (str(p.parent), episode_sort_key(p)))
+        for path in files:
             self._add_file_row(path, checked=True)
 
     def _add_file_row(self, path, checked=True, external=False):
         var = tk.BooleanVar(value=checked)
-        label = path.name + ("   (외부 파일)" if external else "")
+        if external:
+            label = path.name + "   (외부 파일)"
+        else:
+            try:
+                label = str(path.relative_to(SCRIPT_DIR))
+            except ValueError:
+                label = path.name
         cb = tk.Checkbutton(self.check_frame, text=label, variable=var,
                             bg=SURFACE, fg=TEXT, selectcolor=BG,
                             activebackground=SURFACE, activeforeground=TEXT,

@@ -340,9 +340,9 @@ def cmd_inject(pack, md_path, order, subtitle, cover, description, chapter, dry_
 
 
 def cmd_inject_all(pack, dry_run):
-    """script 폴더의 모든 md를 반영하고 한 번만 저장한다."""
-    md_files = sorted(DRAFT_DIR.glob("*.md"),
-                      key=lambda p: (len(p.stem.split("편")[0]), p.stem))
+    """script 폴더(하위 폴더 포함)의 모든 md를 반영하고 한 번만 저장한다."""
+    md_files = sorted(DRAFT_DIR.rglob("*.md"),
+                      key=lambda p: (str(p.parent), len(p.stem.split("편")[0]), p.stem))
     if not md_files:
         sys.exit(f"드래프트 폴더에 md가 없습니다: {DRAFT_DIR}")
     for md in md_files:
