@@ -2538,10 +2538,22 @@
       return defined.sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
     }
 
+    function roleWeight(episode) {
+      if (episode.role === "prologue") return -1;
+      if (episode.role === "epilogue") return 1;
+      return 0;
+    }
+
+    function episodeDisplayName(episode) {
+      if (episode.role === "prologue") return "프롤로그";
+      if (episode.role === "epilogue") return "에필로그";
+      return episode.title || "제목 없음";
+    }
+
     function episodesOfChapter(chapterKey) {
-      return sortedEpisodes().filter(
-        item => String(item.chapter || "").trim() === chapterKey
-      );
+      return sortedEpisodes()
+        .filter(item => String(item.chapter || "").trim() === chapterKey)
+        .sort((a, b) => roleWeight(a) - roleWeight(b));
     }
 
     function renderLobby() {
@@ -2598,7 +2610,7 @@
 
         const label = document.createElement("div");
         label.className = "episode-order";
-        label.textContent = `${episodes.length}개 화 수록`;
+        label.textContent = `${episodes.filter(item => !item.role).length}개 화 수록`;
 
         const title = document.createElement("h3");
         title.className = "episode-title";
@@ -2648,7 +2660,7 @@
 
       const title = document.createElement("span");
       title.className = "continue-title";
-      title.textContent = latest.episode.title || "제목 없음";
+      title.textContent = episodeDisplayName(latest.episode);
 
       const percentEl = document.createElement("span");
       percentEl.className = "continue-percent";
@@ -2662,6 +2674,13 @@
     function renderChapterEpisodes(chapter) {
       setRouteHash(`ch=${encodeURIComponent(String(chapter.key))}`);
       const episodes = episodesOfChapter(String(chapter.key));
+
+      // 챕터 최초 진입: 프롤로그 감상 기록이 없으면 목록 대신 곧바로 재생한다.
+      const prologue = episodes.find(item => item.role === "prologue");
+      if (prologue && !progressCache.some(item => item.episodeId === prologue.id)) {
+        openViewer(prologue.id, { position: 0 }).then(() => saveViewerProgress());
+        return;
+      }
 
       const bar = document.createElement("div");
       bar.className = "chapter-back-bar";
@@ -2679,7 +2698,7 @@
 
       const count = document.createElement("span");
       count.className = "chapter-episode-count";
-      count.textContent = `${episodes.length}개 화`;
+      count.textContent = `${episodes.filter(item => !item.role).length}개 화`;
 
       bar.append(backButton, heading, count);
       episodeGrid.append(bar);
@@ -2706,7 +2725,7 @@
 
       const panelCount = document.createElement("div");
       panelCount.className = "chapter-side-count";
-      panelCount.textContent = `${episodes.length}개 화 수록`;
+      panelCount.textContent = `${episodes.filter(item => !item.role).length}개 화 수록`;
 
       panelBody.append(panelTitle, panelCount);
 
@@ -2731,20 +2750,24 @@
         list.innerHTML = `<div class="empty-state">이 챕터에는 아직 수록된 화가 없습니다.</div>`;
       }
 
-      episodes.forEach((episode, index) => {
+      let numbered = 0;
+      episodes.forEach(episode => {
         const row = document.createElement("div");
         row.className = "episode-row";
 
         const orderEl = document.createElement("span");
         orderEl.className = "episode-row-order";
-        orderEl.textContent = `${index + 1}화`;
+        if (!episode.role) {
+          numbered += 1;
+          orderEl.textContent = `${numbered}화`;
+        }
 
         const textCol = document.createElement("div");
         textCol.className = "episode-row-text";
 
         const titleEl = document.createElement("span");
         titleEl.className = "episode-row-title";
-        titleEl.textContent = episode.title || "제목 없음";
+        titleEl.textContent = episodeDisplayName(episode);
         textCol.append(titleEl);
 
         if (episode.subtitle) {
@@ -5158,8 +5181,9 @@
       }
 
       viewerEpisodeId = previewDraft ? null : episode.id;
-      viewerEpisodeTitle.textContent =
-        `${episode.order || ""}화 · ${episode.title || "제목 없음"}`;
+      viewerEpisodeTitle.textContent = episode.role
+        ? episodeDisplayName(episode)
+        : `${episode.order || ""}화 · ${episode.title || "제목 없음"}`;
 
       viewerEntries = parseScenario(episode.script);
       viewerPlayableIndices = viewerEntries
@@ -5232,7 +5256,15 @@
         renderViewerEntry();
       } else {
         stopViewerAuto();
-        openEpisodeEndModal();
+        const current = episodesCache.find(item => item.id === viewerEpisodeId);
+        if (current?.role === "prologue") {
+          // 프롤로그는 팝업 없이 곧장 챕터 목록으로 — 목록이 다음 무대다
+          currentChapterKey = String(current.chapter || "").trim();
+          showScreen("lobby");
+          renderLobby();
+        } else {
+          openEpisodeEndModal();
+        }
       }
     }
 
@@ -5362,7 +5394,7 @@
       const text = document.getElementById("episodeEndText");
 
       if (nextEpisode) {
-        text.textContent = `다음 화를 감상하시겠습니까?\n다음 화: ${nextEpisode.title}`;
+        text.textContent = `다음 화를 감상하시겠습니까?\n다음 화: ${episodeDisplayName(nextEpisode)}`;
         nextButton.hidden = false;
         nextButton.onclick = () => {
           modal.classList.remove("show");

@@ -55,7 +55,9 @@ def save_pack(pack):
 
 
 META_KEYS = {"부제": "subtitle", "설명": "description", "커버": "cover",
-              "챕터": "chapter", "순서": "order"}
+              "챕터": "chapter", "순서": "order", "역할": "role"}
+ROLE_MAP = {"프롤로그": "prologue", "에필로그": "epilogue",
+            "prologue": "prologue", "epilogue": "epilogue"}
 
 
 def parse_md(md_path):
@@ -154,7 +156,8 @@ def cmd_list(pack):
     for chapter, eps in by_chapter.items():
         print(f" 《{chapter}》")
         for ep in eps:
-            print(f"  [{ep.get('order')}] {ep.get('title')}  — {ep.get('subtitle') or '(부제 없음)'}"
+            label = {"prologue": "프롤로그", "epilogue": "에필로그"}.get(ep.get("role"), f"{ep.get('order')}")
+            print(f"  [{label}] {ep.get('title')}  — {ep.get('subtitle') or '(부제 없음)'}"
                   f"  (id: {ep.get('id')}, script {len(ep.get('script', ''))}자)")
     print(f"\n배경 에셋 {len(pack.get('assets', []))}개:")
     for a in pack.get("assets", []):
@@ -264,6 +267,15 @@ def cmd_inject(pack, md_path, order, subtitle, cover, description, chapter, dry_
         except ValueError:
             print(f"경고: 순서 값이 숫자가 아닙니다: {md_meta['order']}")
 
+    role = None
+    if "role" in md_meta:
+        role = ROLE_MAP.get(md_meta["role"].strip())
+        if role is None:
+            print(f"경고: 알 수 없는 역할 값: {md_meta['role']} (프롤로그/에필로그만 가능)")
+        elif order is None:
+            # 역할 에피소드의 순서는 정렬용 관례값 (플레이어는 role로 정렬)
+            order = 0 if role == "prologue" else 99
+
     missing = check_assets(script, pack)
     if missing:
         print(f"경고: 팩에 없는 배경 id 참조 {len(missing)}건 → {', '.join(missing)}")
@@ -287,6 +299,8 @@ def cmd_inject(pack, md_path, order, subtitle, cover, description, chapter, dry_
             existing["description"] = description
         if chapter is not None:
             existing["chapter"] = chapter
+        if role is not None:
+            existing["role"] = role
         target = existing
     else:
         action = "신규 추가"
@@ -300,6 +314,7 @@ def cmd_inject(pack, md_path, order, subtitle, cover, description, chapter, dry_
             "id": "episode_" + secrets.token_hex(6),
             "order": order,
             "chapter": chapter if chapter is not None else default_chapter(pack),
+            **({"role": role} if role else {}),
             "title": title,
             "subtitle": subtitle or "",
             "description": description or "",
