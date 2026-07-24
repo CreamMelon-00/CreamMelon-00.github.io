@@ -517,7 +517,9 @@
 
     .episode-row-actions {
       margin-left: auto;
-      display: flex;
+      display: grid;
+      grid-template-columns: 22px 64px auto;
+      align-items: center;
       gap: 8px;
       flex: none;
     }
@@ -1599,7 +1601,8 @@
     }
 
     .episode-row-motif {
-      flex: none;
+      grid-column: 1;
+      justify-self: center;
       font-size: 15px;
       line-height: 1;
       opacity: 0.45;
@@ -1609,13 +1612,19 @@
     }
 
     .episode-row-progress {
-      flex: none;
+      grid-column: 2;
+      justify-self: center;
       font-size: 11.5px;
       font-weight: 800;
       color: var(--muted);
       border: 1px solid var(--line);
       border-radius: 20px;
       padding: 3px 9px;
+      white-space: nowrap;
+    }
+
+    .episode-row-actions .primary {
+      grid-column: 3;
     }
 
     .episode-row-progress.is-done {
