@@ -1347,12 +1347,12 @@
     .inline-shout {
       display: inline-block;
       color: rgba(255, 255, 255, 0.98);
-      font-size: 1.36em;
+      font-size: 1.14em;
       line-height: 1.35;
-      font-weight: 950;
-      letter-spacing: -0.02em;
-      text-shadow: 0 2px 18px rgba(0, 0, 0, 0.52);
-      transform: translateY(0.02em);
+      font-weight: 750;
+      letter-spacing: -0.01em;
+      text-shadow: 0 1px 10px rgba(0, 0, 0, 0.4);
+      transform: translateY(0.01em);
     }
 
     .glossary-link {
@@ -1467,14 +1467,12 @@
       transform: translate(-50%, 0);
     }
 
-    body.published #newEpisodeBtn,
     body.published #exportProjectBtn,
     body.published #importProjectBtn,
     body.published #projectSettingsBtn,
     body.published #assetLibraryBtn,
     body.published #characterLibraryBtn,
     body.published #glossaryBtn,
-    body.published #viewerEditBtn,
     body.published .episode-card-actions button:not(.primary) {
       display: none !important;
     }
@@ -1701,10 +1699,10 @@
           <h1>스토리 다이얼로그 스튜디오</h1>
           <p>링크로 감상하는 세계관 시나리오 플레이어입니다.</p>
         </div>
-        <button id="newEpisodeBtn" class="primary" hidden>새 화 제작</button>
         <button id="exportProjectBtn">프로젝트 내보내기</button>
         <button id="importProjectBtn">프로젝트 불러오기</button>
         <input id="importProjectInput" type="file" accept=".storypack,.json,application/json" hidden />
+        <input id="assetFileInput" type="file" accept="image/*" multiple hidden />
       </nav>
 
       <section class="lobby-hero">
@@ -1726,107 +1724,10 @@
     </div>
   </section>
 
-  <section id="editorScreen" class="screen">
-    <div class="app-shell">
-      <nav class="top-nav">
-        <div class="brand">
-          <h1 id="editorHeading">새 시나리오 제작</h1>
-          <p>
-            배경 명령은 <code>@배경 asset_id</code> 형식입니다.
-            표현 문법은 <code>*작게*</code>, <code>#크게#</code>, <code>[고유명사]</code>를 사용합니다.
-            화면 흔들림은 <code>@흔들림</code>을 대사나 연출 바로 앞에 적습니다.
-            암전은 <code>@암전</code>, 복귀는 <code>@조명</code>을 사용합니다.
-            컷신은 <code>@집중 asset_id</code>, 레터박스는 <code>@레터박스 확대</code>처럼 조작합니다.
-            캐릭터 실루엣은 <code>@등장 세라 left</code>, <code>@퇴장 세라</code>, <code>@전원퇴장</code>으로 조작합니다.
-            표시 범위는 <code>@등장 세라 left bust</code>, <code>half</code>, <code>full</code>처럼 조정할 수 있습니다.
-            장면 설명은 <code>- 장소 | 설명</code> 형식으로 직접 작성할 수 있습니다.
-          </p>
-        </div>
-        <button id="editorBackBtn">로비로</button>
-      </nav>
-
-      <div class="editor-layout">
-        <section class="panel">
-          <header class="panel-header">
-            <h2>시나리오 정보</h2>
-            <p>제목, 순서, 설명과 원문을 저장합니다.</p>
-          </header>
-
-          <div class="form-section">
-            <div class="form-grid">
-              <div class="field">
-                <label for="episodeOrder">화 순서</label>
-                <input id="episodeOrder" type="number" min="1" step="1" value="1" />
-              </div>
-
-              <div class="field">
-                <label for="episodeChapter">챕터</label>
-                <input id="episodeChapter" type="text" list="chapterOptions" placeholder="가문과 가족" />
-                <datalist id="chapterOptions"></datalist>
-              </div>
-
-              <div class="field full">
-                <label for="episodeTitle">화 제목</label>
-                <input id="episodeTitle" type="text" placeholder="아버지의 그림자 上" />
-              </div>
-
-              <div class="field full">
-                <label for="episodeSubtitle">부제 또는 인용문</label>
-                <input id="episodeSubtitle" type="text" placeholder="달리는 기차 위에 중립은 없다." />
-              </div>
-
-              <div class="field full">
-                <label for="episodeDescription">로비 설명</label>
-                <textarea id="episodeDescription" rows="3" placeholder="이 화를 소개하는 짧은 문장"></textarea>
-              </div>
-
-              <div class="field full">
-                <label for="episodeCoverAsset">로비 카드 표지</label>
-                <select id="episodeCoverAsset">
-                  <option value="">기본 표지</option>
-                </select>
-              </div>
-
-              <div class="field full">
-                <label for="episodeScript">시나리오 원문</label>
-                <textarea id="episodeScript" spellcheck="false" placeholder="@배경 north_alley&#10;- 연방 북방주, 골목길&#10;&#10;에른스트 | 하노버 용병단&#10;야, 야, 빨리 빨리 좀 해라~"></textarea>
-              </div>
-            </div>
-          </div>
-
-          <footer class="editor-footer">
-            <div class="toolbar">
-              <button id="saveEpisodeBtn" class="primary">저장</button>
-              <button id="previewEpisodeBtn">미리보기</button>
-            </div>
-            <div class="toolbar">
-              <button id="duplicateEpisodeBtn">복제</button>
-              <button id="deleteEpisodeBtn" class="danger">삭제</button>
-            </div>
-          </footer>
-        </section>
-
-        <aside class="panel asset-panel">
-          <header class="panel-header">
-            <h3>공용 배경 라이브러리</h3>
-            <p>배경은 작품 전체에서 공유되며, 각 화는 고정 ID로 이미지를 참조합니다.</p>
-            <div class="toolbar" style="margin-top: 12px;">
-              <button id="editorAddAssetsBtn" class="small">이미지 추가</button>
-              <input id="assetFileInput" type="file" accept="image/*" multiple hidden />
-              <button id="editorRefreshAssetsBtn" class="small">새로고침</button>
-            </div>
-          </header>
-          <div id="editorAssetList" class="asset-list"></div>
-        </aside>
-      </div>
-    </div>
-  </section>
-
   <section id="viewerScreen" class="screen viewer-screen">
     <div class="viewer-wrap">
       <header class="viewer-topbar">
         <button id="viewerLobbyBtn" class="small">로비</button>
-        <button id="viewerEditBtn" class="small">이 화 수정</button>
         <div class="viewer-heading">
           <strong id="viewerEpisodeTitle">시나리오</strong>
           <span id="viewerSceneName">장면 미지정</span>
@@ -2122,7 +2023,6 @@
 
     const screens = {
       lobby: document.getElementById("lobbyScreen"),
-      editor: document.getElementById("editorScreen"),
       viewer: document.getElementById("viewerScreen")
     };
 
@@ -2481,8 +2381,7 @@
           order: 1,
           title: "샘플 시나리오",
           subtitle: "처음 저장된 예시 화",
-          description:
-            "수정 버튼을 눌러 형식을 살펴보거나, 새 화 제작으로 새로운 이야기를 시작하세요.",
+          description: "대본 형식을 보여주는 예시 화입니다.",
           coverAssetId: "",
           script: SAMPLE_SCRIPT,
           createdAt: now,
@@ -2651,8 +2550,7 @@
       if (!episodesCache.length) {
         episodeGrid.innerHTML = `
           <div class="empty-state">
-            저장된 시나리오가 없습니다.<br />
-            <strong>새 화 제작</strong> 버튼으로 첫 이야기를 만들어보세요.
+            아직 공개된 이야기가 없습니다.
           </div>
         `;
         return;
@@ -3228,23 +3126,19 @@
         String(a.name).localeCompare(String(b.name), "ko")
       );
 
-      editorAssetList.innerHTML = "";
       modalAssetList.innerHTML = "";
 
       if (!assets.length) {
-        const empty = `
+        modalAssetList.innerHTML = `
           <div class="asset-empty">
             저장된 배경이 없습니다.<br />
             이미지 추가 버튼으로 공용 배경을 등록하세요.
           </div>
         `;
-        editorAssetList.innerHTML = empty;
-        modalAssetList.innerHTML = empty;
         return;
       }
 
       for (const asset of assets) {
-        editorAssetList.append(createAssetItem(asset, "editor"));
         modalAssetList.append(createAssetItem(asset, "modal"));
       }
     }
@@ -5695,27 +5589,6 @@
       notify("작품 정보를 저장했습니다.");
     }
 
-    document.getElementById("newEpisodeBtn").addEventListener("click", () => openEditor());
-    document.getElementById("editorBackBtn").addEventListener("click", () => {
-      showScreen("lobby");
-      renderLobby();
-    });
-
-    document.getElementById("saveEpisodeBtn").addEventListener("click", saveEpisode);
-    document.getElementById("previewEpisodeBtn").addEventListener("click", () => {
-      const draft = collectEditorEpisode();
-      if (!draft) return;
-      openViewer(null, { previewDraft: draft, position: 0 });
-    });
-
-    deleteEpisodeBtn.addEventListener("click", () => deleteEpisode());
-    duplicateEpisodeBtn.addEventListener("click", () => duplicateEpisode());
-
-    document.getElementById("editorAddAssetsBtn").addEventListener(
-      "click",
-      () => assetFileInput.click()
-    );
-
     document.getElementById("modalAddAssetsBtn").addEventListener(
       "click",
       () => assetFileInput.click()
@@ -5731,17 +5604,6 @@
         assetFileInput.value = "";
       }
     });
-
-    document.getElementById("editorRefreshAssetsBtn").addEventListener(
-      "click",
-      async () => {
-        await refreshCaches();
-        renderAssetViews();
-        renderCharacterList();
-        populateCoverSelect(episodeCoverAsset.value);
-        notify("배경과 캐릭터 목록을 새로고침했습니다.");
-      }
-    );
 
     document.getElementById("projectSettingsBtn").addEventListener(
       "click",
@@ -5861,14 +5723,6 @@
       }
     });
 
-    document.getElementById("viewerEditBtn").addEventListener("click", () => {
-      if (previewDraft) {
-        showScreen("editor");
-      } else if (viewerEpisodeId) {
-        openEditor(viewerEpisodeId);
-      }
-    });
-
     viewerPrevBtn.addEventListener("click", viewerPrevious);
     viewerNextBtn.addEventListener("click", viewerNext);
     dialogueBox.addEventListener("click", viewerNext);
@@ -5974,19 +5828,13 @@
     });
 
     document.addEventListener("dragover", event => {
-      if (
-        screens.editor.classList.contains("active") ||
-        assetLibraryModal.classList.contains("show")
-      ) {
+      if (assetLibraryModal.classList.contains("show")) {
         event.preventDefault();
       }
     });
 
     document.addEventListener("drop", event => {
-      if (
-        screens.editor.classList.contains("active") ||
-        assetLibraryModal.classList.contains("show")
-      ) {
+      if (assetLibraryModal.classList.contains("show")) {
         event.preventDefault();
         addAssetFiles(event.dataTransfer?.files || []).catch(console.error);
       }
