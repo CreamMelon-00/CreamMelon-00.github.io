@@ -1534,60 +1534,245 @@
       overflow-y: auto;
     }
 
-    .timeline-list {
-      max-height: min(58vh, 520px);
-      overflow-y: auto;
+    .lobby-menu {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 0 0 20px;
     }
 
-    .timeline-day {
-      margin: 16px 0 8px;
-      padding-bottom: 5px;
-      border-bottom: 1px solid rgba(207, 159, 78, 0.3);
-      color: var(--accent);
+    .lobby-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: min(400px, 100%);
+      padding: 13px 18px;
+      border: 1px solid rgba(207, 159, 78, 0.38);
+      border-radius: 11px;
+      background:
+        linear-gradient(135deg, rgba(207, 159, 78, 0.11), transparent 55%),
+        rgba(30, 23, 16, 0.92);
+      box-shadow: inset 0 0 0 1px rgba(10, 7, 4, 0.85);
+      color: var(--text);
+      text-align: left;
+      cursor: pointer;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .lobby-menu-item:hover {
+      border-color: rgba(207, 159, 78, 0.68);
+      box-shadow:
+        inset 0 0 0 1px rgba(10, 7, 4, 0.85),
+        0 0 16px rgba(207, 159, 78, 0.14);
+    }
+
+    .lobby-menu-glyph {
+      flex: none;
+      font-size: 23px;
+      filter: sepia(0.5) saturate(0.8);
+    }
+
+    .lobby-menu-text strong {
+      display: block;
       font-family: var(--serif);
-      font-weight: 700;
-      font-size: 14px;
+      font-size: 15px;
+      letter-spacing: 0.04em;
     }
 
-    .timeline-day:first-child {
+    .lobby-menu-text small {
+      display: block;
       margin-top: 2px;
+      color: var(--muted);
+      font-size: 11.5px;
     }
 
-    .timeline-event {
+    .lobby-menu-count {
+      flex: none;
+      margin-left: auto;
+      padding-left: 14px;
+      font-family: var(--serif);
+      font-size: 13px;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    .timeline-board {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 26px clamp(16px, 4vw, 42px) 36px;
+      border: 1px solid rgba(207, 159, 78, 0.36);
+      border-radius: 14px;
+      background:
+        linear-gradient(160deg, rgba(207, 159, 78, 0.07), transparent 38%),
+        rgba(26, 19, 12, 0.94);
+      box-shadow:
+        var(--shadow),
+        inset 0 0 0 1px rgba(10, 7, 4, 0.9),
+        inset 0 0 0 2px rgba(207, 159, 78, 0.14);
+    }
+
+    .timeline-progress {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(207, 159, 78, 0.22);
+    }
+
+    .timeline-progress strong {
+      flex: none;
+      font-family: var(--serif);
+      font-size: 14px;
+      letter-spacing: 0.05em;
+      color: var(--accent);
+    }
+
+    .timeline-progress-bar {
+      position: relative;
+      flex: 1;
+      height: 4px;
+      border-radius: 2px;
+      overflow: hidden;
+      background: rgba(207, 159, 78, 0.14);
+    }
+
+    .timeline-progress-fill {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 0%;
+      background: linear-gradient(90deg, rgba(207, 159, 78, 0.45), var(--accent));
+      transition: width 0.5s ease;
+    }
+
+    .timeline-rail {
+      position: relative;
+      margin-top: 8px;
+      padding-left: 32px;
+    }
+
+    .timeline-rail::before {
+      content: "";
+      position: absolute;
+      left: 9px;
+      top: 12px;
+      bottom: 8px;
+      width: 0;
+      border-left: 3px double rgba(207, 159, 78, 0.42);
+    }
+
+    .timeline-station {
+      position: relative;
       display: flex;
       align-items: baseline;
-      gap: 9px;
-      margin: 0 0 9px;
-      padding: 7px 9px;
-      border-radius: 8px;
-      font-size: 13.5px;
-      line-height: 1.6;
-      color: var(--text);
+      gap: 10px;
+      margin: 30px 0 12px;
+    }
+
+    .timeline-station::before {
+      content: "";
+      position: absolute;
+      left: -29px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+      background: #1a130c;
+      box-shadow:
+        0 0 0 3px rgba(207, 159, 78, 0.14),
+        0 0 10px rgba(207, 159, 78, 0.35);
+    }
+
+    .timeline-station h3 {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: 17px;
+      letter-spacing: 0.05em;
+      color: var(--accent);
+    }
+
+    .timeline-station small {
+      color: var(--muted);
+      font-size: 11.5px;
+      letter-spacing: 0.08em;
+    }
+
+    .timeline-card {
+      position: relative;
+      display: flex;
+      align-items: baseline;
+      gap: 11px;
+      margin: 0 0 10px;
+      padding: 11px 14px;
+      border: 1px solid rgba(207, 159, 78, 0.22);
+      border-radius: 10px;
+      background: rgba(36, 27, 18, 0.72);
       cursor: pointer;
+      transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
     }
 
-    .timeline-event:hover {
-      background: rgba(207, 159, 78, 0.08);
+    .timeline-card::before {
+      content: "";
+      position: absolute;
+      left: -21px;
+      top: 50%;
+      width: 15px;
+      height: 1px;
+      background: rgba(207, 159, 78, 0.28);
     }
 
-    .timeline-event-motif {
+    .timeline-card:hover {
+      border-color: rgba(207, 159, 78, 0.58);
+      background: rgba(46, 35, 22, 0.85);
+      transform: translateX(2px);
+    }
+
+    .timeline-card.locked {
+      border-style: dashed;
+      border-color: rgba(207, 159, 78, 0.16);
+      background: transparent;
+      opacity: 0.6;
+      cursor: default;
+    }
+
+    .timeline-card.locked:hover {
+      transform: none;
+      background: transparent;
+      border-color: rgba(207, 159, 78, 0.16);
+    }
+
+    .timeline-card-motif {
       flex: none;
-      width: 18px;
+      width: 20px;
       text-align: center;
-      opacity: 0.5;
+      opacity: 0.55;
       filter: sepia(0.6) saturate(0.7);
     }
 
-    .timeline-event-ref {
+    .timeline-card-text {
+      font-size: 13.5px;
+      line-height: 1.65;
+      color: var(--text);
+    }
+
+    .timeline-card.locked .timeline-card-text {
+      color: var(--muted);
+      font-style: italic;
+      letter-spacing: 0.02em;
+    }
+
+    .timeline-card-ref {
       flex: none;
       margin-left: auto;
+      padding-left: 12px;
       color: var(--muted);
       font-size: 11px;
       white-space: nowrap;
     }
 
     .timeline-empty {
-      margin: 8px 0;
+      margin: 18px 0 8px;
       color: var(--muted);
       font-size: 13px;
       line-height: 1.7;
@@ -1766,6 +1951,20 @@
         width: 100%;
         order: -1;
       }
+
+      .timeline-board {
+        padding: 18px 14px 24px;
+      }
+
+      .timeline-card {
+        flex-wrap: wrap;
+      }
+
+      .timeline-card-ref {
+        width: 100%;
+        margin-left: 31px;
+        padding-left: 0;
+      }
     }
   </style>
 </head>
@@ -1797,6 +1996,17 @@
           <button id="glossaryBtn">고유명사 사전</button>
         </div>
       </section>
+
+      <nav class="lobby-menu">
+        <button id="timelineMenuBtn" class="lobby-menu-item">
+          <span class="lobby-menu-glyph">📜</span>
+          <span class="lobby-menu-text">
+            <strong>연표</strong>
+            <small>읽은 이야기의 사건들이 날짜별로 기록됩니다</small>
+          </span>
+          <span id="timelineMenuCount" class="lobby-menu-count"></span>
+        </button>
+      </nav>
 
       <main id="episodeGrid" class="episode-grid"></main>
     </div>
@@ -1854,7 +2064,6 @@
           <button id="viewerAutoBtn">자동 재생</button>
           <button id="viewerRestartBtn">처음부터</button>
           <button id="viewerBacklogBtn">대사 기록</button>
-          <button id="viewerTimelineBtn">연표</button>
           <button id="viewerGlossaryBtn">고유명사 목록</button>
         </div>
 
@@ -1889,18 +2098,27 @@
     </div>
   </section>
 
-  <div id="timelineModal" class="modal-backdrop">
-    <section class="modal" style="width: min(640px, 100%);">
-      <header class="panel-header">
-        <h3>연표</h3>
-        <p>지금까지 읽은 이야기의 사건들입니다. 이야기를 읽을수록 연표가 채워집니다.</p>
-      </header>
-      <div id="timelineList" class="modal-body timeline-list"></div>
-      <div class="modal-actions">
-        <button id="timelineCloseBtn" class="small">닫기</button>
+  <section id="timelineScreen" class="screen">
+    <div class="app-shell">
+      <nav class="top-nav">
+        <div class="brand">
+          <h1>연표 — 사건 기록부</h1>
+          <p>이야기를 끝까지 읽은 화의 사건이 이 기록부에 남습니다.</p>
+        </div>
+        <button id="timelineBackBtn">← 로비로</button>
+      </nav>
+
+      <div class="timeline-board">
+        <div class="timeline-progress">
+          <strong id="timelineProgressLabel">기록된 사건 0 / 0</strong>
+          <div class="timeline-progress-bar">
+            <div id="timelineProgressFill" class="timeline-progress-fill"></div>
+          </div>
+        </div>
+        <div id="timelineRail" class="timeline-rail"></div>
       </div>
-    </section>
-  </div>
+    </div>
+  </section>
 
   <div id="backlogModal" class="modal-backdrop">
     <section class="modal" style="width: min(640px, 100%);">
@@ -2115,7 +2333,8 @@
 
     const screens = {
       lobby: document.getElementById("lobbyScreen"),
-      viewer: document.getElementById("viewerScreen")
+      viewer: document.getElementById("viewerScreen"),
+      timeline: document.getElementById("timelineScreen")
     };
 
     const episodeGrid = document.getElementById("episodeGrid");
@@ -2650,6 +2869,7 @@
 
     function renderLobby() {
       episodeGrid.innerHTML = "";
+      updateTimelineMenu();
 
       if (!episodesCache.length) {
         episodeGrid.innerHTML = `
@@ -2820,13 +3040,6 @@
       panelCount.textContent = `${episodes.filter(item => !item.role).length}개 화 수록`;
 
       panelBody.append(panelTitle, panelCount);
-
-      const timelineButton = document.createElement("button");
-      timelineButton.className = "small";
-      timelineButton.style.marginTop = "12px";
-      timelineButton.textContent = "연표 보기";
-      timelineButton.addEventListener("click", openTimelineModal);
-      panelBody.append(timelineButton);
 
       if (chapter.description) {
         const panelDescription = document.createElement("p");
@@ -5483,69 +5696,112 @@
       return 9999; // "며칠 뒤" 같은 서술형은 맨 뒤
     }
 
-    function openTimelineModal() {
-      const list = document.getElementById("timelineList");
-      list.innerHTML = "";
-      const motifs = projectMeta.motifs || {};
-      const days = new Map(); // day -> [{episode, number, chapterTitle}]
+    function timelineEntries() {
+      const days = new Map(); // day -> [{episode, ref, unlocked}]
+      let total = 0;
+      let unlockedCount = 0;
 
       for (const chapter of chapterList()) {
         const episodes = episodesOfChapter(String(chapter.key));
         let numbered = 0;
         for (const episode of episodes) {
           if (!episode.role) numbered += 1;
-          if (!episode.event || !isEpisodeRead(episode.id)) continue;
+          if (!episode.event) continue;
+          const unlocked = isEpisodeRead(episode.id);
+          total += 1;
+          if (unlocked) unlockedCount += 1;
           const day = episodeEventDate(episode) || "시기 미상";
           if (!days.has(day)) days.set(day, []);
           days.get(day).push({
             episode,
+            unlocked,
             ref: episode.role
               ? episodeDisplayName(episode)
               : `${numbered}화 · ${episode.title}`
           });
         }
       }
+      return { days, total, unlockedCount };
+    }
+
+    function updateTimelineMenu() {
+      const counter = document.getElementById("timelineMenuCount");
+      if (!counter) return;
+      const { total, unlockedCount } = timelineEntries();
+      counter.textContent = total ? `기록 ${unlockedCount} / ${total}` : "";
+    }
+
+    function renderTimelineScreen() {
+      const rail = document.getElementById("timelineRail");
+      rail.innerHTML = "";
+      const motifs = projectMeta.motifs || {};
+      const { days, total, unlockedCount } = timelineEntries();
+
+      document.getElementById("timelineProgressLabel").textContent =
+        `기록된 사건 ${unlockedCount} / ${total}`;
+      document.getElementById("timelineProgressFill").style.width =
+        total ? `${Math.round((unlockedCount / total) * 100)}%` : "0%";
+
+      if (!total) {
+        rail.innerHTML =
+          '<p class="timeline-empty">아직 연표에 오를 사건이 없습니다.</p>';
+        return;
+      }
 
       const orderedDays = [...days.keys()].sort(
         (a, b) => timelineDayWeight(a) - timelineDayWeight(b));
 
       for (const day of orderedDays) {
-        const header = document.createElement("div");
-        header.className = "timeline-day";
-        header.textContent = /\d+일/.test(day) ? `xx월 ${day}` : day;
-        list.append(header);
+        const items = days.get(day);
+        const readCount = items.filter(item => item.unlocked).length;
 
-        for (const item of days.get(day)) {
-          const row = document.createElement("div");
-          row.className = "timeline-event";
+        const station = document.createElement("div");
+        station.className = "timeline-station";
+        const label = document.createElement("h3");
+        label.textContent = /\d+일/.test(day) ? `xx월 ${day}` : day;
+        const meta = document.createElement("small");
+        meta.textContent = `기록 ${readCount} / ${items.length}`;
+        station.append(label, meta);
+        rail.append(station);
+
+        for (const item of items) {
+          const card = document.createElement("div");
+          card.className = "timeline-card" + (item.unlocked ? "" : " locked");
 
           const motif = document.createElement("span");
-          motif.className = "timeline-event-motif";
-          motif.textContent =
-            (item.episode.focal && motifs[item.episode.focal]) || "·";
+          motif.className = "timeline-card-motif";
+          motif.textContent = item.unlocked
+            ? (item.episode.focal && motifs[item.episode.focal]) || "·"
+            : "?";
 
           const text = document.createElement("span");
-          text.textContent = item.episode.event;
+          text.className = "timeline-card-text";
+          text.textContent = item.unlocked
+            ? item.episode.event
+            : "아직 기록되지 않은 사건입니다.";
 
           const ref = document.createElement("span");
-          ref.className = "timeline-event-ref";
+          ref.className = "timeline-card-ref";
           ref.textContent = item.ref;
 
-          row.append(motif, text, ref);
-          row.addEventListener("click", () => {
-            document.getElementById("timelineModal").classList.remove("show");
-            openViewer(item.episode.id);
-          });
-          list.append(row);
+          card.append(motif, text, ref);
+          if (item.unlocked) {
+            card.addEventListener("click", () => openViewer(item.episode.id));
+          }
+          rail.append(card);
         }
       }
+    }
 
-      if (!orderedDays.length) {
-        list.innerHTML =
-          '<p class="timeline-empty">아직 기록된 사건이 없습니다.<br />이야기를 끝까지 읽은 화의 사건이 이곳에 기록됩니다.</p>';
-      }
+    function openTimelineScreen() {
+      renderTimelineScreen();
+      showScreen("timeline");
+      setRouteHash("timeline");
+    }
 
-      document.getElementById("timelineModal").classList.add("show");
+    function closeTimelineScreen() {
+      showScreen("lobby");
+      renderLobby();
     }
 
     function setRouteHash(hash) {
@@ -5556,6 +5812,11 @@
     function applyHashRoute(rawHash = location.hash) {
       const hash = decodeURIComponent(String(rawHash).replace(/^#/, ""));
       if (!hash) return;
+
+      if (hash === "timeline") {
+        openTimelineScreen();
+        return;
+      }
 
       const epMatch = hash.match(/^ep=(\d+)$/);
       if (epMatch) {
@@ -6021,13 +6282,11 @@
     });
 
     document.getElementById("viewerBacklogBtn").addEventListener("click", openBacklogModal);
-    document.getElementById("viewerTimelineBtn").addEventListener("click", openTimelineModal);
-    document.getElementById("timelineCloseBtn").addEventListener("click", () => {
-      document.getElementById("timelineModal").classList.remove("show");
-    });
-    document.getElementById("timelineModal").addEventListener("click", event => {
-      if (event.target === event.currentTarget) {
-        event.currentTarget.classList.remove("show");
+    document.getElementById("timelineMenuBtn").addEventListener("click", openTimelineScreen);
+    document.getElementById("timelineBackBtn").addEventListener("click", closeTimelineScreen);
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape" && screens.timeline.classList.contains("active")) {
+        closeTimelineScreen();
       }
     });
     document.getElementById("backlogCloseBtn").addEventListener("click", () => {
