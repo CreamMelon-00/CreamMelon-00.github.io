@@ -1596,6 +1596,19 @@
       white-space: nowrap;
     }
 
+    .lobby-footer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 34px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(207, 159, 78, 0.14);
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: 0.02em;
+    }
+
     /* ── 이해관계도 (수사보드) ───────────────────────── */
     .board-wrap {
       max-width: 1120px;
@@ -2242,17 +2255,6 @@
 <body class="published">
   <section id="lobbyScreen" class="screen active">
     <div class="app-shell">
-      <nav class="top-nav">
-        <div class="brand">
-          <h1>스토리 다이얼로그 스튜디오</h1>
-          <p>링크로 감상하는 세계관 시나리오 플레이어입니다.</p>
-        </div>
-        <button id="exportProjectBtn">프로젝트 내보내기</button>
-        <button id="importProjectBtn">프로젝트 불러오기</button>
-        <input id="importProjectInput" type="file" accept=".storypack,.json,application/json" hidden />
-        <input id="assetFileInput" type="file" accept="image/*" multiple hidden />
-      </nav>
-
       <section class="lobby-hero">
         <div>
           <h2 id="projectTitleDisplay">세계관 스토리 플레이어</h2>
@@ -2267,6 +2269,8 @@
           <button id="glossaryBtn">고유명사 사전</button>
         </div>
       </section>
+
+      <main id="episodeGrid" class="episode-grid"></main>
 
       <nav class="lobby-menu">
         <button id="timelineMenuBtn" class="lobby-menu-item">
@@ -2287,7 +2291,13 @@
         </button>
       </nav>
 
-      <main id="episodeGrid" class="episode-grid"></main>
+      <footer class="lobby-footer">
+        <span>Story Dialogue Studio</span>
+        <button id="exportProjectBtn">프로젝트 내보내기</button>
+        <button id="importProjectBtn">프로젝트 불러오기</button>
+        <input id="importProjectInput" type="file" accept=".storypack,.json,application/json" hidden />
+        <input id="assetFileInput" type="file" accept="image/*" multiple hidden />
+      </footer>
     </div>
   </section>
 
