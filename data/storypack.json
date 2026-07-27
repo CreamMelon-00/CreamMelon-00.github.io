@@ -1,7 +1,7 @@
 {
   "format": "story-dialogue-studio",
   "version": 1,
-  "exportedAt": "2026-07-27T06:41:06.022Z",
+  "exportedAt": "2026-07-27T06:48:52.381Z",
   "meta": {
     "key": "project",
     "title": "세계관 스토리 플레이어",
@@ -74,8 +74,8 @@
           "note": "북부와 동부의 유력 가문, 그리고 그들의 보안관"
         },
         {
-          "name": "하노버 용병단",
-          "note": "기록에 남지 않는 일을 대신 맡는 손"
+          "name": "구 군부",
+          "note": "해산된 군이 남긴 자리에서, 저마다의 방식으로 살아남은 사람들"
         },
         {
           "name": "헬라스 연합",
@@ -84,6 +84,10 @@
         {
           "name": "건국의 아버지들",
           "note": "법 위에서 만장일치로 결정하는 자리"
+        },
+        {
+          "name": "???",
+          "note": "아이온"
         }
       ],
       "people": [
@@ -167,15 +171,21 @@
         },
         {
           "name": "에른스트",
-          "faction": "하노버 용병단",
-          "title": "단장",
+          "faction": "구 군부",
+          "title": "하노버 용병단장",
           "reveal": 1
         },
         {
           "name": "잭슨",
-          "faction": "하노버 용병단",
+          "faction": "구 군부",
           "title": "열차 강도",
           "reveal": 9
+        },
+        {
+          "name": "프랑크",
+          "faction": "구 군부",
+          "title": "바이에른 그룹",
+          "reveal": 15
         },
         {
           "name": "타게니아",
@@ -192,8 +202,20 @@
         {
           "name": "먼로",
           "faction": "건국의 아버지들",
-          "title": "",
+          "title": "지도자",
           "reveal": 18
+        },
+        {
+          "name": "애덤스",
+          "faction": "건국의 아버지들",
+          "title": "지도자",
+          "reveal": 17
+        },
+        {
+          "name": "식스",
+          "faction": "???",
+          "title": "조력자",
+          "reveal": 6
         }
       ],
       "relations": [
@@ -267,7 +289,7 @@
           "label": "혈연",
           "kind": "blood",
           "note": "같은 스프링필드 가. 네빌은 10년 전 가문을 떠났다",
-          "reveal": 4
+          "reveal": 5
         },
         {
           "from": "세라",
@@ -276,6 +298,30 @@
           "kind": "plain",
           "note": "코네트가 '세라 언니'라 부르며 위기에 먼저 연락하다",
           "reveal": 5
+        },
+        {
+          "from": "세라",
+          "to": "식스",
+          "label": "조력",
+          "kind": "plain",
+          "note": "떠나라는 말에도 '세라님만 두고 갈 순 없다'며 곁에 남다",
+          "reveal": 6
+        },
+        {
+          "from": "세라",
+          "to": "애덤스",
+          "label": "혈연",
+          "kind": "blood",
+          "note": "세라의 아버지",
+          "reveal": 17
+        },
+        {
+          "from": "에른스트",
+          "to": "프랑크",
+          "label": "전우",
+          "kind": "plain",
+          "note": "옛 전장을 함께 넘긴 사이. '연방군 부활' 제안을 들고 찾아오다",
+          "reveal": 15
         },
         {
           "from": "에른스트",
@@ -291,7 +337,7 @@
           "label": "보호",
           "kind": "plain",
           "note": "저택의 아이를 지키는 보안관",
-          "reveal": 3
+          "reveal": 5
         },
         {
           "from": "스프링필드 가주",
@@ -363,7 +409,7 @@
           "label": "협력",
           "kind": "plain",
           "note": "연합의 개입을 직접 불러들이다",
-          "reveal": 11
+          "reveal": 13
         },
         {
           "from": "타게니아",
@@ -403,7 +449,7 @@
           "label": "무슨 사이",
           "kind": "unknown",
           "note": "민간인인 그가 건국의 아버지들의 헌병을 거느리다",
-          "reveal": 17
+          "reveal": 18
         }
       ]
     }
