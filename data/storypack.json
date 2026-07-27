@@ -1,7 +1,7 @@
 {
   "format": "story-dialogue-studio",
   "version": 1,
-  "exportedAt": "2026-07-27T06:35:09.873Z",
+  "exportedAt": "2026-07-27T06:41:06.022Z",
   "meta": {
     "key": "project",
     "title": "세계관 스토리 플레이어",
@@ -163,13 +163,13 @@
           "name": "스프링필드 가주",
           "faction": "대가문",
           "title": "스프링필드 가주",
-          "reveal": 8
+          "reveal": 4
         },
         {
           "name": "에른스트",
           "faction": "하노버 용병단",
           "title": "단장",
-          "reveal": 3
+          "reveal": 1
         },
         {
           "name": "잭슨",
