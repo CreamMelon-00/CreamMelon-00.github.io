@@ -364,6 +364,16 @@ def cmd_inject(pack, md_path, order, subtitle, cover, description, chapter, dry_
             # 역할 에피소드의 순서는 정렬용 관례값 (플레이어는 role로 정렬)
             order = 0 if role == "prologue" else 99
 
+    left = [f"{n}행: {l.strip()[:60]}"
+            for n, l in enumerate(script.split("\n"), 1) if "<<확인" in l]
+    if left:
+        print(f"경고: 손질하지 않은 확인 마커 {len(left)}곳이 남아 있습니다 "
+              f"— 그대로 배포하면 화면에 노출됩니다.")
+        for item in left[:5]:
+            print(f"  {item}")
+        if len(left) > 5:
+            print(f"  … 외 {len(left) - 5}곳")
+
     missing = check_assets(script, pack)
     if missing:
         print(f"경고: 팩에 없는 배경 id 참조 {len(missing)}건 → {', '.join(missing)}")

@@ -547,18 +547,25 @@ def main():
     conv.feed_pages(pages_lines, skip_lines)
 
     # 원본의 씬 구분자(–)를 현행 문법으로 변환:
-    # 바로 뒤에 씬 헤더/@배경/<시간 표시>가 오면 불필요하므로 제거,
-    # 장면 안의 시간 경과 표시면 @정적 1.5 로 대체한다.
+    # 바로 뒤에 씬 헤더/@배경/<시간 표시>가 오면 불필요하므로 제거.
+    # 그렇지 않으면 @정적 1.5로 두되, 이게 단순한 호흡인지 '장면/시점 전환'인지는
+    # 기계가 구분할 수 없다 — 회상 진입 같은 전환을 정적으로 뭉개면 독자가
+    # 시점이 바뀐 걸 알 수 없게 되므로(1장 8편 사례) 확인 마커를 남긴다.
     processed = []
+    ambiguous = 0
     for i, line in enumerate(conv.out):
         if line.strip() in ("–", "—", "--"):
             nxt = next((l.strip() for l in conv.out[i + 1:] if l.strip()), "")
             if (not nxt or nxt.startswith("- ") or nxt.startswith("@배경")
                     or (nxt.startswith("<") and nxt.endswith(">")) or nxt.startswith("##")):
                 continue
-            processed.append("@정적 1.5")
+            processed.append(f"@정적 1.5   {CHECK} 원본 씬 구분자 — 장면/시점 전환이면 표시를 넣을 것")
+            ambiguous += 1
         else:
             processed.append(line)
+    if ambiguous:
+        print(f"확인 필요: 원본 씬 구분자 {ambiguous}곳을 @정적 1.5로 두었습니다.")
+        print(f"  '{CHECK}'를 검색해, 회상/시점 전환이면 < 과거 > 같은 표시로 바꾸세요.")
     body = "\n".join(processed)
     body = re.sub(r"\n{3,}", "\n\n", body).strip("\n")
 
