@@ -1596,6 +1596,225 @@
       white-space: nowrap;
     }
 
+    /* ── 이해관계도 (수사보드) ───────────────────────── */
+    .board-wrap {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 22px clamp(14px, 3vw, 30px) 30px;
+      border: 1px solid rgba(207, 159, 78, 0.36);
+      border-radius: 14px;
+      background:
+        linear-gradient(160deg, rgba(207, 159, 78, 0.07), transparent 38%),
+        rgba(26, 19, 12, 0.94);
+      box-shadow:
+        var(--shadow),
+        inset 0 0 0 1px rgba(10, 7, 4, 0.9),
+        inset 0 0 0 2px rgba(207, 159, 78, 0.14);
+    }
+
+    .board-stage {
+      position: relative;
+      margin-top: 18px;
+    }
+
+    .board-threads {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .board-zones {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 18px;
+    }
+
+    .board-zone {
+      padding: 12px 14px 14px;
+      border: 1px solid rgba(207, 159, 78, 0.22);
+      border-radius: 10px;
+      background: rgba(36, 27, 18, 0.5);
+    }
+
+    .board-zone-name {
+      margin: 0 0 2px;
+      font-family: var(--serif);
+      font-size: 14px;
+      letter-spacing: 0.06em;
+      color: var(--accent);
+    }
+
+    .board-zone-note {
+      display: block;
+      margin-bottom: 10px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .board-cards {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .board-card {
+      position: relative;
+      min-width: 96px;
+      padding: 9px 11px 8px;
+      border: 1px solid rgba(207, 159, 78, 0.3);
+      border-radius: 7px;
+      background: linear-gradient(170deg, rgba(58, 45, 29, 0.9), rgba(38, 29, 18, 0.9));
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+      color: var(--text);
+      text-align: left;
+      cursor: pointer;
+      transition: border-color 0.15s ease, transform 0.15s ease, opacity 0.2s ease;
+    }
+
+    /* 카드 위쪽의 놋쇠 핀 */
+    .board-card::before {
+      content: "";
+      position: absolute;
+      top: -4px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #f0cd8b, #8a6524);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+    }
+
+    .board-card:hover {
+      border-color: rgba(207, 159, 78, 0.7);
+      transform: translateY(-1px);
+    }
+
+    .board-card-motif {
+      font-size: 15px;
+      filter: sepia(0.5) saturate(0.8);
+    }
+
+    .board-card-name {
+      display: block;
+      font-family: var(--serif);
+      font-size: 13.5px;
+      letter-spacing: 0.02em;
+    }
+
+    .board-card-title {
+      display: block;
+      margin-top: 1px;
+      color: var(--muted);
+      font-size: 10.5px;
+      line-height: 1.45;
+    }
+
+    .board-card.locked {
+      border-style: dashed;
+      border-color: rgba(207, 159, 78, 0.14);
+      background: transparent;
+      box-shadow: none;
+      opacity: 0.5;
+      cursor: default;
+    }
+
+    .board-card.locked::before { opacity: 0.3; }
+    .board-card.locked:hover { transform: none; border-color: rgba(207, 159, 78, 0.14); }
+
+    .board-card.is-dimmed { opacity: 0.25; }
+
+    .board-card.is-active {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(207, 159, 78, 0.4), 0 0 16px rgba(207, 159, 78, 0.22);
+    }
+
+    .board-thread {
+      fill: none;
+      stroke: rgba(207, 159, 78, 0.42);
+      stroke-width: 1.4;
+      transition: opacity 0.2s ease, stroke 0.2s ease;
+    }
+
+    .board-thread.kind-blood   { stroke: rgba(224, 176, 96, 0.75); stroke-width: 2.6; }
+    .board-thread.kind-secret  { stroke: rgba(207, 159, 78, 0.5); stroke-dasharray: 5 4; }
+    .board-thread.kind-hostile { stroke: rgba(196, 102, 76, 0.62); stroke-dasharray: 9 3 2 3; }
+    .board-thread.kind-unknown { stroke: rgba(150, 136, 112, 0.5); stroke-dasharray: 2 5; }
+
+    .board-thread.is-dimmed { opacity: 0.08; }
+    .board-thread.is-active { stroke: var(--accent); stroke-width: 2.4; }
+
+    .board-thread-label {
+      fill: var(--muted);
+      font-size: 10px;
+      text-anchor: middle;
+      paint-order: stroke;
+      stroke: rgba(20, 14, 8, 0.9);
+      stroke-width: 3px;
+      transition: opacity 0.2s ease;
+    }
+
+    .board-thread-label.is-dimmed { opacity: 0; }
+    .board-thread-label.is-active { fill: var(--accent); }
+
+    .board-hint {
+      margin: 16px 0 0;
+      color: var(--muted);
+      font-size: 11.5px;
+      text-align: center;
+    }
+
+    .board-detail {
+      margin-top: 14px;
+      padding: 13px 16px;
+      border: 1px solid rgba(207, 159, 78, 0.3);
+      border-radius: 10px;
+      background: rgba(36, 27, 18, 0.7);
+    }
+
+    .board-detail h4 {
+      margin: 0 0 8px;
+      font-family: var(--serif);
+      font-size: 14px;
+      color: var(--accent);
+    }
+
+    .board-detail-row {
+      display: flex;
+      gap: 9px;
+      align-items: baseline;
+      padding: 5px 0;
+      font-size: 12.5px;
+      line-height: 1.6;
+      border-top: 1px solid rgba(207, 159, 78, 0.12);
+    }
+
+    .board-detail-row:first-of-type { border-top: 0; }
+
+    .board-detail-who {
+      flex: none;
+      min-width: 120px;
+      color: var(--text);
+    }
+
+    .board-detail-label {
+      flex: none;
+      padding: 1px 7px;
+      border: 1px solid rgba(207, 159, 78, 0.3);
+      border-radius: 999px;
+      color: var(--accent);
+      font-size: 10.5px;
+    }
+
+    .board-detail-note { color: var(--muted); }
+
     .timeline-board {
       max-width: 880px;
       margin: 0 auto;
@@ -2058,6 +2277,14 @@
           </span>
           <span id="timelineMenuCount" class="lobby-menu-count"></span>
         </button>
+        <button id="boardMenuBtn" class="lobby-menu-item">
+          <span class="lobby-menu-glyph">🧵</span>
+          <span class="lobby-menu-text">
+            <strong>이해관계도</strong>
+            <small>누가 누구와 어떻게 얽혀 있는지</small>
+          </span>
+          <span id="boardMenuCount" class="lobby-menu-count"></span>
+        </button>
       </nav>
 
       <main id="episodeGrid" class="episode-grid"></main>
@@ -2168,6 +2395,35 @@
           </div>
         </div>
         <div id="timelineRail" class="timeline-rail"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="boardScreen" class="screen">
+    <div class="app-shell">
+      <nav class="top-nav">
+        <div class="brand">
+          <h1>이해관계도</h1>
+          <p>읽은 만큼 인물이 드러나고, 그 사이에 실이 걸립니다.</p>
+        </div>
+        <button id="boardBackBtn">← 로비로</button>
+      </nav>
+
+      <div class="board-wrap">
+        <div class="timeline-progress">
+          <strong id="boardProgressLabel">밝혀진 관계 0 / 0</strong>
+          <div class="timeline-progress-bar">
+            <div id="boardProgressFill" class="timeline-progress-fill"></div>
+          </div>
+        </div>
+
+        <div id="boardStage" class="board-stage">
+          <svg id="boardThreads" class="board-threads" aria-hidden="true"></svg>
+          <div id="boardZones" class="board-zones"></div>
+        </div>
+
+        <p id="boardHint" class="board-hint">인물을 누르면 그 사람에게 걸린 실만 남습니다.</p>
+        <div id="boardDetail" class="board-detail" hidden></div>
       </div>
     </div>
   </section>
@@ -2386,7 +2642,8 @@
     const screens = {
       lobby: document.getElementById("lobbyScreen"),
       viewer: document.getElementById("viewerScreen"),
-      timeline: document.getElementById("timelineScreen")
+      timeline: document.getElementById("timelineScreen"),
+      board: document.getElementById("boardScreen")
     };
 
     const episodeGrid = document.getElementById("episodeGrid");
@@ -2928,6 +3185,7 @@
     function renderLobby() {
       episodeGrid.innerHTML = "";
       updateTimelineMenu();
+      updateBoardMenu();
 
       if (!episodesCache.length) {
         episodeGrid.innerHTML = `
@@ -5908,6 +6166,283 @@
       return band;
     }
 
+    // ── 이해관계도 ────────────────────────────────────
+    let boardFocus = null;   // 지금 고른 인물 이름
+
+    function isOrderRead(order) {
+      const target = episodesCache.find(e => Number(e.order) === Number(order));
+      return Boolean(target && isEpisodeRead(target.id));
+    }
+
+    function boardData() {
+      const raw = projectMeta.relationBoard;
+      if (!raw?.people?.length) return null;
+
+      const people = raw.people.map(p => ({ ...p, open: isOrderRead(p.reveal) }));
+      const openNames = new Set(people.filter(p => p.open).map(p => p.name));
+      // 관계는 양쪽 인물이 모두 드러난 뒤에야 걸린다
+      const relations = (raw.relations || []).map(r => ({
+        ...r,
+        open: isOrderRead(r.reveal) && openNames.has(r.from) && openNames.has(r.to)
+      }));
+
+      return {
+        factions: raw.factions || [],
+        people,
+        relations,
+        total: people.length + relations.length,
+        opened: people.filter(p => p.open).length + relations.filter(r => r.open).length
+      };
+    }
+
+    function updateBoardMenu() {
+      const counter = document.getElementById("boardMenuCount");
+      if (!counter) return;
+      const data = boardData();
+      counter.textContent = data ? `관계 ${data.opened} / ${data.total}` : "";
+    }
+
+    function renderBoardScreen() {
+      const zones = document.getElementById("boardZones");
+      const data = boardData();
+      zones.innerHTML = "";
+      boardFocus = null;
+      document.getElementById("boardDetail").hidden = true;
+
+      if (!data) {
+        zones.innerHTML = '<p class="timeline-empty">아직 등록된 관계도가 없습니다.</p>';
+        document.getElementById("boardThreads").innerHTML = "";
+        return;
+      }
+
+      document.getElementById("boardProgressLabel").textContent =
+        `밝혀진 관계 ${data.opened} / ${data.total}`;
+      document.getElementById("boardProgressFill").style.width =
+        data.total ? `${Math.round((data.opened / data.total) * 100)}%` : "0%";
+
+      const motifs = projectMeta.motifs || {};
+      const byFaction = new Map(data.factions.map(f => [f.name, []]));
+      for (const person of data.people) {
+        if (!byFaction.has(person.faction)) byFaction.set(person.faction, []);
+        byFaction.get(person.faction).push(person);
+      }
+
+      for (const faction of data.factions) {
+        const members = byFaction.get(faction.name) || [];
+        if (!members.length) continue;
+
+        const zone = document.createElement("section");
+        zone.className = "board-zone";
+        const name = document.createElement("h3");
+        name.className = "board-zone-name";
+        name.textContent = faction.name;
+        zone.append(name);
+        if (faction.note) {
+          const note = document.createElement("small");
+          note.className = "board-zone-note";
+          note.textContent = faction.note;
+          zone.append(note);
+        }
+
+        const cards = document.createElement("div");
+        cards.className = "board-cards";
+        for (const person of members) {
+          const card = document.createElement("button");
+          card.className = "board-card" + (person.open ? "" : " locked");
+          card.dataset.person = person.name;
+
+          const label = document.createElement("span");
+          label.className = "board-card-name";
+          const motif = motifs[person.name];
+          if (person.open && motif) {
+            const glyph = document.createElement("span");
+            glyph.className = "board-card-motif";
+            glyph.textContent = motif + " ";
+            label.append(glyph);
+          }
+          label.append(document.createTextNode(person.open ? person.name : "???"));
+
+          const title = document.createElement("span");
+          title.className = "board-card-title";
+          title.textContent = person.open ? (person.title || "") : "아직 만나지 않은 인물";
+
+          card.append(label, title);
+          if (person.open) {
+            card.addEventListener("click", () => {
+              setBoardFocus(boardFocus === person.name ? null : person.name);
+            });
+          }
+          cards.append(card);
+        }
+        zone.append(cards);
+        zones.append(zone);
+      }
+
+      drawBoardThreads(data);
+    }
+
+    function drawBoardThreads(data, retry = 0) {
+      const svg = document.getElementById("boardThreads");
+      const stage = document.getElementById("boardStage");
+      svg.innerHTML = "";
+      if (!data) return;
+
+      const base = stage.getBoundingClientRect();
+      // 레이아웃이 아직 안 잡혔으면(폭 0) 좌표가 전부 뭉개진다.
+      // 글꼴 로딩·화면 전환 직후가 그런 상태라 잡힐 때까지 다음 프레임에 다시 시도한다.
+      if (base.width < 1 || base.height < 1) {
+        if (retry < 30) requestAnimationFrame(() => drawBoardThreads(data, retry + 1));
+        return;
+      }
+      svg.setAttribute("viewBox", `0 0 ${base.width} ${base.height}`);
+
+      const centerOf = personName => {
+        const card = stage.querySelector(`.board-card[data-person="${CSS.escape(personName)}"]`);
+        if (!card) return null;
+        const box = card.getBoundingClientRect();
+        return {
+          x: box.left - base.left + box.width / 2,
+          y: box.top - base.top + box.height / 2
+        };
+      };
+
+      const NS = "http://www.w3.org/2000/svg";
+      for (const rel of data.relations) {
+        if (!rel.open) continue;
+        const a = centerOf(rel.from);
+        const b = centerOf(rel.to);
+        if (!a || !b) continue;
+
+        // 실이 팽팽하지 않도록 살짝 늘어뜨린다
+        const mx = (a.x + b.x) / 2;
+        const my = (a.y + b.y) / 2;
+        const sag = Math.min(26, Math.hypot(b.x - a.x, b.y - a.y) * 0.11);
+
+        const path = document.createElementNS(NS, "path");
+        path.setAttribute("d", `M ${a.x} ${a.y} Q ${mx} ${my + sag} ${b.x} ${b.y}`);
+        path.setAttribute("class", `board-thread kind-${rel.kind || "plain"}`);
+        path.dataset.from = rel.from;
+        path.dataset.to = rel.to;
+        svg.append(path);
+
+        const text = document.createElementNS(NS, "text");
+        text.setAttribute("x", mx);
+        text.setAttribute("y", my + sag * 0.62 - 3);
+        text.setAttribute("class", "board-thread-label");
+        text.dataset.from = rel.from;
+        text.dataset.to = rel.to;
+        text.textContent = rel.label || "";
+        svg.append(text);
+      }
+
+      applyBoardFocus();
+    }
+
+    function setBoardFocus(name) {
+      boardFocus = name;
+      applyBoardFocus();
+      renderBoardDetail();
+    }
+
+    function applyBoardFocus() {
+      const stage = document.getElementById("boardStage");
+      const touches = el => !boardFocus
+        || el.dataset.from === boardFocus || el.dataset.to === boardFocus;
+
+      stage.querySelectorAll(".board-thread, .board-thread-label").forEach(el => {
+        el.classList.toggle("is-active", Boolean(boardFocus) && touches(el));
+        el.classList.toggle("is-dimmed", Boolean(boardFocus) && !touches(el));
+      });
+
+      // 연결 인물은 그려진 선이 아니라 데이터에서 구한다
+      // (실이 아직 그려지기 전이어도 강조가 어긋나지 않도록)
+      const linked = new Set();
+      if (boardFocus) {
+        linked.add(boardFocus);
+        for (const rel of boardData()?.relations || []) {
+          if (!rel.open) continue;
+          if (rel.from === boardFocus) linked.add(rel.to);
+          if (rel.to === boardFocus) linked.add(rel.from);
+        }
+      }
+      stage.querySelectorAll(".board-card").forEach(card => {
+        const who = card.dataset.person;
+        card.classList.toggle("is-active", who === boardFocus);
+        card.classList.toggle("is-dimmed", Boolean(boardFocus) && !linked.has(who));
+      });
+    }
+
+    function renderBoardDetail() {
+      const box = document.getElementById("boardDetail");
+      const data = boardData();
+      if (!boardFocus || !data) {
+        box.hidden = true;
+        return;
+      }
+
+      const mine = data.relations.filter(
+        r => r.open && (r.from === boardFocus || r.to === boardFocus));
+      box.innerHTML = "";
+
+      const head = document.createElement("h4");
+      head.textContent = `${boardFocus} — 걸린 실 ${mine.length}개`;
+      box.append(head);
+
+      if (!mine.length) {
+        const empty = document.createElement("p");
+        empty.className = "board-detail-note";
+        empty.textContent = "아직 이 인물에게 이어진 관계가 드러나지 않았습니다.";
+        box.append(empty);
+      }
+
+      for (const rel of mine) {
+        const other = rel.from === boardFocus ? rel.to : rel.from;
+        const row = document.createElement("div");
+        row.className = "board-detail-row";
+
+        const who = document.createElement("span");
+        who.className = "board-detail-who";
+        who.textContent = other;
+
+        const label = document.createElement("span");
+        label.className = "board-detail-label";
+        label.textContent = rel.label || "관계";
+
+        const note = document.createElement("span");
+        note.className = "board-detail-note";
+        note.textContent = rel.note || "";
+
+        row.append(who, label, note);
+        box.append(row);
+      }
+      box.hidden = false;
+    }
+
+    let boardObserver = null;
+
+    // 카드 위치는 글꼴 로딩·창 크기·줄바꿈에 따라 바뀐다.
+    // 그때마다 실을 다시 걸지 않으면 좌표가 어긋난 채로 남는다.
+    function watchBoardLayout() {
+      if (boardObserver || typeof ResizeObserver === "undefined") return;
+      boardObserver = new ResizeObserver(() => {
+        if (screens.board.classList.contains("active")) drawBoardThreads(boardData());
+      });
+      boardObserver.observe(document.getElementById("boardStage"));
+    }
+
+    function openBoardScreen() {
+      showScreen("board");
+      setRouteHash("board");
+      renderBoardScreen();
+      watchBoardLayout();
+      requestAnimationFrame(() => drawBoardThreads(boardData()));
+    }
+
+    function closeBoardScreen() {
+      showScreen("lobby");
+      renderLobby();
+    }
+
     function openTimelineScreen() {
       renderTimelineScreen();
       showScreen("timeline");
@@ -5930,6 +6465,11 @@
 
       if (hash === "timeline") {
         openTimelineScreen();
+        return;
+      }
+
+      if (hash === "board") {
+        openBoardScreen();
         return;
       }
 
@@ -6399,10 +6939,20 @@
     document.getElementById("viewerBacklogBtn").addEventListener("click", openBacklogModal);
     document.getElementById("timelineMenuBtn").addEventListener("click", openTimelineScreen);
     document.getElementById("timelineBackBtn").addEventListener("click", closeTimelineScreen);
+    document.getElementById("boardMenuBtn").addEventListener("click", openBoardScreen);
+    document.getElementById("boardBackBtn").addEventListener("click", closeBoardScreen);
     document.addEventListener("keydown", event => {
-      if (event.key === "Escape" && screens.timeline.classList.contains("active")) {
-        closeTimelineScreen();
+      if (event.key !== "Escape") return;
+      if (screens.timeline.classList.contains("active")) closeTimelineScreen();
+      else if (screens.board.classList.contains("active")) {
+        if (boardFocus) setBoardFocus(null);
+        else closeBoardScreen();
       }
+    });
+
+    // 창 크기가 바뀌면 카드 위치가 달라지므로 실을 다시 건다
+    window.addEventListener("resize", () => {
+      if (screens.board.classList.contains("active")) drawBoardThreads(boardData());
     });
     document.getElementById("backlogCloseBtn").addEventListener("click", () => {
       document.getElementById("backlogModal").classList.remove("show");

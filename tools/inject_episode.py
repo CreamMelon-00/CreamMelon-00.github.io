@@ -218,6 +218,92 @@ def ensure_chapter(pack, chapter):
     print(f"새 챕터 등록: {chapter} (order {order})")
 
 
+RELATION_FILE = "_인물관계.md"
+# 라벨에 이 말이 들어가면 그 유형의 선으로 그린다 (앞에서부터 먼저 맞는 것)
+REL_KINDS = [
+    ("blood",   ("혈연", "형제", "남매", "가족", "부녀", "부자")),
+    ("hostile", ("적대", "억압", "대립", "반목")),
+    ("secret",  ("밀약", "포섭", "감시", "거래", "이용")),
+]
+
+
+def parse_relations(path):
+    """_인물관계.md → {factions, people, relations}."""
+    factions, people, relations = [], [], []
+    for n, raw in enumerate(path.read_text(encoding="utf-8").split("\n"), 1):
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        key, sep, value = line.partition(":")
+        key = key.strip()
+        if not sep or key not in ("세력", "인물", "관계"):
+            continue
+        parts = [x.strip() for x in value.split("|")]
+
+        def reveal(field):
+            m = re.search(r"(\d+)", field or "")
+            return int(m.group(1)) if m else None
+
+        if key == "세력":
+            if len(parts) < 1 or not parts[0]:
+                print(f"경고: {n}행 세력 형식 오류 → {line}")
+                continue
+            factions.append({"name": parts[0],
+                             "note": parts[1] if len(parts) > 1 else ""})
+        elif key == "인물":
+            if len(parts) < 4:
+                print(f"경고: {n}행 인물 형식은 '이름 | 세력 | 직함 | 공개: N편' → {line}")
+                continue
+            rv = reveal(parts[3])
+            if rv is None:
+                print(f"경고: {n}행 공개 편을 읽을 수 없습니다 → {parts[3]}")
+                continue
+            people.append({"name": parts[0], "faction": parts[1],
+                           "title": parts[2], "reveal": rv})
+        else:
+            if len(parts) < 4:
+                print(f"경고: {n}행 관계 형식은 'A - B | 라벨 | 설명 | 공개: N편' → {line}")
+                continue
+            a, dash, b = parts[0].partition("-")
+            rv = reveal(parts[3])
+            if not dash or not a.strip() or not b.strip() or rv is None:
+                print(f"경고: {n}행 관계 형식 오류 → {line}")
+                continue
+            label = parts[1]
+            kind = "plain"
+            if label.startswith("?"):
+                kind, label = "unknown", label.lstrip("?").strip()
+            else:
+                for name, words in REL_KINDS:
+                    if any(w in label for w in words):
+                        kind = name
+                        break
+            relations.append({"from": a.strip(), "to": b.strip(), "label": label,
+                              "kind": kind, "note": parts[2], "reveal": rv})
+    return {"factions": factions, "people": people, "relations": relations}
+
+
+def cmd_relations(pack, path, dry_run, save=True):
+    data = parse_relations(path)
+    known = {p["name"] for p in data["people"]}
+    fnames = {f["name"] for f in data["factions"]}
+    for p in data["people"]:
+        if p["faction"] not in fnames:
+            print(f"경고: 등록되지 않은 세력 '{p['faction']}' (인물 {p['name']})")
+    for r in data["relations"]:
+        for side in (r["from"], r["to"]):
+            if side not in known:
+                print(f"경고: 인물 목록에 없는 이름 '{side}' (관계 {r['from']}-{r['to']})")
+    pack.setdefault("meta", {})["relationBoard"] = data
+    print(f"관계도 반영: 세력 {len(data['factions'])} / 인물 {len(data['people'])} "
+          f"/ 관계 {len(data['relations'])}")
+    if dry_run:
+        print("(dry-run: 저장하지 않음)")
+        return
+    if save:
+        save_if_changed(pack)
+
+
 def ensure_eras(pack, past_events):
     """과거 시점 목록(meta.eras)을 갱신한다 — 플레이어가 이 순서로 연표를 세운다."""
     if not past_events:
@@ -470,8 +556,14 @@ def cmd_inject_all(pack, dry_run):
                       key=lambda p: (str(p.parent), len(p.stem.split("편")[0]), p.stem))
     if not md_files:
         sys.exit(f"드래프트 폴더에 md가 없습니다: {DRAFT_DIR}")
+    # '_'로 시작하는 파일은 에피소드가 아니라 부속 데이터다
     for md in md_files:
-        cmd_inject(pack, md, None, None, None, None, None, dry_run, save=False)
+        if md.name == RELATION_FILE:
+            cmd_relations(pack, md, dry_run, save=False)
+        elif md.name.startswith("_"):
+            print(f"건너뜀(에피소드 아님): {md.name}")
+        else:
+            cmd_inject(pack, md, None, None, None, None, None, dry_run, save=False)
     if dry_run:
         print(f"\n(dry-run: {len(md_files)}개 파일 확인만 함)")
         return
@@ -513,8 +605,11 @@ def main():
     elif args.add_bg:
         cmd_add_bg(pack, args.add_bg, args.id_name, args.dry_run)
     elif args.md:
-        cmd_inject(pack, args.md, args.order, args.subtitle, args.cover, args.description,
-                   args.chapter, args.dry_run)
+        if Path(args.md).name == RELATION_FILE:
+            cmd_relations(pack, Path(args.md), args.dry_run)
+        else:
+            cmd_inject(pack, args.md, args.order, args.subtitle, args.cover, args.description,
+                       args.chapter, args.dry_run)
     else:
         ap.print_help()
 
