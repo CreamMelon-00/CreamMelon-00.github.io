@@ -97,6 +97,22 @@ META_KEYS = {"부제": "subtitle", "설명": "description", "커버": "cover",
 ROLE_MAP = {"프롤로그": "prologue", "에필로그": "epilogue",
             "prologue": "prologue", "epilogue": "epilogue"}
 
+# 본편에서 언급/회상되는 과거 사건. 한 화에 여러 줄 쓸 수 있다.
+PAST_KEY = "과거사건"
+
+# 과거 시점(역)의 배열 순서. 대본의 상대 표기를 그대로 쓰되 순서만 여기서 정한다.
+# 앞에 있을수록 오래된 과거. 여기 없는 시점은 목록 맨 뒤(본편 직전)에 붙는다.
+ERA_ORDER = [
+    "먼 과거",
+    "10년 전",
+    "연말 위기",
+    "과거 어느 날",
+    "3년 전",
+    "몇 달 전",
+    "두 달 전",
+    "몇 주 전",
+]
+
 
 def parse_md(md_path):
     """대본 md → (title, script, ep_num, meta).
@@ -128,6 +144,7 @@ def parse_md(md_path):
 
     # 제목 뒤 메타 줄 수집
     meta = {}
+    past = []          # 과거사건: 시점 | 사건  (여러 줄 가능)
     i = body_start
     while i < len(lines):
         s = lines[i].strip()
@@ -135,12 +152,30 @@ def parse_md(md_path):
             i += 1
             continue
         key, sep, value = s.partition(":")
-        if sep and key.strip() in META_KEYS:
-            meta[META_KEYS[key.strip()]] = value.strip()
+        key = key.strip()
+        if sep and key == PAST_KEY:
+            # 과거사건: 시점 | 사건 [| 주역]
+            parts = [x.strip() for x in value.split("|")]
+            era = parts[0] if parts else ""
+            text = parts[1] if len(parts) > 1 else ""
+            focal = parts[2] if len(parts) > 2 else ""
+            if not era or not text:
+                print(f"경고: 과거사건 형식은 '과거사건: 시점 | 사건 [| 주역]' 입니다 → {s}")
+            else:
+                entry = {"era": era, "text": text}
+                if focal:
+                    entry["focal"] = focal
+                past.append(entry)
+            i += 1
+            continue
+        if sep and key in META_KEYS:
+            meta[META_KEYS[key]] = value.strip()
             i += 1
             continue
         break
     body_start = i
+    if past:
+        meta["pastEvents"] = past
 
     body = []
     for line in lines[body_start:]:
@@ -181,6 +216,23 @@ def ensure_chapter(pack, chapter):
     chapters.append({"key": chapter, "title": chapter, "description": "",
                      "coverAssetId": "", "order": order})
     print(f"새 챕터 등록: {chapter} (order {order})")
+
+
+def ensure_eras(pack, past_events):
+    """과거 시점 목록(meta.eras)을 갱신한다 — 플레이어가 이 순서로 연표를 세운다."""
+    if not past_events:
+        return
+    meta = pack.setdefault("meta", {})
+    eras = meta.setdefault("eras", [])
+    for item in past_events:
+        era = item.get("era")
+        if era and era not in eras:
+            eras.append(era)
+            print(f"새 시점 등록: {era}")
+    # 알려진 시점은 정해진 연대순으로, 나머지는 등록순으로 뒤에 붙인다
+    known = [e for e in ERA_ORDER if e in eras]
+    rest = [e for e in eras if e not in ERA_ORDER]
+    meta["eras"] = known + rest
 
 
 def cmd_list(pack):
@@ -343,6 +395,11 @@ def cmd_inject(pack, md_path, order, subtitle, cover, description, chapter, dry_
             existing["event"] = md_meta["event"]
         if "eventDate" in md_meta:
             existing["eventDate"] = md_meta["eventDate"]
+        # 과거사건 줄을 모두 지운 경우도 반영되도록 항상 덮어쓴다
+        if md_meta.get("pastEvents"):
+            existing["pastEvents"] = md_meta["pastEvents"]
+        else:
+            existing.pop("pastEvents", None)
         # 내용이 그대로면 updatedAt도 건드리지 않는다 (배포마다 diff가 지저분해지는 것 방지)
         if existing == before:
             action = "변경 없음"
@@ -365,6 +422,7 @@ def cmd_inject(pack, md_path, order, subtitle, cover, description, chapter, dry_
             **({"focal": md_meta["focal"]} if "focal" in md_meta else {}),
             **({"event": md_meta["event"]} if "event" in md_meta else {}),
             **({"eventDate": md_meta["eventDate"]} if "eventDate" in md_meta else {}),
+            **({"pastEvents": md_meta["pastEvents"]} if md_meta.get("pastEvents") else {}),
             "title": title,
             "subtitle": subtitle or "",
             "description": description or "",
@@ -376,6 +434,7 @@ def cmd_inject(pack, md_path, order, subtitle, cover, description, chapter, dry_
         episodes.append(target)
 
     ensure_chapter(pack, target.get("chapter"))
+    ensure_eras(pack, target.get("pastEvents"))
 
     # 주역 인물의 기호를 팩 공용 매핑(meta.motifs)에 등록
     if "motif" in md_meta and target.get("focal"):
