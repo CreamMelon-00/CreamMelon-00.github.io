@@ -94,7 +94,9 @@ def harvest_known_pairs():
         with open(PACK_PATH, encoding="utf-8") as f:
             pack = json.load(f)
         for ep in pack.get("episodes", []):
-            from_script(ep.get("script", ""))
+            script = ep.get("script", "")
+            # 팩에는 대본이 줄 배열로 저장되어 있다 (git diff 가독성)
+            from_script("\n".join(script) if isinstance(script, list) else script)
 
     for md in STORY_DIR.glob("*.md"):
         from_script(md.read_text(encoding="utf-8"))

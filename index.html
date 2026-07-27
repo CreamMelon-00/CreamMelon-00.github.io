@@ -2707,6 +2707,12 @@
       });
     }
 
+    // storypack 파일은 대본을 줄 배열로 담는다 (git diff 가독성). 내부에서는 문자열로 다룬다.
+    function normalizeEpisode(episode) {
+      if (!Array.isArray(episode?.script)) return episode;
+      return { ...episode, script: episode.script.join("\n") };
+    }
+
     async function loadPublishedStorypack() {
       if (!document.body.classList.contains("published")) return;
 
@@ -2763,7 +2769,7 @@
         });
 
         for (const episode of data.episodes || []) {
-          await storePut(STORES.episodes, episode);
+          await storePut(STORES.episodes, normalizeEpisode(episode));
         }
 
         for (const asset of data.assets || []) {
@@ -6014,7 +6020,7 @@
       });
 
       for (const episode of data.episodes || []) {
-        await storePut(STORES.episodes, episode);
+        await storePut(STORES.episodes, normalizeEpisode(episode));
       }
 
       for (const asset of data.assets || []) {

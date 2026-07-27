@@ -16,6 +16,7 @@
 """
 import argparse
 import base64
+import copy
 import json
 import re
 import secrets
@@ -37,19 +38,54 @@ def now_iso():
     return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
 
 
+_BASELINE = None
+
+
 def load_pack():
+    global _BASELINE
     if not PACK_PATH.exists():
         sys.exit(f"storypack을 찾을 수 없습니다: {PACK_PATH}")
     with open(PACK_PATH, encoding="utf-8") as f:
-        return json.load(f)
+        pack = json.load(f)
+    # 파일에는 대본이 줄 배열로 저장된다 — 내부에서는 항상 문자열로 다룬다.
+    for episode in pack.get("episodes", []):
+        if isinstance(episode.get("script"), list):
+            episode["script"] = "\n".join(episode["script"])
+    _BASELINE = copy.deepcopy(pack)
+    return pack
+
+
+def save_if_changed(pack):
+    """실제로 바뀐 게 있을 때만 저장한다.
+
+    exportedAt만 바뀐 커밋은 방문자 전원에게 팩을 다시 내려받게 만들고
+    diff도 지저분해지므로, 내용이 같으면 파일을 건드리지 않는다.
+    """
+    def content(p):
+        return {k: v for k, v in p.items() if k != "exportedAt"}
+
+    if _BASELINE is not None and content(pack) == content(_BASELINE):
+        print("변경 사항이 없습니다 — storypack을 저장하지 않았습니다.")
+        return False
+    pack["exportedAt"] = now_iso()
+    save_pack(pack)
+    return True
 
 
 def save_pack(pack):
+    # 대본을 줄 배열로 풀어서 저장한다. 한 줄짜리 거대 JSON은 git/SourceTree가
+    # 글자 단위 비교를 시도하며 멈추고, 무엇이 바뀌었는지도 읽을 수 없다.
+    out = copy.deepcopy(pack)
+    for episode in out.get("episodes", []):
+        if isinstance(episode.get("script"), str):
+            episode["script"] = episode["script"].split("\n")
+
     backup = PACK_PATH.with_suffix(".json.bak")
     shutil.copy2(PACK_PATH, backup)
     tmp = PACK_PATH.with_suffix(".json.tmp")
     with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(pack, f, ensure_ascii=False)
+        json.dump(out, f, ensure_ascii=False, indent=2)
+        f.write("\n")
     tmp.replace(PACK_PATH)
     print(f"저장 완료: {PACK_PATH} (백업: {backup.name})")
 
@@ -214,8 +250,7 @@ def cmd_add_bg(pack, image_path, id_name, dry_run):
         BG_DIR.mkdir(parents=True, exist_ok=True)
         target.write_bytes(data)
     pack["assets"].append(asset)
-    pack["exportedAt"] = now_iso()
-    save_pack(pack)
+    save_if_changed(pack)
 
 
 def cmd_externalize(pack, dry_run):
@@ -245,8 +280,7 @@ def cmd_externalize(pack, dry_run):
     if dry_run:
         print(f"(dry-run: {changed}개 변환 예정, 저장하지 않음)")
         return
-    pack["exportedAt"] = now_iso()
-    save_pack(pack)
+    save_if_changed(pack)
     print(f"완료: 배경 {changed}개 분리")
 
 
@@ -289,8 +323,8 @@ def cmd_inject(pack, md_path, order, subtitle, cover, description, chapter, dry_
 
     if existing:
         action = "갱신"
+        before = copy.deepcopy(existing)
         existing["script"] = script
-        existing["updatedAt"] = now
         if order is not None:
             existing["order"] = order
         if subtitle is not None:
@@ -309,6 +343,11 @@ def cmd_inject(pack, md_path, order, subtitle, cover, description, chapter, dry_
             existing["event"] = md_meta["event"]
         if "eventDate" in md_meta:
             existing["eventDate"] = md_meta["eventDate"]
+        # 내용이 그대로면 updatedAt도 건드리지 않는다 (배포마다 diff가 지저분해지는 것 방지)
+        if existing == before:
+            action = "변경 없음"
+        else:
+            existing["updatedAt"] = now
         target = existing
     else:
         action = "신규 추가"
@@ -353,8 +392,7 @@ def cmd_inject(pack, md_path, order, subtitle, cover, description, chapter, dry_
         print("(dry-run: 저장하지 않음)")
         return
     if save:
-        pack["exportedAt"] = now_iso()
-        save_pack(pack)
+        save_if_changed(pack)
 
 
 def cmd_inject_all(pack, dry_run):
@@ -368,8 +406,7 @@ def cmd_inject_all(pack, dry_run):
     if dry_run:
         print(f"\n(dry-run: {len(md_files)}개 파일 확인만 함)")
         return
-    pack["exportedAt"] = now_iso()
-    save_pack(pack)
+    save_if_changed(pack)
     print(f"\n총 {len(md_files)}개 대본 반영 완료")
 
 
