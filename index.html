@@ -231,22 +231,67 @@
       justify-content: flex-end;
     }
 
+    /* 로비 커버 — 배경 아트 3장을 이어붙인 콜라주 히어로 */
     .lobby-hero {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 24px;
-      align-items: end;
-      padding: 30px;
+      position: relative;
+      overflow: hidden;
+      min-height: 280px;
       margin-bottom: 20px;
       border: 1px solid rgba(207, 159, 78, 0.4);
       border-radius: 12px;
-      background:
-        linear-gradient(135deg, rgba(207, 159, 78, 0.12), transparent 42%),
-        rgba(30, 23, 16, 0.94);
+      background: rgba(20, 15, 9, 0.94);
       box-shadow:
         var(--shadow),
         inset 0 0 0 1px rgba(10, 7, 4, 0.9),
         inset 0 0 0 2px rgba(207, 159, 78, 0.16);
+    }
+
+    .lobby-hero-collage {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      /* 사진을 그대로 두지 않고 세피아 톤으로 눌러 사이트 팔레트에 맞춘다 */
+      filter: sepia(0.35) saturate(0.55) brightness(0.6) contrast(1.08);
+    }
+
+    .lobby-hero-pane {
+      position: relative;
+      flex: 1 1 0;
+      min-width: 0;
+      background-size: cover;
+      background-position: center;
+      background-color: rgba(20, 15, 9, 1);
+    }
+
+    .lobby-hero-pane:not(:first-child) {
+      margin-left: -1px;
+    }
+
+    /* 이웃한 사진끼리 이어붙인 티가 나지 않도록, 각 판을 안쪽에서부터 어둡게 눌러준다 */
+    .lobby-hero-pane::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(130% 150% at 50% 45%, transparent 38%, rgba(12, 9, 5, 0.94) 100%);
+    }
+
+    .lobby-hero-scrim {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(180deg, rgba(12, 9, 5, 0.1) 0%, rgba(12, 9, 5, 0.5) 60%, rgba(9, 6, 3, 0.92) 100%),
+        linear-gradient(90deg, rgba(9, 6, 3, 0.55), transparent 26%, transparent 74%, rgba(9, 6, 3, 0.55));
+    }
+
+    .lobby-hero-content {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 24px;
+      align-items: end;
+      min-height: inherit;
+      padding: 30px;
     }
 
     .lobby-hero h2 {
@@ -255,6 +300,7 @@
       font-weight: 900;
       font-size: clamp(24px, 4vw, 42px);
       letter-spacing: 0.01em;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.55);
     }
 
     .lobby-hero p {
@@ -262,6 +308,7 @@
       margin: 12px 0 0;
       color: var(--muted);
       line-height: 1.7;
+      text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
     }
 
     .episode-grid {
@@ -2182,8 +2229,13 @@
       }
 
       .lobby-hero {
+        min-height: 200px;
+      }
+
+      .lobby-hero-content {
         grid-template-columns: 1fr;
         align-items: start;
+        padding: 20px;
       }
     }
 
@@ -2256,17 +2308,25 @@
   <section id="lobbyScreen" class="screen active">
     <div class="app-shell">
       <section class="lobby-hero">
-        <div>
-          <h2 id="projectTitleDisplay">세계관 스토리 플레이어</h2>
-          <p id="projectDescriptionDisplay">
-            챕터를 선택해 이야기를 감상하세요.
-          </p>
+        <div id="lobbyHeroCollage" class="lobby-hero-collage" aria-hidden="true">
+          <div class="lobby-hero-pane"></div>
+          <div class="lobby-hero-pane"></div>
+          <div class="lobby-hero-pane"></div>
         </div>
-        <div class="toolbar right">
-          <button id="projectSettingsBtn">작품 정보</button>
-          <button id="assetLibraryBtn">배경 라이브러리</button>
-          <button id="characterLibraryBtn">캐릭터 라이브러리</button>
-          <button id="glossaryBtn">고유명사 사전</button>
+        <div class="lobby-hero-scrim" aria-hidden="true"></div>
+        <div class="lobby-hero-content">
+          <div>
+            <h2 id="projectTitleDisplay">세계관 스토리 플레이어</h2>
+            <p id="projectDescriptionDisplay">
+              챕터를 선택해 이야기를 감상하세요.
+            </p>
+          </div>
+          <div class="toolbar right">
+            <button id="projectSettingsBtn">작품 정보</button>
+            <button id="assetLibraryBtn">배경 라이브러리</button>
+            <button id="characterLibraryBtn">캐릭터 라이브러리</button>
+            <button id="glossaryBtn">고유명사 사전</button>
+          </div>
         </div>
       </section>
 
@@ -3192,10 +3252,23 @@
         .sort((a, b) => roleWeight(a) - roleWeight(b));
     }
 
+    // 로비 커버 콜라주에 쓸 배경 3장. 왼쪽부터 북방주(고향) → 수도주(정치) → 스프링필드(가문).
+    const LOBBY_COVER_ASSETS = ["북방주_대로변_낮", "수도주_광장_아침", "스프링필드_저택_길가_밤"];
+
+    function renderLobbyCover() {
+      const panes = document.querySelectorAll("#lobbyHeroCollage .lobby-hero-pane");
+      panes.forEach((pane, index) => {
+        const asset = findAsset(LOBBY_COVER_ASSETS[index]);
+        const url = asset ? getAssetUrl(asset) : "";
+        pane.style.backgroundImage = url ? `url("${url}")` : "none";
+      });
+    }
+
     function renderLobby() {
       episodeGrid.innerHTML = "";
       updateTimelineMenu();
       updateBoardMenu();
+      renderLobbyCover();
 
       if (!episodesCache.length) {
         episodeGrid.innerHTML = `
