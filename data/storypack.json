@@ -1,7 +1,7 @@
 {
   "format": "story-dialogue-studio",
   "version": 1,
-  "exportedAt": "2026-07-27T06:53:16.058Z",
+  "exportedAt": "2026-07-27T06:57:43.917Z",
   "meta": {
     "key": "project",
     "title": "세계관 스토리 플레이어",
@@ -444,11 +444,11 @@
           "reveal": 18
         },
         {
-          "from": "세라",
+          "from": "앤드루",
           "to": "먼로",
           "label": "무슨 사이",
           "kind": "unknown",
-          "note": "민간인인 그가 건국의 아버지들의 헌병을 거느리다",
+          "note": "용병을 부려 연방 전역의 지하를 파헤치고도, 국가로부터 아무런 제지를 받지 않는다",
           "reveal": 18
         }
       ]
