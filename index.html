@@ -3939,11 +3939,18 @@
       viewerGlossaryModal.classList.add("show");
     }
 
+    // [ ] 토큰의 알맹이. 통신 메시지 안에 [용어]나 *행동*이 겹쳐 있으면
+    // 표기 문자만 걷어내고 글자는 살린다 (통신 스타일은 바깥에서 이미 입혀짐).
+    function innerMarkupText(token) {
+      return token.slice(1, -1).replace(/[\[\]*#]/g, "").trim();
+    }
+
     function renderRichText(target, rawText) {
       target.textContent = "";
 
       const text = String(rawText ?? "");
-      const pattern = /(\#[^#\n]+?\#|\*[^*\n]+?\*|\[[^\]\n]+?\])/g;
+      // 통신 [ ] 안에 용어 [ ]가 한 겹 들어갈 수 있다 (19편 등)
+      const pattern = /(\#[^#\n]+?\#|\*[^*\n]+?\*|\[(?:[^\[\]\n]|\[[^\[\]\n]*\])+?\])/g;
       let lastIndex = 0;
       const map = glossaryMap();
 
@@ -3965,7 +3972,7 @@
           span.textContent = token.slice(1, -1);
           target.append(span);
         } else if (token.startsWith("[") && token.endsWith("]")) {
-          const term = token.slice(1, -1).trim();
+          const term = innerMarkupText(token);
           if (!map.has(term)) {
             // 사전에 없는 대괄호는 통신/메시지 표기 — 앰버 단말 스타일
             const tx = document.createElement("span");
@@ -4803,7 +4810,8 @@
 
     function splitRichText(rawText) {
       const text = String(rawText ?? "");
-      const pattern = /(\#[^#\n]+?\#|\*[^*\n]+?\*|\[[^\]\n]+?\])/g;
+      // 통신 [ ] 안에 용어 [ ]가 한 겹 들어갈 수 있다 (19편 등)
+      const pattern = /(\#[^#\n]+?\#|\*[^*\n]+?\*|\[(?:[^\[\]\n]|\[[^\[\]\n]*\])+?\])/g;
       const segments = [];
       let lastIndex = 0;
 
@@ -4830,7 +4838,7 @@
         } else if (token.startsWith("[") && token.endsWith("]")) {
           segments.push({
             type: "glossary",
-            text: token.slice(1, -1).trim()
+            text: innerMarkupText(token)
           });
         }
 
