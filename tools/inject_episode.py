@@ -342,6 +342,55 @@ def cmd_quotes(pack, path, dry_run, save=True):
         save_if_changed(pack)
 
 
+GLOSSARY_FILE = "_용어사전.md"
+
+
+def parse_glossary(path):
+    """_용어사전.md → [{term, description}]"""
+    entries = []
+    for n, raw in enumerate(path.read_text(encoding="utf-8").split("\n"), 1):
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        key, sep, value = line.partition(":")
+        if not sep or key.strip() != "용어":
+            continue
+        term, bar, desc = value.partition("|")
+        term, desc = term.strip(), desc.strip()
+        if not term or not bar:
+            print(f"경고: {n}행 형식은 '용어: 이름 | 설명' 입니다 → {line}")
+            continue
+        entries.append({"term": term, "description": desc})
+    return entries
+
+
+def cmd_glossary(pack, path, dry_run, save=True):
+    entries = parse_glossary(path)
+
+    seen = set()
+    for e in entries:
+        if e["term"] in seen:
+            print(f"경고: 중복된 용어 → {e['term']}")
+        seen.add(e["term"])
+
+    # 용어가 다른 용어를 통째로 품으면 자동 링크가 짧은 쪽으로 잘릴 수 있다.
+    # 플레이어는 긴 것부터 찾지만, 작성 단계에서 한 번 알려준다.
+    for e in entries:
+        inner = [o["term"] for o in entries
+                 if o["term"] != e["term"] and o["term"] in e["term"]]
+        if inner:
+            print(f"참고: '{e['term']}' 안에 '{', '.join(inner)}'가 들어 있습니다 "
+                  f"(긴 용어를 먼저 링크하므로 정상 동작합니다)")
+
+    pack["glossary"] = entries
+    print(f"용어사전 반영: {len(entries)}개")
+    if dry_run:
+        print("(dry-run: 저장하지 않음)")
+        return
+    if save:
+        save_if_changed(pack)
+
+
 def ensure_eras(pack, past_events):
     """과거 시점 목록(meta.eras)을 갱신한다 — 플레이어가 이 순서로 연표를 세운다."""
     if not past_events:
@@ -615,6 +664,8 @@ def cmd_inject_all(pack, dry_run):
             cmd_relations(pack, md, dry_run, save=False)
         elif md.name == QUOTE_FILE:
             cmd_quotes(pack, md, dry_run, save=False)
+        elif md.name == GLOSSARY_FILE:
+            cmd_glossary(pack, md, dry_run, save=False)
         elif md.name.startswith("_"):
             print(f"건너뜀(에피소드 아님): {md.name}")
         else:
@@ -662,6 +713,8 @@ def main():
     elif args.md:
         if Path(args.md).name == QUOTE_FILE:
             cmd_quotes(pack, Path(args.md), args.dry_run)
+        elif Path(args.md).name == GLOSSARY_FILE:
+            cmd_glossary(pack, Path(args.md), args.dry_run)
         elif Path(args.md).name == RELATION_FILE:
             cmd_relations(pack, Path(args.md), args.dry_run)
         else:

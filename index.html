@@ -1442,6 +1442,24 @@
       border-bottom-color: rgba(214, 177, 109, 0.36);
     }
 
+    /* 대괄호 없이 자동으로 찾아 이은 용어.
+       작가가 직접 감싼 [용어]의 강조를 잡아먹지 않도록, 글자색은 그대로 두고
+       아주 옅은 밑줄만 남긴다. 커서를 올렸을 때만 사전 링크임이 드러난다. */
+    .glossary-term {
+      display: inline;
+      color: inherit;
+      border-bottom: 1px dotted rgba(207, 159, 78, 0.34);
+      cursor: help;
+      text-decoration: none;
+      transition: color 0.12s ease, border-color 0.12s ease;
+    }
+
+    .glossary-term:hover,
+    .glossary-term:focus-visible {
+      color: var(--accent-strong);
+      border-bottom-color: rgba(240, 201, 131, 0.8);
+    }
+
     .glossary-form {
       display: grid;
       gap: 12px;
@@ -2504,6 +2522,14 @@
           </span>
           <span id="boardMenuCount" class="lobby-menu-count"></span>
         </button>
+        <button id="lobbyGlossaryMenuBtn" class="lobby-menu-item">
+          <span class="lobby-menu-glyph">📖</span>
+          <span class="lobby-menu-text">
+            <strong>용어사전</strong>
+            <small>파벌·조직·사건의 이름을 찾아볼 수 있습니다</small>
+          </span>
+          <span id="lobbyGlossaryMenuCount" class="lobby-menu-count"></span>
+        </button>
       </nav>
 
       <footer class="lobby-footer">
@@ -2744,6 +2770,20 @@
       <div id="viewerGlossaryList" class="glossary-list viewer-glossary-list"></div>
       <footer class="modal-actions">
         <button data-close-modal="viewerGlossaryModal" class="primary">닫기</button>
+      </footer>
+    </section>
+  </div>
+
+  <!-- 로비에서 여는 읽기 전용 용어사전. 편집용 #glossaryModal과 달리 입력 폼이 없다. -->
+  <div id="lobbyGlossaryModal" class="modal-backdrop">
+    <section class="modal" style="width: min(640px, 100%);">
+      <header class="panel-header">
+        <h3>용어사전</h3>
+        <p id="lobbyGlossarySummary">이야기에 나오는 파벌·조직·사건의 이름입니다.</p>
+      </header>
+      <div id="lobbyGlossaryList" class="glossary-list viewer-glossary-list"></div>
+      <footer class="modal-actions">
+        <button data-close-modal="lobbyGlossaryModal" class="primary">닫기</button>
       </footer>
     </section>
   </div>
@@ -3482,6 +3522,7 @@
       episodeGrid.innerHTML = "";
       updateTimelineMenu();
       updateBoardMenu();
+      updateLobbyGlossaryMenu();
       renderLobbyCover();
       hideLobbyQuote();
 
@@ -4468,6 +4509,14 @@
           });
         }
       }
+
+      // 대괄호 없이 자동으로 링크되는 용어도 같은 목록에 담는다.
+      // 본문에서는 밑줄로 보이는데 목록에 없으면 독자가 되짚어 찾을 수 없다.
+      for (const term of glossaryMap().keys()) {
+        if (!text.includes(term)) continue;
+        if (targetMap.has(term)) continue;
+        targetMap.set(term, { term, count: 1 });
+      }
     }
 
     function collectGlossaryTermsFromEntry(entry, targetMap) {
@@ -4485,6 +4534,8 @@
         entry.type === "narration"
       ) {
         collectGlossaryTermsFromText(entry.text, targetMap);
+        // 소속 라벨에도 사전 링크가 걸리므로 목록에도 함께 담는다
+        collectGlossaryTermsFromText(entry.affiliation, targetMap);
       }
     }
 
@@ -4504,9 +4555,49 @@
       return [...terms.values()];
     }
 
+    // 로비용 읽기 전용 사전. 뷰어 쪽과 달리 '지금까지 등장한 것'이 아니라 전체를 보여준다.
+    // 설명 자체를 스포일러 없이 쓰기로 했으므로 진행도로 잠그지 않는다.
+    function openLobbyGlossaryModal() {
+      const list = document.getElementById("lobbyGlossaryList");
+      const summary = document.getElementById("lobbyGlossarySummary");
+      const entries = [...glossaryCache].sort((a, b) =>
+        String(a.term).localeCompare(String(b.term), "ko"));
+
+      list.innerHTML = "";
+      summary.textContent = entries.length
+        ? `이야기에 나오는 이름 ${entries.length}개입니다. 본문에서 밑줄 그어진 말을 눌러도 열립니다.`
+        : "아직 등록된 용어가 없습니다.";
+
+      for (const entry of entries) {
+        const article = document.createElement("article");
+        article.className = "glossary-item";
+
+        const term = document.createElement("div");
+        term.className = "glossary-term";
+        term.textContent = entry.term;
+
+        const description = document.createElement("div");
+        description.className = "glossary-description";
+        description.textContent = entry.description || "설명이 없습니다.";
+
+        article.append(term, description);
+        list.append(article);
+      }
+
+      document.getElementById("lobbyGlossaryModal").classList.add("show");
+    }
+
+    function updateLobbyGlossaryMenu() {
+      const counter = document.getElementById("lobbyGlossaryMenuCount");
+      if (!counter) return;
+      counter.textContent = glossaryCache.length ? `${glossaryCache.length}개` : "";
+    }
+
     function openViewerGlossaryModal() {
-      const visibleTerms = getVisibleGlossaryTerms();
       const map = glossaryMap();
+      // 사전에 없는 대괄호는 통신 메시지 표기다. 그 문장이 '고유명사'로
+      // 목록에 섞이면 독자에게는 잡음이라, 설명이 있는 것만 남긴다.
+      const visibleTerms = getVisibleGlossaryTerms().filter(item => map.has(item.term));
 
       viewerGlossaryList.innerHTML = "";
 
@@ -4564,9 +4655,41 @@
       let lastIndex = 0;
       const map = glossaryMap();
 
+      // 대사창과 같은 규칙으로 자동 링크를 건다. 여기서 빠뜨리면
+      // 본문에서는 밑줄이던 말이 '대사 기록'에서는 맨 글씨가 되어 어긋난다.
+      const autoTerms = [...map.keys()].sort((a, b) => b.length - a.length);
+      const usedTerms = new Set();
+      const appendPlain = value => {
+        if (!value) return;
+        for (const part of splitPlainByTerms(value, autoTerms, usedTerms)) {
+          if (part.type !== "term" || !map.has(part.text)) {
+            target.append(document.createTextNode(part.text));
+            continue;
+          }
+          const span = document.createElement("span");
+          span.className = "glossary-term";
+          span.textContent = part.text;
+          span.title = "클릭해서 설명 보기";
+          span.tabIndex = 0;
+          span.role = "button";
+          span.addEventListener("click", event => {
+            event.stopPropagation();
+            showGlossaryPopup(part.text);
+          });
+          span.addEventListener("keydown", event => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              event.stopPropagation();
+              showGlossaryPopup(part.text);
+            }
+          });
+          target.append(span);
+        }
+      };
+
       for (const match of text.matchAll(pattern)) {
         if (match.index > lastIndex) {
-          target.append(document.createTextNode(text.slice(lastIndex, match.index)));
+          appendPlain(text.slice(lastIndex, match.index));
         }
 
         const token = match[0];
@@ -4583,6 +4706,8 @@
           target.append(span);
         } else if (token.startsWith("[") && token.endsWith("]")) {
           const term = innerMarkupText(token);
+          // 작가가 감싼 용어가 우선. 같은 줄에서 또 자동 링크되지 않게 표시해둔다
+          usedTerms.add(term);
           if (!map.has(term)) {
             // 사전에 없는 대괄호는 통신/메시지 표기 — 앰버 단말 스타일
             const tx = document.createElement("span");
@@ -4616,7 +4741,7 @@
       }
 
       if (lastIndex < text.length) {
-        target.append(document.createTextNode(text.slice(lastIndex)));
+        appendPlain(text.slice(lastIndex));
       }
     }
 
@@ -5418,6 +5543,69 @@
       return 26 * factor;
     }
 
+    // 사전에 등록된 용어를 대괄호 없이도 본문에서 찾아 잇는다.
+    // 한 줄에 같은 용어가 여러 번 나오면 첫 번째만 링크한다 — 전부 걸면 지저분해진다.
+    function splitPlainByTerms(text, terms, used) {
+      if (!terms.length || !text) return [{ type: "plain", text }];
+
+      const out = [];
+      let rest = text;
+
+      while (rest) {
+        let hit = null;
+        for (const term of terms) {
+          if (used.has(term)) continue;
+          const at = rest.indexOf(term);
+          if (at >= 0 && (!hit || at < hit.at)) hit = { term, at };
+        }
+        if (!hit) break;
+
+        if (hit.at > 0) out.push({ type: "plain", text: rest.slice(0, hit.at) });
+        out.push({ type: "term", text: hit.term });
+        used.add(hit.term);
+        rest = rest.slice(hit.at + hit.term.length);
+      }
+
+      if (rest) out.push({ type: "plain", text: rest });
+      return out.length ? out : [{ type: "plain", text }];
+    }
+
+    // 화자 소속 라벨에 사전 링크를 건다. 본문과 달리 마크업이 없는 짧은 문자열이라
+    // 용어 분해만 하면 된다.
+    function renderAffiliationWithTerms(target, affiliation) {
+      target.textContent = "";
+      if (!affiliation) return;
+
+      const map = glossaryMap();
+      const terms = [...map.keys()].sort((a, b) => b.length - a.length);
+      const parts = splitPlainByTerms(affiliation, terms, new Set());
+
+      for (const part of parts) {
+        if (part.type !== "term" || !map.has(part.text)) {
+          target.append(document.createTextNode(part.text));
+          continue;
+        }
+        const span = document.createElement("span");
+        span.className = "glossary-term";
+        span.textContent = part.text;
+        span.title = "클릭해서 설명 보기";
+        span.tabIndex = 0;
+        span.role = "button";
+        span.addEventListener("click", event => {
+          event.stopPropagation();
+          showGlossaryPopup(part.text);
+        });
+        span.addEventListener("keydown", event => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            event.stopPropagation();
+            showGlossaryPopup(part.text);
+          }
+        });
+        target.append(span);
+      }
+    }
+
     function splitRichText(rawText) {
       const text = String(rawText ?? "");
       // 통신 [ ] 안에 용어 [ ]가 한 겹 들어갈 수 있다 (19편 등)
@@ -5425,12 +5613,16 @@
       const segments = [];
       let lastIndex = 0;
 
+      // 긴 용어부터 찾아야 '건국의 아버지들'이 '아버지'로 쪼개지지 않는다
+      const terms = [...glossaryMap().keys()].sort((a, b) => b.length - a.length);
+      const usedTerms = new Set();
+      const pushPlain = value => {
+        if (value) segments.push(...splitPlainByTerms(value, terms, usedTerms));
+      };
+
       for (const match of text.matchAll(pattern)) {
         if (match.index > lastIndex) {
-          segments.push({
-            type: "plain",
-            text: text.slice(lastIndex, match.index)
-          });
+          pushPlain(text.slice(lastIndex, match.index));
         }
 
         const token = match[0];
@@ -5446,9 +5638,12 @@
             text: token.slice(1, -1)
           });
         } else if (token.startsWith("[") && token.endsWith("]")) {
+          const inner = innerMarkupText(token);
+          // 작가가 직접 감싼 용어가 우선이다. 같은 줄에서 또 자동 링크되지 않게 표시해둔다
+          usedTerms.add(inner);
           segments.push({
             type: "glossary",
-            text: innerMarkupText(token)
+            text: inner
           });
         }
 
@@ -5456,10 +5651,7 @@
       }
 
       if (lastIndex < text.length) {
-        segments.push({
-          type: "plain",
-          text: text.slice(lastIndex)
-        });
+        pushPlain(text.slice(lastIndex));
       }
 
       return segments;
@@ -5670,7 +5862,7 @@
           span.textContent = visibleText;
         }
 
-        if (segment.type === "glossary") {
+        if (segment.type === "glossary" || segment.type === "term") {
           const isFullyVisible = visibleText === segment.text;
 
           if (!map.has(segment.text)) {
@@ -5681,7 +5873,8 @@
             continue;
           }
 
-          span.className = "glossary-link";
+          // 작가가 감싼 것은 또렷하게, 자동으로 찾은 것은 조용하게
+          span.className = segment.type === "term" ? "glossary-term" : "glossary-link";
           span.textContent = visibleText;
           span.title = "클릭해서 설명 보기";
 
@@ -6068,7 +6261,9 @@
       if (entry.type === "dialogue") {
         screens.viewer.classList.remove("is-scene-intro");
         dialogueSpeaker.textContent = entry.speaker || "???";
-        dialogueAffiliation.textContent = entry.affiliation || "";
+        // 소속 라벨('통합파 의원', '연합 감독관' …)은 독자가 파벌 이름을
+        // 가장 자주 마주치는 자리다. 여기에도 사전 링크를 걸어준다.
+        renderAffiliationWithTerms(dialogueAffiliation, entry.affiliation || "");
         queueTypewriter(entry.text, entry);
         viewerStageMessage.innerHTML = "";
       }
@@ -7110,7 +7305,7 @@
       });
     });
 
-    [projectSettingsModal, assetLibraryModal, characterLibraryModal, glossaryModal, termPopupModal, viewerGlossaryModal].forEach(modal => {
+    [projectSettingsModal, assetLibraryModal, characterLibraryModal, glossaryModal, termPopupModal, viewerGlossaryModal, document.getElementById("lobbyGlossaryModal")].forEach(modal => {
       modal.addEventListener("click", event => {
         if (event.target === modal) modal.classList.remove("show");
       });
@@ -7240,6 +7435,8 @@
     document.getElementById("timelineMenuBtn").addEventListener("click", openTimelineScreen);
     document.getElementById("timelineBackBtn").addEventListener("click", closeTimelineScreen);
     document.getElementById("boardMenuBtn").addEventListener("click", openBoardScreen);
+    document.getElementById("lobbyGlossaryMenuBtn")
+      .addEventListener("click", openLobbyGlossaryModal);
 
     const lobbyQuoteBox = document.getElementById("lobbyQuote");
     lobbyQuoteBox?.addEventListener("click", swapLobbyQuote);
