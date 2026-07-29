@@ -1,7 +1,7 @@
 {
   "format": "story-dialogue-studio",
   "version": 1,
-  "exportedAt": "2026-07-29T01:00:05.871Z",
+  "exportedAt": "2026-07-29T01:23:13.168Z",
   "meta": {
     "key": "project",
     "title": "스토리 플레이어",
@@ -8650,443 +8650,443 @@
     {
       "id": "북방주_대로변_낮",
       "name": "북방주 대로변_낮",
-      "fileName": "북방주 대로변_낮.png",
-      "mimeType": "image/png",
-      "size": 2482646,
+      "fileName": "북방주 대로변_낮.webp",
+      "mimeType": "image/webp",
+      "size": 224808,
       "createdAt": "2026-06-19T06:39:29.115Z",
-      "src": "resource/bg/북방주 대로변_낮.png"
+      "src": "resource/bg/북방주 대로변_낮.webp"
     },
     {
       "id": "스프링필드_저택_길가_오후",
       "name": "스프링필드 저택 길가_오후",
-      "fileName": "스프링필드 저택 길가_오후.png",
-      "mimeType": "image/png",
-      "size": 2529916,
+      "fileName": "스프링필드 저택 길가_오후.webp",
+      "mimeType": "image/webp",
+      "size": 259948,
       "createdAt": "2026-06-19T06:39:29.117Z",
-      "src": "resource/bg/스프링필드 저택 길가_오후.png"
+      "src": "resource/bg/스프링필드 저택 길가_오후.webp"
     },
     {
       "id": "스프링필드_저택_길가_밤",
       "name": "스프링필드 저택 길가_밤",
-      "fileName": "스프링필드 저택 길가_밤.png",
-      "mimeType": "image/png",
-      "size": 2561099,
+      "fileName": "스프링필드 저택 길가_밤.webp",
+      "mimeType": "image/webp",
+      "size": 289716,
       "createdAt": "2026-06-19T06:39:29.138Z",
-      "src": "resource/bg/스프링필드 저택 길가_밤.png"
+      "src": "resource/bg/스프링필드 저택 길가_밤.webp"
     },
     {
       "id": "북방주_골목_낮",
       "name": "북방주 골목_낮",
-      "fileName": "북방주 골목_낮.png",
-      "mimeType": "image/png",
-      "size": 2575097,
+      "fileName": "북방주 골목_낮.webp",
+      "mimeType": "image/webp",
+      "size": 249276,
       "createdAt": "2026-06-19T06:42:40.967Z",
-      "src": "resource/bg/북방주 골목_낮.png"
+      "src": "resource/bg/북방주 골목_낮.webp"
     },
     {
       "id": "수도주_중앙역_낮",
       "name": "수도주 중앙역_낮",
-      "fileName": "수도주 중앙역_낮.png",
-      "mimeType": "image/png",
-      "size": 3072357,
+      "fileName": "수도주 중앙역_낮.webp",
+      "mimeType": "image/webp",
+      "size": 419936,
       "createdAt": "2026-06-19T08:38:05.521Z",
-      "src": "resource/bg/수도주 중앙역_낮.png"
+      "src": "resource/bg/수도주 중앙역_낮.webp"
     },
     {
       "id": "철도청_비서실_낮",
       "name": "철도청 비서실_낮",
-      "fileName": "철도청 비서실_낮.png",
-      "mimeType": "image/png",
-      "size": 2475782,
+      "fileName": "철도청 비서실_낮.webp",
+      "mimeType": "image/webp",
+      "size": 258000,
       "createdAt": "2026-06-19T08:38:05.522Z",
-      "src": "resource/bg/철도청 비서실_낮.png"
+      "src": "resource/bg/철도청 비서실_낮.webp"
     },
     {
       "id": "수도주_골목_저녁",
       "name": "수도주 골목_저녁",
-      "fileName": "수도주 골목_저녁.png",
-      "mimeType": "image/png",
-      "size": 2905564,
+      "fileName": "수도주 골목_저녁.webp",
+      "mimeType": "image/webp",
+      "size": 400270,
       "createdAt": "2026-06-19T08:38:05.676Z",
-      "src": "resource/bg/수도주 골목_저녁.png"
+      "src": "resource/bg/수도주 골목_저녁.webp"
     },
     {
       "id": "어딘가의_밀실",
       "name": "어딘가의 밀실",
-      "fileName": "어딘가의 밀실.png",
-      "mimeType": "image/png",
-      "size": 2295720,
+      "fileName": "어딘가의 밀실.webp",
+      "mimeType": "image/webp",
+      "size": 176394,
       "createdAt": "2026-06-19T08:38:05.883Z",
-      "src": "resource/bg/어딘가의 밀실.png"
+      "src": "resource/bg/어딘가의 밀실.webp"
     },
     {
       "id": "동방주_경계_밤",
       "name": "동방주 경계_밤",
-      "fileName": "동방주 경계_밤.png",
-      "mimeType": "image/png",
-      "size": 2342394,
+      "fileName": "동방주 경계_밤.webp",
+      "mimeType": "image/webp",
+      "size": 225262,
       "createdAt": "2026-07-22T03:31:27.415Z",
-      "src": "resource/bg/동방주 경계_밤.png"
+      "src": "resource/bg/동방주 경계_밤.webp"
     },
     {
       "id": "북방주_매표소_낮",
       "name": "북방주 매표소_낮",
-      "fileName": "북방주 매표소_낮.png",
-      "mimeType": "image/png",
-      "size": 2481949,
+      "fileName": "북방주 매표소_낮.webp",
+      "mimeType": "image/webp",
+      "size": 235008,
       "createdAt": "2026-07-22T03:31:27.415Z",
-      "src": "resource/bg/북방주 매표소_낮.png"
+      "src": "resource/bg/북방주 매표소_낮.webp"
     },
     {
       "id": "북방주_스프링필드_A역_낮",
       "name": "북방주 스프링필드 A역_낮",
-      "fileName": "북방주 스프링필드 A역_낮.png",
-      "mimeType": "image/png",
-      "size": 2554433,
+      "fileName": "북방주 스프링필드 A역_낮.webp",
+      "mimeType": "image/webp",
+      "size": 239054,
       "createdAt": "2026-07-22T03:31:27.415Z",
-      "src": "resource/bg/북방주 스프링필드 A역_낮.png"
+      "src": "resource/bg/북방주 스프링필드 A역_낮.webp"
     },
     {
       "id": "북방주_스프링필드_H역_낮",
       "name": "북방주 스프링필드 H역_낮",
-      "fileName": "북방주 스프링필드 H역_낮.png",
-      "mimeType": "image/png",
-      "size": 2567722,
+      "fileName": "북방주 스프링필드 H역_낮.webp",
+      "mimeType": "image/webp",
+      "size": 231046,
       "createdAt": "2026-07-22T03:31:27.415Z",
-      "src": "resource/bg/북방주 스프링필드 H역_낮.png"
+      "src": "resource/bg/북방주 스프링필드 H역_낮.webp"
     },
     {
       "id": "수도주_골목_낮",
       "name": "수도주 골목_낮",
-      "fileName": "수도주 골목_낮.png",
-      "mimeType": "image/png",
-      "size": 3526446,
+      "fileName": "수도주 골목_낮.webp",
+      "mimeType": "image/webp",
+      "size": 586412,
       "createdAt": "2026-07-22T03:31:27.415Z",
-      "src": "resource/bg/수도주 골목_낮.png"
+      "src": "resource/bg/수도주 골목_낮.webp"
     },
     {
       "id": "수도주_누군가의_집_새벽",
       "name": "수도주 누군가의 집_새벽",
-      "fileName": "수도주 누군가의 집_새벽.png",
-      "mimeType": "image/png",
-      "size": 1653124,
+      "fileName": "수도주 누군가의 집_새벽.webp",
+      "mimeType": "image/webp",
+      "size": 83602,
       "createdAt": "2026-07-22T03:31:27.415Z",
-      "src": "resource/bg/수도주 누군가의 집_새벽.png"
+      "src": "resource/bg/수도주 누군가의 집_새벽.webp"
     },
     {
       "id": "수도주_대로변_낮",
       "name": "수도주 대로변_낮",
-      "fileName": "수도주 대로변_낮.png",
-      "mimeType": "image/png",
-      "size": 3052757,
+      "fileName": "수도주 대로변_낮.webp",
+      "mimeType": "image/webp",
+      "size": 434326,
       "createdAt": "2026-07-22T03:31:27.415Z",
-      "src": "resource/bg/수도주 대로변_낮.png"
+      "src": "resource/bg/수도주 대로변_낮.webp"
     },
     {
       "id": "수도주_의회_거리_낮",
       "name": "수도주 의회 거리_낮",
-      "fileName": "수도주 의회 거리_낮.png",
-      "mimeType": "image/png",
-      "size": 3002178,
+      "fileName": "수도주 의회 거리_낮.webp",
+      "mimeType": "image/webp",
+      "size": 419526,
       "createdAt": "2026-07-22T03:31:27.415Z",
-      "src": "resource/bg/수도주 의회 거리_낮.png"
+      "src": "resource/bg/수도주 의회 거리_낮.webp"
     },
     {
       "id": "수도주_의회_거리_아침",
       "name": "수도주 의회 거리_아침",
-      "fileName": "수도주 의회 거리_아침.png",
-      "mimeType": "image/png",
-      "size": 2748098,
+      "fileName": "수도주 의회 거리_아침.webp",
+      "mimeType": "image/webp",
+      "size": 280324,
       "createdAt": "2026-07-22T03:31:27.415Z",
-      "src": "resource/bg/수도주 의회 거리_아침.png"
+      "src": "resource/bg/수도주 의회 거리_아침.webp"
     },
     {
       "id": "연방_경찰청_낮",
       "name": "연방 경찰청_낮",
-      "fileName": "연방 경찰청_낮.png",
-      "mimeType": "image/png",
-      "size": 2692143,
+      "fileName": "연방 경찰청_낮.webp",
+      "mimeType": "image/webp",
+      "size": 291438,
       "createdAt": "2026-07-22T03:31:27.415Z",
-      "src": "resource/bg/연방 경찰청_낮.png"
+      "src": "resource/bg/연방 경찰청_낮.webp"
     },
     {
       "id": "연방_의회_낮",
       "name": "연방 의회_낮",
-      "fileName": "연방 의회_낮.png",
-      "mimeType": "image/png",
-      "size": 2669630,
+      "fileName": "연방 의회_낮.webp",
+      "mimeType": "image/webp",
+      "size": 318244,
       "createdAt": "2026-07-22T03:31:27.415Z",
-      "src": "resource/bg/연방 의회_낮.png"
+      "src": "resource/bg/연방 의회_낮.webp"
     },
     {
       "id": "연방_지하철",
       "name": "연방 지하철",
-      "fileName": "연방 지하철.png",
-      "mimeType": "image/png",
-      "size": 2558707,
+      "fileName": "연방 지하철.webp",
+      "mimeType": "image/webp",
+      "size": 235884,
       "createdAt": "2026-07-22T03:31:27.415Z",
-      "src": "resource/bg/연방 지하철.png"
+      "src": "resource/bg/연방 지하철.webp"
     },
     {
       "id": "의회_복도",
       "name": "의회 복도",
-      "fileName": "의회 복도.png",
-      "mimeType": "image/png",
-      "size": 2492930,
+      "fileName": "의회 복도.webp",
+      "mimeType": "image/webp",
+      "size": 225012,
       "createdAt": "2026-07-22T03:31:27.415Z",
-      "src": "resource/bg/의회 복도.png"
+      "src": "resource/bg/의회 복도.webp"
     },
     {
       "id": "의회_연회장_복도_낮",
       "name": "의회 연회장 복도_낮",
-      "fileName": "의회 연회장 복도_낮.png",
-      "mimeType": "image/png",
-      "size": 2627281,
+      "fileName": "의회 연회장 복도_낮.webp",
+      "mimeType": "image/webp",
+      "size": 344760,
       "createdAt": "2026-07-22T03:31:27.415Z",
-      "src": "resource/bg/의회 연회장 복도_낮.png"
+      "src": "resource/bg/의회 연회장 복도_낮.webp"
     },
     {
       "id": "의회_연회장_낮",
       "name": "의회 연회장_낮",
-      "fileName": "의회 연회장_낮.png",
-      "mimeType": "image/png",
-      "size": 2598256,
+      "fileName": "의회 연회장_낮.webp",
+      "mimeType": "image/webp",
+      "size": 297402,
       "createdAt": "2026-07-22T03:31:27.415Z",
-      "src": "resource/bg/의회 연회장_낮.png"
+      "src": "resource/bg/의회 연회장_낮.webp"
     },
     {
       "id": "의회_연회장_저녁",
       "name": "의회 연회장_저녁",
-      "fileName": "의회 연회장_저녁.png",
-      "mimeType": "image/png",
-      "size": 2222944,
+      "fileName": "의회 연회장_저녁.webp",
+      "mimeType": "image/webp",
+      "size": 235372,
       "createdAt": "2026-07-22T03:31:27.415Z",
-      "src": "resource/bg/의회 연회장_저녁.png"
+      "src": "resource/bg/의회 연회장_저녁.webp"
     },
     {
       "id": "철도청_비서실_과거",
       "name": "철도청 비서실_과거",
-      "fileName": "철도청 비서실_과거.png",
-      "mimeType": "image/png",
-      "size": 2257258,
+      "fileName": "철도청 비서실_과거.webp",
+      "mimeType": "image/webp",
+      "size": 205402,
       "createdAt": "2026-07-22T03:31:27.415Z",
-      "src": "resource/bg/철도청 비서실_과거.png"
+      "src": "resource/bg/철도청 비서실_과거.webp"
     },
     {
       "id": "철도청_사무실",
       "name": "철도청 사무실",
-      "fileName": "철도청 사무실.png",
-      "mimeType": "image/png",
-      "size": 2283004,
+      "fileName": "철도청 사무실.webp",
+      "mimeType": "image/webp",
+      "size": 218648,
       "createdAt": "2026-07-22T03:31:27.415Z",
-      "src": "resource/bg/철도청 사무실.png"
+      "src": "resource/bg/철도청 사무실.webp"
     },
     {
       "id": "동방주_중앙역_저녁",
       "name": "동방주 중앙역_저녁",
-      "fileName": "동방주 중앙역_저녁.png",
-      "mimeType": "image/png",
-      "size": 2833106,
+      "fileName": "동방주 중앙역_저녁.webp",
+      "mimeType": "image/webp",
+      "size": 396064,
       "createdAt": "2026-07-22T06:46:52.570Z",
-      "src": "resource/bg/동방주 중앙역_저녁.png"
+      "src": "resource/bg/동방주 중앙역_저녁.webp"
     },
     {
       "id": "북방주_술집_저녁",
       "name": "북방주 술집_저녁",
-      "fileName": "북방주 술집_저녁.png",
-      "mimeType": "image/png",
-      "size": 2323574,
+      "fileName": "북방주 술집_저녁.webp",
+      "mimeType": "image/webp",
+      "size": 193598,
       "createdAt": "2026-07-22T06:46:52.570Z",
-      "src": "resource/bg/북방주 술집_저녁.png"
+      "src": "resource/bg/북방주 술집_저녁.webp"
     },
     {
       "id": "북방주_하트퍼드_저택_앞_아침",
       "name": "북방주 하트퍼드 저택 앞_아침",
-      "fileName": "북방주 하트퍼드 저택 앞_아침.png",
-      "mimeType": "image/png",
-      "size": 2707346,
+      "fileName": "북방주 하트퍼드 저택 앞_아침.webp",
+      "mimeType": "image/webp",
+      "size": 298708,
       "createdAt": "2026-07-22T06:46:52.570Z",
-      "src": "resource/bg/북방주 하트퍼드 저택 앞_아침.png"
+      "src": "resource/bg/북방주 하트퍼드 저택 앞_아침.webp"
     },
     {
       "id": "북방주_하트퍼드_저택_아침",
       "name": "북방주 하트퍼드 저택_아침",
-      "fileName": "북방주 하트퍼드 저택_아침.png",
-      "mimeType": "image/png",
-      "size": 2888687,
+      "fileName": "북방주 하트퍼드 저택_아침.webp",
+      "mimeType": "image/webp",
+      "size": 366658,
       "createdAt": "2026-07-22T06:46:52.570Z",
-      "src": "resource/bg/북방주 하트퍼드 저택_아침.png"
+      "src": "resource/bg/북방주 하트퍼드 저택_아침.webp"
     },
     {
       "id": "수도주_광장_심야",
       "name": "수도주 광장_심야",
-      "fileName": "수도주 광장_심야.png",
-      "mimeType": "image/png",
-      "size": 2171695,
+      "fileName": "수도주 광장_심야.webp",
+      "mimeType": "image/webp",
+      "size": 169660,
       "createdAt": "2026-07-22T06:46:52.570Z",
-      "src": "resource/bg/수도주 광장_심야.png"
+      "src": "resource/bg/수도주 광장_심야.webp"
     },
     {
       "id": "수도주_의원실_아침",
       "name": "수도주 의원실_아침",
-      "fileName": "수도주 의원실_아침.png",
-      "mimeType": "image/png",
-      "size": 2366540,
+      "fileName": "수도주 의원실_아침.webp",
+      "mimeType": "image/webp",
+      "size": 233914,
       "createdAt": "2026-07-22T06:46:52.570Z",
-      "src": "resource/bg/수도주 의원실_아침.png"
+      "src": "resource/bg/수도주 의원실_아침.webp"
     },
     {
       "id": "수도주_의회_거리_저녁",
       "name": "수도주 의회 거리_저녁",
-      "fileName": "수도주 의회 거리_저녁.png",
-      "mimeType": "image/png",
-      "size": 2748098,
+      "fileName": "수도주 의회 거리_저녁.webp",
+      "mimeType": "image/webp",
+      "size": 348066,
       "createdAt": "2026-07-22T06:46:52.570Z",
-      "src": "resource/bg/수도주 의회 거리_저녁.png"
+      "src": "resource/bg/수도주 의회 거리_저녁.webp"
     },
     {
       "id": "스프링필드_저택_로비_수리중_저녁",
       "name": "스프링필드 저택 로비 수리중_저녁",
-      "fileName": "스프링필드 저택 로비 수리중_저녁.png",
-      "mimeType": "image/png",
-      "size": 2697913,
+      "fileName": "스프링필드 저택 로비 수리중_저녁.webp",
+      "mimeType": "image/webp",
+      "size": 340118,
       "createdAt": "2026-07-22T06:46:52.570Z",
-      "src": "resource/bg/스프링필드 저택 로비 수리중_저녁.png"
+      "src": "resource/bg/스프링필드 저택 로비 수리중_저녁.webp"
     },
     {
       "id": "스프링필드_저택_로비",
       "name": "스프링필드 저택 로비",
-      "fileName": "스프링필드 저택 로비.png",
-      "mimeType": "image/png",
-      "size": 2529690,
+      "fileName": "스프링필드 저택 로비.webp",
+      "mimeType": "image/webp",
+      "size": 286976,
       "createdAt": "2026-07-22T06:46:52.570Z",
-      "src": "resource/bg/스프링필드 저택 로비.png"
+      "src": "resource/bg/스프링필드 저택 로비.webp"
     },
     {
       "id": "스프링필드_저택_복도_수리중_저녁",
       "name": "스프링필드 저택 복도 수리중_저녁",
-      "fileName": "스프링필드 저택 복도 수리중_저녁.png",
-      "mimeType": "image/png",
-      "size": 2605828,
+      "fileName": "스프링필드 저택 복도 수리중_저녁.webp",
+      "mimeType": "image/webp",
+      "size": 315252,
       "createdAt": "2026-07-22T06:46:52.570Z",
-      "src": "resource/bg/스프링필드 저택 복도 수리중_저녁.png"
+      "src": "resource/bg/스프링필드 저택 복도 수리중_저녁.webp"
     },
     {
       "id": "스프링필드_저택_복도_오후",
       "name": "스프링필드 저택 복도_오후",
-      "fileName": "스프링필드 저택 복도_오후.png",
-      "mimeType": "image/png",
-      "size": 3116980,
+      "fileName": "스프링필드 저택 복도_오후.webp",
+      "mimeType": "image/webp",
+      "size": 462648,
       "createdAt": "2026-07-22T06:46:52.570Z",
-      "src": "resource/bg/스프링필드 저택 복도_오후.png"
+      "src": "resource/bg/스프링필드 저택 복도_오후.webp"
     },
     {
       "id": "어딘가의_밀실_복도",
       "name": "어딘가의 밀실 복도",
-      "fileName": "어딘가의 밀실 복도.png",
-      "mimeType": "image/png",
-      "size": 2328608,
+      "fileName": "어딘가의 밀실 복도.webp",
+      "mimeType": "image/webp",
+      "size": 200836,
       "createdAt": "2026-07-22T06:46:52.570Z",
-      "src": "resource/bg/어딘가의 밀실 복도.png"
+      "src": "resource/bg/어딘가의 밀실 복도.webp"
     },
     {
       "id": "치킨누들_레스토랑_저녁",
       "name": "치킨누들 레스토랑_저녁",
-      "fileName": "치킨누들 레스토랑_저녁.png",
-      "mimeType": "image/png",
-      "size": 2285248,
+      "fileName": "치킨누들 레스토랑_저녁.webp",
+      "mimeType": "image/webp",
+      "size": 237072,
       "createdAt": "2026-07-22T06:46:52.570Z",
-      "src": "resource/bg/치킨누들 레스토랑_저녁.png"
+      "src": "resource/bg/치킨누들 레스토랑_저녁.webp"
     },
     {
       "id": "북방주_골목_전쟁_중",
       "name": "북방주 골목_전쟁 중",
-      "fileName": "북방주 골목_전쟁 중.png",
-      "mimeType": "image/png",
-      "size": 2751658,
+      "fileName": "북방주 골목_전쟁 중.webp",
+      "mimeType": "image/webp",
+      "size": 296566,
       "createdAt": "2026-07-24T02:00:42.642Z",
-      "src": "resource/bg/북방주 골목_전쟁 중.png"
+      "src": "resource/bg/북방주 골목_전쟁 중.webp"
     },
     {
       "id": "북방주_대로변_전쟁_중",
       "name": "북방주 대로변_전쟁 중",
-      "fileName": "북방주 대로변_전쟁 중.png",
-      "mimeType": "image/png",
-      "size": 2613212,
+      "fileName": "북방주 대로변_전쟁 중.webp",
+      "mimeType": "image/webp",
+      "size": 263724,
       "createdAt": "2026-07-24T02:00:42.642Z",
-      "src": "resource/bg/북방주 대로변_전쟁 중.png"
+      "src": "resource/bg/북방주 대로변_전쟁 중.webp"
     },
     {
       "id": "수도주_뒷골목_낮",
       "name": "수도주 뒷골목_낮",
-      "fileName": "수도주 뒷골목_낮.png",
-      "mimeType": "image/png",
-      "size": 2790103,
+      "fileName": "수도주 뒷골목_낮.webp",
+      "mimeType": "image/webp",
+      "size": 296770,
       "createdAt": "2026-07-24T02:00:42.642Z",
-      "src": "resource/bg/수도주 뒷골목_낮.png"
+      "src": "resource/bg/수도주 뒷골목_낮.webp"
     },
     {
       "id": "수도주-북방주_경계_낮",
       "name": "수도주-북방주 경계_낮",
-      "fileName": "수도주-북방주 경계_낮.png",
-      "mimeType": "image/png",
-      "size": 2930236,
+      "fileName": "수도주-북방주 경계_낮.webp",
+      "mimeType": "image/webp",
+      "size": 393348,
       "createdAt": "2026-07-24T02:00:42.642Z",
-      "src": "resource/bg/수도주-북방주 경계_낮.png"
+      "src": "resource/bg/수도주-북방주 경계_낮.webp"
     },
     {
       "id": "스프링필드_저택_길가_전쟁_중",
       "name": "스프링필드 저택 길가_전쟁 중",
-      "fileName": "스프링필드 저택 길가_전쟁 중.png",
-      "mimeType": "image/png",
-      "size": 2582695,
+      "fileName": "스프링필드 저택 길가_전쟁 중.webp",
+      "mimeType": "image/webp",
+      "size": 268150,
       "createdAt": "2026-07-24T02:00:42.642Z",
-      "src": "resource/bg/스프링필드 저택 길가_전쟁 중.png"
+      "src": "resource/bg/스프링필드 저택 길가_전쟁 중.webp"
     },
     {
       "id": "연방_경찰청_복도",
       "name": "연방 경찰청 복도",
-      "fileName": "연방 경찰청 복도.png",
-      "mimeType": "image/png",
-      "size": 2502769,
+      "fileName": "연방 경찰청 복도.webp",
+      "mimeType": "image/webp",
+      "size": 233000,
       "createdAt": "2026-07-24T02:00:42.642Z",
-      "src": "resource/bg/연방 경찰청 복도.png"
+      "src": "resource/bg/연방 경찰청 복도.webp"
     },
     {
       "id": "치킨누들_레스토랑_앞_거리_새벽",
       "name": "치킨누들 레스토랑 앞 거리_새벽",
-      "fileName": "치킨누들 레스토랑 앞 거리_새벽.png",
-      "mimeType": "image/png",
-      "size": 2562420,
+      "fileName": "치킨누들 레스토랑 앞 거리_새벽.webp",
+      "mimeType": "image/webp",
+      "size": 297640,
       "createdAt": "2026-07-24T02:00:42.642Z",
-      "src": "resource/bg/치킨누들 레스토랑 앞 거리_새벽.png"
+      "src": "resource/bg/치킨누들 레스토랑 앞 거리_새벽.webp"
     },
     {
       "id": "치킨누들_레스토랑_낮",
       "name": "치킨누들 레스토랑_낮",
-      "fileName": "치킨누들 레스토랑_낮.png",
-      "mimeType": "image/png",
-      "size": 2812702,
+      "fileName": "치킨누들 레스토랑_낮.webp",
+      "mimeType": "image/webp",
+      "size": 354156,
       "createdAt": "2026-07-24T02:00:42.642Z",
-      "src": "resource/bg/치킨누들 레스토랑_낮.png"
+      "src": "resource/bg/치킨누들 레스토랑_낮.webp"
     },
     {
       "id": "수도주_광장_아침",
       "name": "수도주 광장_아침",
-      "fileName": "수도주 광장_아침.png",
-      "mimeType": "image/png",
-      "size": 2818264,
+      "fileName": "수도주 광장_아침.webp",
+      "mimeType": "image/webp",
+      "size": 350246,
       "createdAt": "2026-07-27T06:31:30.761Z",
-      "src": "resource/bg/수도주 광장_아침.png"
+      "src": "resource/bg/수도주 광장_아침.webp"
     },
     {
       "id": "수도주_골목_아침",
       "name": "수도주 골목_아침",
-      "fileName": "수도주 골목_아침.png",
-      "mimeType": "image/png",
-      "size": 2900962,
+      "fileName": "수도주 골목_아침.webp",
+      "mimeType": "image/webp",
+      "size": 355704,
       "createdAt": "2026-07-27T06:31:31.175Z",
-      "src": "resource/bg/수도주 골목_아침.png"
+      "src": "resource/bg/수도주 골목_아침.webp"
     }
   ],
   "progress": [

@@ -348,14 +348,18 @@ MIME_EXT = {"image/png": ".png", "image/jpeg": ".jpg", "image/webp": ".webp"}
 
 
 def cmd_add_bg(pack, image_path, id_name, dry_run):
-    """이미지를 resource/bg/ 에 두고 storypack에는 경로(src)만 등록한다."""
+    """이미지를 WebP로 변환해 resource/bg/ 에 두고 storypack에는 경로(src)만 등록한다.
+
+    배경 전체를 무손실 PNG로 두던 시절엔 49장에 122MB였다(2026-07-27, WebP
+    전환으로 13.7MB). 같은 문제가 새 배경에서 반복되지 않도록 여기서 항상
+    WebP로 저장한다.
+    """
     img = Path(image_path)
     if not img.exists():
         sys.exit(f"이미지를 찾을 수 없습니다: {img}")
 
-    mime = {"png": "image/png", "jpg": "image/jpeg", "jpeg": "image/jpeg", "webp": "image/webp"}.get(
-        img.suffix.lower().lstrip("."))
-    if not mime:
+    suffix = img.suffix.lower().lstrip(".")
+    if suffix not in ("png", "jpg", "jpeg", "webp"):
         sys.exit(f"지원하지 않는 이미지 형식입니다: {img.suffix}")
 
     name = id_name or img.stem
@@ -365,28 +369,39 @@ def cmd_add_bg(pack, image_path, id_name, dry_run):
         alphabet = string.ascii_lowercase + string.digits
         asset_id += "_" + "".join(secrets.choice(alphabet) for _ in range(5))
 
-    data = img.read_bytes()
-    target = BG_DIR / img.name
-    if target.exists() and target.read_bytes() != data:
-        target = BG_DIR / f"{name}_{asset_id.rsplit('_', 1)[-1]}{img.suffix.lower()}"
+    target = BG_DIR / f"{img.stem}.webp"
+    if target.exists():
+        alphabet = string.ascii_lowercase + string.digits
+        target = BG_DIR / f"{img.stem}_{''.join(secrets.choice(alphabet) for _ in range(5))}.webp"
 
-    asset = {
-        "id": asset_id,
-        "name": name,
-        "fileName": target.name,
-        "mimeType": mime,
-        "size": len(data),
-        "createdAt": now_iso(),
-        "src": f"resource/bg/{target.name}",
-    }
-    print(f"배경 추가: {asset_id}  ({target.name}, {len(data) / 1024 / 1024:.1f}MB) → {asset['src']}")
+    print(f"배경 추가: {asset_id}  → resource/bg/{target.name}")
     print(f"대본에서 사용법: @배경 {asset_id}")
     if dry_run:
         print("(dry-run: 저장하지 않음)")
         return
-    if img.resolve() != target.resolve():
-        BG_DIR.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(data)
+
+    BG_DIR.mkdir(parents=True, exist_ok=True)
+    if suffix == "webp":
+        shutil.copy2(img, target)
+    else:
+        try:
+            from PIL import Image
+        except ImportError:
+            sys.exit("PNG/JPG를 WebP로 바꾸려면 Pillow가 필요합니다: pip install Pillow\n"
+                     "  (이미 WebP 파일이면 Pillow 없이도 그대로 추가할 수 있습니다)")
+        Image.open(img).convert("RGB").save(target, "WEBP", quality=85, method=6)
+
+    size = target.stat().st_size
+    asset = {
+        "id": asset_id,
+        "name": name,
+        "fileName": target.name,
+        "mimeType": "image/webp",
+        "size": size,
+        "createdAt": now_iso(),
+        "src": f"resource/bg/{target.name}",
+    }
+    print(f"  {size / 1024 / 1024:.2f}MB")
     pack["assets"].append(asset)
     save_if_changed(pack)
 
