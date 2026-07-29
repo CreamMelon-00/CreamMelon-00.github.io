@@ -1225,8 +1225,11 @@
       flex: 1;
       display: grid;
       place-items: center;
-      min-height: 390px;
+      /* 대사 상자가 긴 대사에서 늘어날 때, 이 여백이 줄어들어 흡수한다.
+         390px으로 못 박아두면 대신 페이지 전체가 늘어나 아래 버튼이 밀린다. */
+      min-height: 150px;
       padding: calc(var(--letterbox-height) + 18px) 24px;
+      cursor: pointer;
     }
 
     .viewer-stage-message {
@@ -1296,7 +1299,9 @@
     }
 
     .dialogue-text {
-      min-height: 126px;
+      /* em으로 잡아 글자 크기 슬라이더에 함께 따라간다. 긴 대사가 들어와도
+         상자 높이가 바뀌지 않을 만큼 미리 자리를 비워둔다. */
+      min-height: 8em;
       padding: 19px 22px 24px;
       font-size: calc(clamp(15px, 1.45vw, 18px) * var(--dialogue-scale, 1));
       line-height: 1.82;
@@ -1376,6 +1381,33 @@
       flex-wrap: wrap;
       color: rgba(176, 160, 134, 0.82);
       font-size: 11px;
+    }
+
+    /* 읽는 화면에 슬라이더가 상시 펼쳐져 있으면 모바일에서 본문이 한 화면에
+       들어가지 않고, 처음 열어본 사람에게는 읽기 전에 설정부터 보인다.
+       기본은 접어두고 ⚙로만 연다. */
+    .viewer-settings[hidden] {
+      display: none;
+    }
+
+    .viewer-settings-extra {
+      width: 100%;
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      flex-wrap: wrap;
+      padding-bottom: 4px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .viewer-settings-toggle.is-open {
+      border-color: rgba(217, 180, 111, 0.45);
+      color: var(--accent-strong);
+    }
+
+    /* 에셋 id는 집필용 표시다. 독자 화면에는 나오지 않아야 한다. */
+    body.published #viewerBackgroundLabel {
+      display: none;
     }
 
     .viewer-bottom-ui button {
@@ -2441,10 +2473,26 @@
         gap: 10px;
       }
 
+      /* 설정을 펼쳐도 한 화면에 들어오도록 좁힌다 */
+      .viewer-settings {
+        gap: 6px;
+        row-gap: 3px;
+      }
+
+      .viewer-settings input[type="range"] {
+        width: 96px;
+      }
+
+      .viewer-settings select {
+        min-width: 104px;
+      }
+
       .dialogue-text {
         font-size: 15px;
         line-height: 1.76;
         padding: 17px 18px 22px;
+        /* 한 줄에 24자밖에 안 들어가므로 데스크톱보다 더 많은 줄을 비워둔다 */
+        min-height: 11em;
       }
 
       .viewer-topbar {
@@ -2549,7 +2597,7 @@
             <button id="projectSettingsBtn">작품 정보</button>
             <button id="assetLibraryBtn">배경 라이브러리</button>
             <button id="characterLibraryBtn">캐릭터 라이브러리</button>
-            <button id="glossaryBtn">고유명사 사전</button>
+            <button id="glossaryBtn">용어사전</button>
           </div>
         </div>
       </section>
@@ -2656,12 +2704,21 @@
           <button id="viewerPrevBtn">이전</button>
           <button id="viewerNextBtn" class="primary">다음</button>
           <button id="viewerAutoBtn">자동 재생</button>
-          <button id="viewerRestartBtn">처음부터</button>
-          <button id="viewerBacklogBtn">대사 기록</button>
-          <button id="viewerGlossaryBtn">고유명사 목록</button>
+          <button
+            id="viewerSettingsToggle"
+            class="viewer-settings-toggle"
+            aria-expanded="false"
+            aria-controls="viewerSettings"
+          >⚙ 더보기</button>
         </div>
 
-        <div class="viewer-settings">
+        <div id="viewerSettings" class="viewer-settings" hidden>
+          <div class="viewer-settings-extra">
+            <button id="viewerBacklogBtn">대사 기록</button>
+            <button id="viewerGlossaryBtn">용어사전</button>
+            <button id="viewerRestartBtn">처음부터</button>
+          </div>
+
           <label for="viewerFit">배경 맞춤</label>
           <select id="viewerFit">
             <option value="cover">화면 채우기</option>
@@ -2775,9 +2832,9 @@
   <div id="glossaryModal" class="modal-backdrop">
     <section class="modal" style="width: min(780px, 100%);">
       <header class="panel-header">
-        <h3>고유명사 사전</h3>
+        <h3>용어사전</h3>
         <p>
-          대사에서 <code>[스프링필드 가문]</code>처럼 대괄호로 감싼 고유명사는
+          대사에서 <code>[스프링필드 가문]</code>처럼 대괄호로 감싼 용어는
           감상 화면에서 클릭 가능한 설명 링크가 됩니다.
           큰 외침은 <code>#멈춰#</code>, 작은 중얼거림은 <code>*중얼*</code>로 표시합니다.
           화면 흔들림은 <code>@흔들림</code>으로 표시합니다.
@@ -2812,7 +2869,7 @@
   <div id="termPopupModal" class="modal-backdrop">
     <section class="modal">
       <header class="panel-header">
-        <h3 id="termPopupTitle">고유명사</h3>
+        <h3 id="termPopupTitle">용어</h3>
       </header>
       <div class="modal-body">
         <p id="termPopupDescription"></p>
@@ -2826,9 +2883,9 @@
   <div id="viewerGlossaryModal" class="modal-backdrop">
     <section class="modal" style="width: min(780px, 100%);">
       <header class="panel-header">
-        <h3>이 장면까지의 고유명사</h3>
+        <h3>이 장면까지의 용어</h3>
         <p id="viewerGlossarySummary">
-          현재 감상 위치까지 대사에 등장한 고유명사를 모아 보여줍니다.
+          현재 감상 위치까지 대사에 등장한 용어를 모아 보여줍니다.
         </p>
       </header>
       <div id="viewerGlossaryList" class="glossary-list viewer-glossary-list"></div>
@@ -4804,7 +4861,9 @@
       const counter = document.getElementById("lobbyGlossaryMenuCount");
       if (!counter) return;
       const total = glossaryCache.length;
-      counter.textContent = total ? `${readGlossaryTerms().size} / ${total}` : "";
+      counter.textContent = total
+        ? `용어 ${readGlossaryTerms().size} / ${total}`
+        : "";
     }
 
     function openViewerGlossaryModal() {
@@ -4817,14 +4876,14 @@
 
       viewerGlossarySummary.textContent =
         visibleTerms.length
-          ? `현재 위치까지 등장한 고유명사 ${visibleTerms.length}개입니다.`
-          : "아직 이 시점까지 등장한 고유명사가 없습니다.";
+          ? `현재 위치까지 등장한 용어 ${visibleTerms.length}개입니다.`
+          : "아직 이 시점까지 등장한 용어가 없습니다.";
 
       if (!visibleTerms.length) {
         viewerGlossaryList.innerHTML = `
           <div class="glossary-empty">
-            아직 표시할 고유명사가 없습니다.<br />
-            대사에 <code>[고유명사]</code> 형식으로 등장하면 이곳에 추가됩니다.
+            아직 표시할 용어가 없습니다.<br />
+            대사에 <code>[용어]</code> 형식으로 등장하면 이곳에 추가됩니다.
           </div>
         `;
         viewerGlossaryModal.classList.add("show");
@@ -7548,8 +7607,10 @@
 
     viewerPrevBtn.addEventListener("click", viewerPrevious);
     viewerNextBtn.addEventListener("click", viewerNext);
-    dialogueBox.addEventListener("click", viewerNext);
 
+    /* 화면 어디를 눌러도 넘어간다 — 비주얼 노벨의 기본 조작이고, 모바일에서는
+       삽화가 화면의 절반을 차지하므로 그 영역이 죽어 있으면 손이 계속 아래로
+       내려가야 한다. 조작부·상단바·용어 링크만 각자의 동작을 지킨다. */
     screens.viewer.addEventListener("click", event => {
       if (event.target.closest(".modal")) return;
 
@@ -7558,14 +7619,32 @@
         return;
       }
 
-      if (event.target.closest(".viewer-content") &&
-          screens.viewer.classList.contains("is-scene-intro")) {
-        viewerNext();
-      }
+      if (event.target.closest(".viewer-topbar, .viewer-bottom-ui")) return;
+      if (event.target.closest(".glossary-term, .glossary-link")) return;
+
+      viewerNext();
     });
 
     viewerAutoBtn.addEventListener("click", toggleViewerAuto);
     viewerGlossaryBtn.addEventListener("click", openViewerGlossaryModal);
+
+    const viewerSettingsPanel = document.getElementById("viewerSettings");
+    const viewerSettingsToggle = document.getElementById("viewerSettingsToggle");
+
+    function setViewerSettingsOpen(open) {
+      viewerSettingsPanel.hidden = !open;
+      viewerSettingsToggle.classList.toggle("is-open", open);
+      viewerSettingsToggle.setAttribute("aria-expanded", open ? "true" : "false");
+      viewerSettingsToggle.textContent = open ? "⚙ 접기" : "⚙ 더보기";
+    }
+
+    viewerSettingsToggle.addEventListener("click", () => {
+      const open = viewerSettingsPanel.hidden;
+      setViewerSettingsOpen(open);
+      saveViewerSetting("settingsOpen", open);
+    });
+
+    setViewerSettingsOpen(loadViewerSettings().settingsOpen === true);
 
     document.getElementById("viewerRestartBtn").addEventListener("click", () => {
       stopViewerAuto();
