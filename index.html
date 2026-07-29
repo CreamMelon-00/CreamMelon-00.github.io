@@ -7506,6 +7506,7 @@
       dial.disabled = false;
       document.getElementById("radioLockBtn").disabled = true;
       document.getElementById("radioListenBtn").disabled = false;
+      document.getElementById("radioSkipBtn").hidden = false;
       document.getElementById("radioMessage").classList.remove("is-locked");
       document.getElementById("radioScale").innerHTML = "";
 
@@ -7610,6 +7611,8 @@
       const lock = document.getElementById("radioLockBtn");
       lock.disabled = false;
       lock.textContent = "닫기";
+      // 이미 해독한 뒤에 '건너뛰기'가 남아 있으면 무엇을 눌러야 할지 헷갈린다
+      document.getElementById("radioSkipBtn").hidden = true;
     }
 
     function finishMinigame(result) {
@@ -7618,8 +7621,11 @@
       document.getElementById("radioLockBtn").textContent = "고정";
       document.getElementById("radioDial").disabled = false;
       document.getElementById("radioListenBtn").disabled = false;
+      document.getElementById("radioSkipBtn").hidden = false;
       document.querySelector(".radio-set").classList.remove("is-listening");
-      session?.onDone?.(result);
+      // 고정한 뒤에는 어떤 경로로 나가도 해독으로 처리한다 — 이미 읽어버린 전문을
+      // '건너뛰기'로 나갔다는 이유로 기록에서 지우면 잃어버린 것처럼 보인다.
+      session?.onDone?.(session.locked ? "success" : result);
     }
 
     // 목록 항목으로 들어온 경우 — 끝나면 화 목록으로 돌아간다
