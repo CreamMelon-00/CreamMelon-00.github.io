@@ -3639,12 +3639,36 @@
         renderCharacterList();
         renderGlossaryList();
         applyHashRoute(initialHash);
+        if (new URLSearchParams(location.search).has("reset")) askProgressReset();
       } catch (error) {
         console.error(error);
         alert("브라우저 저장소를 초기화하지 못했습니다. 시크릿 모드나 저장소 권한을 확인해주세요.");
       } finally {
         hideBootLoading();
       }
+    }
+
+    /* ?reset=1 — 처음 방문한 사람의 화면을 다시 보기 위한 초기화.
+       되돌릴 수 없으므로 반드시 묻고, 주소에서 표시를 지운 뒤 다시 읽는다. */
+    function askProgressReset() {
+      openGate({
+        title: "진행도를 모두 지웁니까?",
+        body: "읽은 기록과 건너뛴 기록이 사라집니다. 연표·이해관계도·용어사전도"
+          + " 처음 상태로 돌아갑니다. 되돌릴 수 없습니다.",
+        actions: [
+          {
+            label: "지우기",
+            primary: true,
+            onClick: async () => {
+              await clearStore(STORES.progress);
+              localStorage.removeItem(SKIPPED_KEY);
+              localStorage.removeItem(CHAPTER_ACK_KEY);
+              location.replace(location.pathname);
+            }
+          },
+          { label: "그대로 두기", onClick: () => location.replace(location.pathname) }
+        ]
+      });
     }
 
     function renderProjectInfo() {
@@ -6948,8 +6972,16 @@
       return null;
     }
 
+    function hasVisited(episode) {
+      return progressCache.some(item => item.episodeId === episode.id);
+    }
+
     function episodeUnlocked(episode) {
       if (unlockAllEpisodes) return true;
+      // 이미 읽었거나 읽던 화는 절대 다시 잠그지 않는다. 순서대로 읽기는
+      // '아직 안 가본 곳'에만 걸리는 규칙이다 — 순서를 섞어 읽어둔 사람의
+      // 화에 "읽음 ✓"와 자물쇠가 함께 붙는 모순을 막는다.
+      if (hasVisited(episode)) return true;
       const previous = previousGateOf(episode);
       return !previous || isGateCleared(previous);
     }
