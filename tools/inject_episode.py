@@ -545,7 +545,10 @@ def cmd_inject(pack, md_path, order, subtitle, cover, description, chapter, dry_
         chapter = md_meta.get("chapter")
     if order is None and "order" in md_meta:
         try:
-            order = int(md_meta["order"])
+            # 미니게임은 화 사이에 끼어들어야 하므로 3.5 같은 소수도 받는다.
+            # 정수로 적힌 값은 정수로 남겨 기존 팩과 diff가 생기지 않게 한다.
+            value = float(md_meta["order"])
+            order = int(value) if value.is_integer() else value
         except ValueError:
             print(f"경고: 순서 값이 숫자가 아닙니다: {md_meta['order']}")
 

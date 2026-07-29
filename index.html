@@ -7385,7 +7385,15 @@
         config.brief || "다이얼을 돌려 잡음 속의 전문을 찾아라.";
 
       const dial = document.getElementById("radioDial");
-      dial.value = 0;
+      // 늘 0에서 시작하면 목표가 낮은 쪽에 있을 때 들어오자마자 신호가 잡혀
+      // 찾을 것이 없어진다. 신호가 전혀 없는 자리 중 하나에서 시작한다.
+      const silent = [];
+      for (let d = 0; d <= 100; d += 1) {
+        if (Math.abs(dialToFreq(d) - target) > RADIO_REACH) silent.push(d);
+      }
+      dial.value = silent.length
+        ? silent[Math.floor(Math.random() * silent.length)]
+        : 0;
       dial.disabled = false;
       document.getElementById("radioLockBtn").disabled = true;
       document.getElementById("radioMessage").classList.remove("is-locked");

@@ -1,7 +1,7 @@
 {
   "format": "story-dialogue-studio",
   "version": 1,
-  "exportedAt": "2026-07-29T06:22:40.681Z",
+  "exportedAt": "2026-07-29T08:00:51.317Z",
   "meta": {
     "key": "project",
     "title": "스토리 플레이어",
@@ -8903,6 +8903,25 @@
       ],
       "createdAt": "2026-07-27T06:53:16.058Z",
       "updatedAt": "2026-07-29T06:22:40.680Z"
+    },
+    {
+      "id": "episode_c25385b6f106",
+      "order": 3.5,
+      "chapter": "가문과 가족 1부",
+      "role": "minigame",
+      "game": "무전",
+      "gameTarget": "1407",
+      "gameMessage": "하노버 철수 완료. 보안관 건은 정리됐다. 다음 지시까지 대기한다.",
+      "gameBrief": "누군가의 무전을 가로챈다. 다이얼을 돌려 전문을 찾아라.",
+      "title": "잡음 속에서",
+      "subtitle": "누군가 아직 송신하고 있다",
+      "description": "",
+      "coverAssetId": "",
+      "script": [
+        ""
+      ],
+      "createdAt": "2026-07-29T08:00:51.317Z",
+      "updatedAt": "2026-07-29T08:00:51.317Z"
     }
   ],
   "assets": [
