@@ -7125,6 +7125,15 @@
         return;
       }
 
+      /* 미니게임 항목에는 대본이 없다. 어느 경로로 들어와도 — 잠금 안내의
+         [건너뛰고 열기], 뷰어의 [다음 화], 화 끝의 [다음 화 감상], 주소 직접
+         입력 — 뷰어가 아니라 게임으로 보낸다. 호출하는 쪽마다 막으면 새 경로가
+         생길 때 또 '출력할 대사가 없습니다'가 뜬다. */
+      if (!previewDraft && isMinigame(episode)) {
+        openMinigameEntry(episode);
+        return;
+      }
+
       viewerEpisodeId = previewDraft ? null : episode.id;
       viewerEpisodeTitle.textContent = episode.role
         ? episodeDisplayName(episode)
