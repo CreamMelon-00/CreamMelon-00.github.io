@@ -584,7 +584,21 @@ def cmd_inject(pack, md_path, order, subtitle, cover, description, chapter, dry_
         print("  (--add-bg 로 배경을 먼저 추가하거나, 대본의 @배경 id를 확인하세요. 주입은 계속 진행합니다.)")
 
     episodes = pack.setdefault("episodes", [])
-    existing = next((e for e in episodes if e.get("title") == title), None)
+    # 제목으로 찾는다. 파일을 어느 폴더로 옮겨도 제목이 같으면 진행도가 유지된다.
+    # 단 '챕터:'가 적혀 있으면 그 챕터 안에서 먼저 찾는다 — 1부와 2부에 똑같이
+    # '잡음'을 두는 경우, 제목만 보면 2부 것을 넣을 때 1부 것을 덮어쓴다.
+    same_title = [e for e in episodes if e.get("title") == title]
+    if chapter:
+        key = chapter.strip()
+        in_chapter = [e for e in same_title
+                      if str(e.get("chapter") or "").strip() == key]
+        existing = in_chapter[0] if in_chapter else None
+        if existing is None and same_title:
+            print(f"참고: 같은 제목 '{title}'이 다른 챕터에 {len(same_title)}개 있습니다."
+                  f" 챕터 '{key}'의 새 항목으로 추가합니다.")
+            print("  (챕터를 옮기려던 것이라면 storypack.json의 chapter를 직접 고칠 것)")
+    else:
+        existing = same_title[0] if same_title else None
     now = now_iso()
 
     if existing:
