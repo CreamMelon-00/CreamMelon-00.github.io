@@ -105,6 +105,13 @@
       transform: translateY(1px);
     }
 
+    /* 모바일 기본 탭 하이라이트(반투명 파란 박스)를 끈다. 대사를 넘기는 화면은
+       누르는 횟수가 수백 번이라, 그때마다 상자 전체가 번쩍이면 읽기를 방해한다.
+       버튼은 위의 button:active가, 카드류는 각자의 :active 규칙이 촉감을 대신한다. */
+    html {
+      -webkit-tap-highlight-color: transparent;
+    }
+
     button:disabled {
       opacity: 0.4;
       cursor: not-allowed;
@@ -427,6 +434,12 @@
       border-color: #8a6a3c;
     }
 
+    /* 탭 하이라이트를 끈 대신, 손가락으로 눌렀을 때의 반응을 직접 준다 */
+    .chapter-card:active {
+      transform: translateY(-1px);
+      border-color: #a37c40;
+    }
+
     .chapter-card .episode-cover {
       height: 150px;
     }
@@ -550,6 +563,11 @@
     .episode-row:hover {
       border-color: #8a6a3c;
       background: var(--surface-2);
+    }
+
+    .episode-row:active {
+      border-color: #a37c40;
+      background: var(--surface-3);
     }
 
     .episode-row-order {
@@ -1230,6 +1248,10 @@
       min-height: 150px;
       padding: calc(var(--letterbox-height) + 18px) 24px;
       cursor: pointer;
+      /* 삽화 영역도 넘기는 자리가 됐으므로 대사 상자와 같이 막는다 */
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
     }
 
     .viewer-stage-message {
@@ -1261,7 +1283,11 @@
       background: var(--glass);
       backdrop-filter: blur(16px) saturate(1.08);
       cursor: pointer;
+      /* 빠르게 연달아 누르면 두 번 탭으로 인식돼 대사가 선택되고, 길게 누르면
+         복사/공유 말풍선이 뜬다. 둘 다 반투명 박스를 남기므로 함께 막는다. */
       user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
       box-shadow:
         0 18px 54px rgba(0, 0, 0, 0.32),
         inset 0 1px 0 rgba(255, 255, 255, 0.04);
