@@ -4,6 +4,25 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>스토리 플레이어</title>
+  <meta name="description" content="《가문과 가족》 — 산업혁명기 대체역사 정치 드라마. 챕터를 골라 이야기를 감상하고, 연표와 이해관계도로 읽은 만큼 세계관을 채워보세요." />
+
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="스토리 플레이어" />
+  <meta property="og:title" content="스토리 플레이어 — 《가문과 가족》" />
+  <meta property="og:description" content="산업혁명기 대체역사 정치 드라마. 챕터를 골라 이야기를 감상하고, 연표와 이해관계도로 읽은 만큼 세계관을 채워보세요." />
+  <meta property="og:image" content="https://creammelon-00.github.io/resource/bg/%EC%88%98%EB%8F%84%EC%A3%BC%20%EA%B4%91%EC%9E%A5_%EC%95%84%EC%B9%A8.webp" />
+  <meta property="og:url" content="https://creammelon-00.github.io/" />
+  <meta property="og:locale" content="ko_KR" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="스토리 플레이어 — 《가문과 가족》" />
+  <meta name="twitter:description" content="산업혁명기 대체역사 정치 드라마. 챕터를 골라 이야기를 감상하세요." />
+  <meta name="twitter:image" content="https://creammelon-00.github.io/resource/bg/%EC%88%98%EB%8F%84%EC%A3%BC%20%EA%B4%91%EC%9E%A5_%EC%95%84%EC%B9%A8.webp" />
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
@@ -2304,9 +2323,65 @@
         padding-left: 0;
       }
     }
+
+    /* ── 첫 로딩 화면 ──────────────────────────────── */
+    .boot-loading {
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      display: grid;
+      place-items: center;
+      gap: 18px;
+      background: var(--bg);
+      transition: opacity 0.4s ease;
+    }
+
+    .boot-loading.is-hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .boot-loading-gear {
+      width: 56px;
+      height: 56px;
+      animation: boot-gear-spin 2.6s linear infinite;
+    }
+
+    .boot-loading-gear polygon {
+      fill: var(--accent);
+    }
+
+    .boot-loading-gear circle {
+      fill: var(--bg);
+    }
+
+    .boot-loading-text {
+      margin: 0;
+      color: var(--muted);
+      font-family: var(--serif);
+      font-size: 13px;
+      letter-spacing: 0.14em;
+    }
+
+    @keyframes boot-gear-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .boot-loading-gear {
+        animation: none;
+      }
+    }
   </style>
 </head>
 <body class="published">
+  <div id="bootLoading" class="boot-loading">
+    <svg class="boot-loading-gear" viewBox="0 0 64 64" aria-hidden="true">
+      <polygon points="27.2,10.8 28.3,4.1 35.7,4.1 36.8,10.8 43.7,13.6 49.1,9.6 54.4,14.9 50.4,20.3 53.2,27.2 59.9,28.3 59.9,35.7 53.2,36.8 50.4,43.7 54.4,49.1 49.1,54.4 43.7,50.4 36.8,53.2 35.7,59.9 28.3,59.9 27.2,53.2 20.3,50.4 14.9,54.4 9.6,49.1 13.6,43.7 10.8,36.8 4.1,35.7 4.1,28.3 10.8,27.2 13.6,20.3 9.6,14.9 14.9,9.6 20.3,13.6" />
+      <circle cx="32" cy="32" r="9.6" />
+    </svg>
+    <p class="boot-loading-text">불러오는 중…</p>
+  </div>
   <section id="lobbyScreen" class="screen active">
     <div class="app-shell">
       <section class="lobby-hero">
@@ -3186,6 +3261,10 @@
       }
     }
 
+    function hideBootLoading() {
+      document.getElementById("bootLoading")?.classList.add("is-hidden");
+    }
+
     async function initializeApp() {
       try {
         await openDatabase();
@@ -3203,6 +3282,8 @@
       } catch (error) {
         console.error(error);
         alert("브라우저 저장소를 초기화하지 못했습니다. 시크릿 모드나 저장소 권한을 확인해주세요.");
+      } finally {
+        hideBootLoading();
       }
     }
 
@@ -7090,6 +7171,8 @@
     window.addEventListener("beforeunload", revokeAssetUrls);
 
     initializeApp();
+    // 네트워크가 아주 느려 initializeApp이 끝내 안 끝나도, 로딩 화면에 갇히지는 않게 한다
+    setTimeout(hideBootLoading, 15000);
   </script>
 </body>
 </html>
