@@ -2630,6 +2630,195 @@
       }
     }
 
+    /* ── 무전 미니게임 ─────────────────────────────
+       본문의 [대괄호] 무전 표기가 이미 앰버 CRT 느낌이라, 그 시각 언어를
+       그대로 늘려 쓴다. 새로 그린 그림은 하나도 없다. */
+    .minigame-screen {
+      background: #0b0906;
+    }
+
+    .minigame-wrap {
+      width: min(680px, 100%);
+      margin: 0 auto;
+      padding: 22px 18px 34px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .minigame-topbar {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(207, 159, 78, 0.14);
+    }
+
+    .minigame-topbar > div {
+      flex: 1;
+      min-width: 0;
+    }
+
+    #minigameTitle {
+      display: block;
+      font-family: var(--serif);
+      font-size: 20px;
+      letter-spacing: -0.01em;
+    }
+
+    #minigameBrief {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .radio-set {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 22px 20px 24px;
+      border: 1px solid rgba(217, 180, 111, 0.22);
+      border-radius: 14px;
+      background:
+        radial-gradient(120% 80% at 50% 0%, rgba(217, 180, 111, 0.07), transparent 70%),
+        #120d08;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    }
+
+    .radio-readout {
+      display: flex;
+      align-items: baseline;
+      gap: 7px;
+    }
+
+    .radio-freq {
+      font-family: ui-monospace, "Courier New", monospace;
+      font-size: 34px;
+      font-weight: 700;
+      color: #f0ca87;
+      letter-spacing: 0.04em;
+      text-shadow: 0 0 14px rgba(217, 180, 111, 0.4);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .radio-unit {
+      color: rgba(217, 180, 111, 0.6);
+      font-size: 13px;
+    }
+
+    .radio-state {
+      margin-left: auto;
+      padding: 4px 10px;
+      border: 1px solid rgba(217, 180, 111, 0.28);
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+    }
+
+    .radio-state.is-close {
+      border-color: rgba(217, 180, 111, 0.6);
+      color: #f0ca87;
+    }
+
+    .radio-state.is-locked {
+      border-color: #4e9f8f;
+      color: #7fc9ba;
+    }
+
+    .radio-meter {
+      height: 6px;
+      border-radius: 3px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .radio-meter-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, rgba(217, 180, 111, 0.45), #f0ca87);
+      transition: width 90ms linear;
+    }
+
+    /* 전문 자리는 잡음일 때도 높이가 흔들리지 않게 미리 비워둔다 */
+    .radio-message {
+      display: block;
+      min-height: 5.2em;
+      padding: 14px 15px;
+      border: 1px dashed rgba(217, 180, 111, 0.2);
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.28);
+      color: #e8c98f;
+      font-family: ui-monospace, "Courier New", monospace;
+      font-size: 14px;
+      line-height: 1.85;
+      letter-spacing: 0.02em;
+      word-break: break-all;
+      white-space: pre-wrap;
+    }
+
+    .radio-message.is-locked {
+      border-style: solid;
+      border-color: rgba(78, 159, 143, 0.45);
+      color: #f2f4f7;
+      word-break: keep-all;
+    }
+
+    .radio-dial-label {
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+    }
+
+    .radio-dial {
+      width: 100%;
+      min-height: 44px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .radio-actions {
+      display: flex;
+      gap: 9px;
+      justify-content: flex-end;
+    }
+
+    .radio-actions button {
+      min-width: 88px;
+      min-height: 44px;
+    }
+
+    /* 이야기 중간의 미니게임 단추. 목록의 '색이 다른 줄'과 같은 청록을 써서,
+       두 자리가 같은 것을 가리킨다는 걸 색으로 알린다. */
+    .minigame-cue {
+      min-height: 44px;
+      padding: 0 20px;
+      border-color: rgba(78, 159, 143, 0.5);
+      background: linear-gradient(135deg, rgba(78, 159, 143, 0.16), transparent 60%);
+      color: #7fc9ba;
+      font-family: var(--serif);
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      animation: minigame-cue-breathe 2.6s ease-in-out infinite;
+    }
+
+    .minigame-cue:hover {
+      border-color: #4e9f8f;
+      color: #a9ded3;
+    }
+
+    @keyframes minigame-cue-breathe {
+      0%, 100% { box-shadow: 0 0 0 rgba(78, 159, 143, 0); }
+      50% { box-shadow: 0 0 18px rgba(78, 159, 143, 0.28); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .minigame-cue {
+        animation: none;
+      }
+    }
+
     /* ── 첫 로딩 화면 ──────────────────────────────── */
     .boot-loading {
       position: fixed;
@@ -2945,6 +3134,43 @@
     </section>
   </div>
 
+  <!-- 무전 주파수 맞추기. 목록 항목과 대본 중간(@미니게임) 양쪽에서 같은 화면을 쓴다. -->
+  <section id="minigameScreen" class="screen minigame-screen">
+    <div class="minigame-wrap">
+      <header class="minigame-topbar">
+        <div>
+          <strong id="minigameTitle">무전</strong>
+          <span id="minigameBrief">다이얼을 돌려 잡음 속의 전문을 찾아라.</span>
+        </div>
+        <button id="minigameQuitBtn" class="small">그만두기</button>
+      </header>
+
+      <div class="radio-set">
+        <div class="radio-readout">
+          <span id="radioFreq" class="radio-freq">1400.0</span>
+          <span class="radio-unit">kHz</span>
+          <span id="radioState" class="radio-state">잡음</span>
+        </div>
+
+        <div class="radio-meter" aria-hidden="true">
+          <div id="radioMeterFill" class="radio-meter-fill"></div>
+        </div>
+
+        <output id="radioMessage" class="radio-message"></output>
+
+        <label class="radio-dial-label" for="radioDial">주파수 다이얼</label>
+        <input id="radioDial" class="radio-dial" type="range"
+               min="0" max="100" step="1" value="0"
+               aria-describedby="radioState" />
+
+        <div class="radio-actions">
+          <button id="radioLockBtn" class="primary" disabled>고정</button>
+          <button id="radioSkipBtn" class="small">건너뛰기</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- 잠긴 화 안내 / 챕터 스포일러 경고 등 "묻고 답하는" 자리를 하나로 쓴다 -->
   <div id="gateModal" class="modal-backdrop">
     <section class="modal" style="width: min(460px, 100%);">
@@ -3156,7 +3382,8 @@
       lobby: document.getElementById("lobbyScreen"),
       viewer: document.getElementById("viewerScreen"),
       timeline: document.getElementById("timelineScreen"),
-      board: document.getElementById("boardScreen")
+      board: document.getElementById("boardScreen"),
+      minigame: document.getElementById("minigameScreen")
     };
 
     const episodeGrid = document.getElementById("episodeGrid");
@@ -5246,6 +5473,22 @@
       return match ? match[2].trim() : null;
     }
 
+    /* @미니게임 무전 | 1443 | 전문 내용 | 안내
+       주파수·전문·안내는 생략할 수 있다 (주파수를 비우면 매번 다른 자리에 숨는다).
+       파이프를 쓰지만 화자 라벨 검사보다 앞에서 걸리므로 대사로 오인되지 않는다. */
+    function getMinigameCommand(line) {
+      const match = line.match(/^@(미니게임|minigame)\s+(.+)$/i);
+      if (!match) return null;
+      const parts = match[2].split("|").map(part => part.trim());
+      const target = Number(parts[1]);
+      return {
+        kind: parts[0] || "무전",
+        target: Number.isFinite(target) && parts[1] ? target : null,
+        message: parts[2] || "",
+        brief: parts[3] || ""
+      };
+    }
+
     function getLetterboxCommand(line) {
       const match =
         line.match(/^@(레터박스|letterbox)\s+([^\s]+)$/i) ||
@@ -5801,6 +6044,18 @@
             type: "background",
             assetId: backgroundId === "0" ? "" : backgroundId
           });
+          continue;
+        }
+
+        const minigame = getMinigameCommand(line);
+        if (minigame !== null) {
+          flushDialogue();
+          activeSpeaker = null;
+          activeAffiliation = "";
+          result.push(withShake({
+            type: "minigame",
+            ...minigame
+          }));
           continue;
         }
 
@@ -6722,6 +6977,26 @@
         startViewerSilence(entry.seconds || 1);
       }
 
+      /* 이야기 중간의 미니게임 — 누르면 전용 화면으로, 그냥 '다음'을 누르면
+         지나간다. 막지 않는 것이 원칙이므로 통과 조건으로 쓰지 않는다. */
+      if (entry.type === "minigame") {
+        screens.viewer.classList.remove("is-scene-intro");
+        stopTyping();
+        dialogueSpeaker.textContent = entry.kind || "무전";
+        dialogueAffiliation.textContent = "";
+        dialogueText.textContent = "";
+        viewerStageMessage.innerHTML = "";
+
+        const cue = document.createElement("button");
+        cue.className = "minigame-cue";
+        cue.textContent = "다이얼을 잡는다";
+        cue.addEventListener("click", event => {
+          event.stopPropagation();
+          openMinigameFromScript(entry);
+        });
+        dialogueText.append(cue);
+      }
+
       if (entry.type === "focus") {
         screens.viewer.classList.remove("is-scene-intro");
         const asset = findAsset(entry.assetId);
@@ -7032,17 +7307,168 @@
     // 미니게임과 본편은 목록에서 같은 자리를 쓴다. 실행부만 갈라진다.
     function openEpisodeEntry(episode) {
       if (isMinigame(episode)) {
-        openMinigame(episode);
+        openMinigameEntry(episode);
         return;
       }
       openViewer(episode.id);
     }
 
-    function openMinigame(episode) {
-      openGate({
-        title: episodeDisplayName(episode),
-        body: "아직 준비되지 않았습니다.",
-        actions: [{ label: "닫기", primary: true }]
+    /* ── 무전 미니게임 ─────────────────────────────
+       다이얼을 돌려 목표 주파수에 맞추면 잡음이 걷히고 전문이 드러난다.
+       '틀리는' 상태가 없는 탐색 퍼즐이라 아무도 막히지 않고, 그래도
+       건너뛰기는 항상 열어둔다. */
+    const RADIO_MIN = 1400;      // 다이얼 0
+    const RADIO_STEP = 0.5;      // 눈금 하나
+    const RADIO_CATCH = 1.0;     // 이 안에 들면 수신
+    const RADIO_REACH = 12;      // 이보다 멀면 신호가 전혀 없다
+    const NOISE_GLYPHS = "▒▓░▚▞╳·";
+    const MINIGAME_DONE_KEY = "minigames-done-v1";
+
+    let radioSession = null;
+
+    function minigamesDone() {
+      try {
+        return new Set(JSON.parse(localStorage.getItem(MINIGAME_DONE_KEY)) || []);
+      } catch (error) {
+        return new Set();
+      }
+    }
+
+    function markMinigameDone(id) {
+      const set = minigamesDone();
+      set.add(id);
+      try {
+        localStorage.setItem(MINIGAME_DONE_KEY, JSON.stringify([...set]));
+      } catch (error) {
+        /* 기록 못 해도 노는 데는 지장이 없다 */
+      }
+    }
+
+    function dialToFreq(dial) {
+      return RADIO_MIN + Number(dial) * RADIO_STEP;
+    }
+
+    function freqToDial(freq) {
+      const dial = (Number(freq) - RADIO_MIN) / RADIO_STEP;
+      return Math.max(0, Math.min(100, Math.round(dial)));
+    }
+
+    // 신호가 약할수록 글자를 잡음으로 바꾼다. 공백은 남겨 문장의 형태만 비친다.
+    function garble(text, strength, seed) {
+      // 4제곱이라 마지막 2kHz에서야 글자가 풀린다. 제곱으로 두면 한참 떨어진
+      // 곳에서 이미 다 읽혀서 찾는 재미가 일찍 끝난다.
+      // 사냥은 신호 막대로 하고, 글자가 풀리는 건 보상으로 남긴다.
+      const keep = strength ** 4;
+      let out = "";
+      for (let i = 0; i < text.length; i += 1) {
+        const char = text[i];
+        if (char === " " || char === "\n") { out += char; continue; }
+        // 자리마다 고정된 값을 써서, 다이얼을 흔들 때 글자가 춤추지 않게 한다
+        const noise = ((i * 2654435761 + seed) % 1000) / 1000;
+        out += noise < keep ? char : NOISE_GLYPHS[(i + seed) % NOISE_GLYPHS.length];
+      }
+      return out;
+    }
+
+    function startMinigame(config, onDone) {
+      const message = String(config.message || "").trim()
+        || "전문 내용이 비어 있습니다";
+      const target = Number.isFinite(Number(config.target))
+        ? Number(config.target)
+        // 지정이 없으면 매번 다른 자리에 숨는다 (양 끝은 피한다)
+        : dialToFreq(8 + Math.floor(Math.random() * 85));
+
+      radioSession = { message, target, locked: false, onDone, seed: message.length };
+
+      document.getElementById("minigameTitle").textContent = config.title || "무전";
+      document.getElementById("minigameBrief").textContent =
+        config.brief || "다이얼을 돌려 잡음 속의 전문을 찾아라.";
+
+      const dial = document.getElementById("radioDial");
+      dial.value = 0;
+      dial.disabled = false;
+      document.getElementById("radioLockBtn").disabled = true;
+      document.getElementById("radioMessage").classList.remove("is-locked");
+
+      showScreen("minigame");
+      renderRadio();
+    }
+
+    function renderRadio() {
+      if (!radioSession) return;
+      const dial = document.getElementById("radioDial");
+      const freq = dialToFreq(dial.value);
+      const distance = Math.abs(freq - radioSession.target);
+      const strength = Math.max(0, 1 - distance / RADIO_REACH);
+      const close = distance <= RADIO_CATCH;
+
+      document.getElementById("radioFreq").textContent = freq.toFixed(1);
+      document.getElementById("radioMeterFill").style.width = `${Math.round(strength * 100)}%`;
+
+      const state = document.getElementById("radioState");
+      state.classList.toggle("is-close", close && !radioSession.locked);
+      state.classList.toggle("is-locked", radioSession.locked);
+      state.textContent = radioSession.locked
+        ? "수신 완료"
+        : close ? "신호 포착" : strength > 0.45 ? "가까움" : "잡음";
+
+      document.getElementById("radioMessage").textContent = radioSession.locked
+        ? radioSession.message
+        : garble(radioSession.message, strength, radioSession.seed);
+
+      document.getElementById("radioLockBtn").disabled = !close || radioSession.locked;
+    }
+
+    function lockRadio() {
+      if (!radioSession || radioSession.locked) return;
+      radioSession.locked = true;
+      document.getElementById("radioMessage").classList.add("is-locked");
+      document.getElementById("radioDial").disabled = true;
+      renderRadio();
+      const lock = document.getElementById("radioLockBtn");
+      lock.disabled = false;
+      lock.textContent = "닫기";
+    }
+
+    function finishMinigame(result) {
+      const session = radioSession;
+      radioSession = null;
+      document.getElementById("radioLockBtn").textContent = "고정";
+      document.getElementById("radioDial").disabled = false;
+      session?.onDone?.(result);
+    }
+
+    // 목록 항목으로 들어온 경우 — 끝나면 화 목록으로 돌아간다
+    function openMinigameEntry(episode) {
+      startMinigame({
+        title: episode.title || "무전",
+        brief: episode.gameBrief,
+        target: episode.gameTarget,
+        message: episode.gameMessage
+      }, result => {
+        if (result === "success") markMinigameDone(episode.id);
+        currentChapterKey = String(episode.chapter || "").trim() || currentChapterKey;
+        showScreen("lobby");
+        renderLobby();
+      });
+    }
+
+    // 대본 중간(@미니게임)에서 들어온 경우 — 끝나면 읽던 자리에서 한 칸 나아간다
+    function openMinigameFromScript(entry) {
+      const episodeId = viewerEpisodeId;
+      const position = viewerPosition;
+      startMinigame({
+        title: entry.kind === "무전" ? "무전" : entry.kind,
+        brief: entry.brief,
+        target: entry.target,
+        message: entry.message
+      }, () => {
+        showScreen("viewer");
+        if (viewerEpisodeId === episodeId) {
+          viewerPosition = position;
+          renderViewerEntry();
+          viewerNext();
+        }
       });
     }
 
@@ -8022,6 +8448,18 @@
         ]
       });
     });
+
+    document.getElementById("radioDial").addEventListener("input", renderRadio);
+    document.getElementById("radioLockBtn").addEventListener("click", () => {
+      if (!radioSession) return;
+      // 같은 단추가 '고정' → '닫기'로 이어진다
+      if (radioSession.locked) finishMinigame("success");
+      else lockRadio();
+    });
+    document.getElementById("radioSkipBtn")
+      .addEventListener("click", () => finishMinigame("skip"));
+    document.getElementById("minigameQuitBtn")
+      .addEventListener("click", () => finishMinigame("skip"));
 
     const viewerSettingsPanel = document.getElementById("viewerSettings");
     const viewerSettingsToggle = document.getElementById("viewerSettingsToggle");

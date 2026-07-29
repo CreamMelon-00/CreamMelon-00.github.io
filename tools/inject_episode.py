@@ -93,7 +93,10 @@ def save_pack(pack):
 META_KEYS = {"부제": "subtitle", "설명": "description", "커버": "cover",
               "챕터": "chapter", "순서": "order", "역할": "role",
               "주역": "focal", "기호": "motif",
-              "사건": "event", "날짜": "eventDate"}
+              "사건": "event", "날짜": "eventDate",
+              # 미니게임 (역할: 미니게임) 전용
+              "게임": "game", "주파수": "gameTarget",
+              "전문": "gameMessage", "안내": "gameBrief"}
 ROLE_MAP = {"프롤로그": "prologue", "에필로그": "epilogue",
             "미니게임": "minigame",
             "prologue": "prologue", "epilogue": "epilogue",
@@ -603,6 +606,9 @@ def cmd_inject(pack, md_path, order, subtitle, cover, description, chapter, dry_
             existing["event"] = md_meta["event"]
         if "eventDate" in md_meta:
             existing["eventDate"] = md_meta["eventDate"]
+        for key in ("game", "gameTarget", "gameMessage", "gameBrief"):
+            if key in md_meta:
+                existing[key] = md_meta[key]
         # 과거사건 줄을 모두 지운 경우도 반영되도록 항상 덮어쓴다
         if md_meta.get("pastEvents"):
             existing["pastEvents"] = md_meta["pastEvents"]
@@ -631,6 +637,8 @@ def cmd_inject(pack, md_path, order, subtitle, cover, description, chapter, dry_
             **({"event": md_meta["event"]} if "event" in md_meta else {}),
             **({"eventDate": md_meta["eventDate"]} if "eventDate" in md_meta else {}),
             **({"pastEvents": md_meta["pastEvents"]} if md_meta.get("pastEvents") else {}),
+            **{key: md_meta[key] for key in
+               ("game", "gameTarget", "gameMessage", "gameBrief") if key in md_meta},
             "title": title,
             "subtitle": subtitle or "",
             "description": description or "",
