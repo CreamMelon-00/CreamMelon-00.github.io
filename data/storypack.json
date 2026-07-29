@@ -19,7 +19,8 @@
         "title": "마왕과 용사",
         "description": "",
         "coverAssetId": "",
-        "order": 3
+        "order": 3,
+        "spoilerWarning": false
       },
       {
         "key": "가문과 가족 2부",

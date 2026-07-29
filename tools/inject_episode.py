@@ -95,7 +95,9 @@ META_KEYS = {"부제": "subtitle", "설명": "description", "커버": "cover",
               "주역": "focal", "기호": "motif",
               "사건": "event", "날짜": "eventDate"}
 ROLE_MAP = {"프롤로그": "prologue", "에필로그": "epilogue",
-            "prologue": "prologue", "epilogue": "epilogue"}
+            "미니게임": "minigame",
+            "prologue": "prologue", "epilogue": "epilogue",
+            "minigame": "minigame"}
 
 # 본편에서 언급/회상되는 과거 사건. 한 화에 여러 줄 쓸 수 있다.
 PAST_KEY = "과거사건"
@@ -419,7 +421,8 @@ def cmd_list(pack):
     for chapter, eps in by_chapter.items():
         print(f" 《{chapter}》")
         for ep in eps:
-            label = {"prologue": "프롤로그", "epilogue": "에필로그"}.get(ep.get("role"), f"{ep.get('order')}")
+            label = {"prologue": "프롤로그", "epilogue": "에필로그",
+                     "minigame": "미니게임"}.get(ep.get("role"), f"{ep.get('order')}")
             print(f"  [{label}] {ep.get('title')}  — {ep.get('subtitle') or '(부제 없음)'}"
                   f"  (id: {ep.get('id')}, script {len(ep.get('script', ''))}자)")
     print(f"\n배경 에셋 {len(pack.get('assets', []))}개:")
@@ -547,7 +550,14 @@ def cmd_inject(pack, md_path, order, subtitle, cover, description, chapter, dry_
     if "role" in md_meta:
         role = ROLE_MAP.get(md_meta["role"].strip())
         if role is None:
-            print(f"경고: 알 수 없는 역할 값: {md_meta['role']} (프롤로그/에필로그만 가능)")
+            print(f"경고: 알 수 없는 역할 값: {md_meta['role']}"
+                  " (프롤로그/에필로그/미니게임만 가능)")
+        elif role == "minigame":
+            # 미니게임은 화 사이에 끼어들므로 순서를 직접 정해야 한다.
+            # 3화와 4화 사이에 두려면 '순서: 3.5'.
+            if order is None:
+                print("경고: 미니게임에는 '순서:' 줄이 필요합니다."
+                      " (예: 3화와 4화 사이 → 순서: 3.5)")
         elif order is None:
             # 역할 에피소드의 순서는 정렬용 관례값 (플레이어는 role로 정렬)
             order = 0 if role == "prologue" else 99
