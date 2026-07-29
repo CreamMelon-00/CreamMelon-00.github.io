@@ -572,11 +572,14 @@
       background: var(--surface-3);
     }
 
-    /* ── 아직 열지 않은 화 ──────────────────────────
-       제목만 남기고 나머지를 흐린다. 부제도 스포일러가 될 수 있으므로 함께 가린다.
-       완전히 숨기면 궁금할 것도 없어지니, 자리는 남겨두고 읽을 수만 없게 한다. */
-    .episode-row.is-untouched .episode-row-subtitle,
-    .episode-row.is-untouched .episode-row-motif {
+    /* ── 아직 갈 수 없는 화 ─────────────────────────
+       제목만 남기고 부제와 기호를 흐린다. 부제도 스포일러가 될 수 있어서다.
+       완전히 숨기면 궁금할 것도 없어지니, 자리는 남겨두고 읽을 수만 없게 한다.
+
+       흐림은 '잠긴 것'에만 건다. 읽을 수 있는 화라면 아직 안 읽었더라도
+       또렷하게 둔다 — 흐림이 "여기는 아직 못 간다"는 뜻 하나만 갖게 된다. */
+    .episode-row.is-locked .episode-row-subtitle,
+    .episode-row.is-locked .episode-row-motif {
       filter: blur(3.5px);
       opacity: 0.55;
       user-select: none;
@@ -4077,7 +4080,6 @@
         // 흐린 목록에서 한 줄만 색이 살아 있는 것 자체가 미끼다.
         if (isMinigame(episode)) row.classList.add("is-marked");
         if (!unlocked) row.classList.add("is-locked");
-        if (isEpisodeUntouched(episode)) row.classList.add("is-untouched");
 
         const orderEl = document.createElement("span");
         orderEl.className = "episode-row-order";
@@ -6986,13 +6988,6 @@
       return !previous || isGateCleared(previous);
     }
 
-    // 한 번도 열어보지 않은 화만 흐리게 둔다. 읽는 중인 화까지 가리면
-    // 정작 자기 진행 상황을 못 보게 된다.
-    function isEpisodeUntouched(episode) {
-      if (unlockAllEpisodes) return false; // 검수 중에는 목록도 또렷하게 보여야 한다
-      const record = progressCache.find(item => item.episodeId === episode.id);
-      return !(record && Number(record.position) > 0);
-    }
 
     /* 제목 뒤 조사는 마지막 글자의 받침에 따라 갈린다.
        「가문의 영광」+를 → 「가문의 영광」+을. 이름이 데이터라 계산해서 붙인다. */
