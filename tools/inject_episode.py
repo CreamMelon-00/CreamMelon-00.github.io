@@ -304,6 +304,44 @@ def cmd_relations(pack, path, dry_run, save=True):
         save_if_changed(pack)
 
 
+QUOTE_FILE = "_어록.md"
+
+
+def parse_quotes(path):
+    """_어록.md → [{text, note}]  (note는 출처 메모, 화면에는 안 나온다)"""
+    quotes = []
+    for n, raw in enumerate(path.read_text(encoding="utf-8").split("\n"), 1):
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        key, sep, value = line.partition(":")
+        if not sep or key.strip() != "어록":
+            continue
+        text, _, note = value.partition("|")
+        text, note = text.strip(), note.strip()
+        if not text:
+            print(f"경고: {n}행 어록이 비어 있습니다 → {line}")
+            continue
+        quotes.append({"text": text, "note": note} if note else {"text": text})
+    return quotes
+
+
+def cmd_quotes(pack, path, dry_run, save=True):
+    quotes = parse_quotes(path)
+    seen = {}
+    for q in quotes:
+        if q["text"] in seen:
+            print(f"경고: 중복된 어록 → {q['text'][:40]}")
+        seen[q["text"]] = True
+    pack.setdefault("meta", {})["quotes"] = quotes
+    print(f"어록 반영: {len(quotes)}개")
+    if dry_run:
+        print("(dry-run: 저장하지 않음)")
+        return
+    if save:
+        save_if_changed(pack)
+
+
 def ensure_eras(pack, past_events):
     """과거 시점 목록(meta.eras)을 갱신한다 — 플레이어가 이 순서로 연표를 세운다."""
     if not past_events:
@@ -575,6 +613,8 @@ def cmd_inject_all(pack, dry_run):
     for md in md_files:
         if md.name == RELATION_FILE:
             cmd_relations(pack, md, dry_run, save=False)
+        elif md.name == QUOTE_FILE:
+            cmd_quotes(pack, md, dry_run, save=False)
         elif md.name.startswith("_"):
             print(f"건너뜀(에피소드 아님): {md.name}")
         else:
@@ -620,7 +660,9 @@ def main():
     elif args.add_bg:
         cmd_add_bg(pack, args.add_bg, args.id_name, args.dry_run)
     elif args.md:
-        if Path(args.md).name == RELATION_FILE:
+        if Path(args.md).name == QUOTE_FILE:
+            cmd_quotes(pack, Path(args.md), args.dry_run)
+        elif Path(args.md).name == RELATION_FILE:
             cmd_relations(pack, Path(args.md), args.dry_run)
         else:
             cmd_inject(pack, args.md, args.order, args.subtitle, args.cover, args.description,

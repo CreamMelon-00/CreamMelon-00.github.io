@@ -1664,6 +1664,76 @@
       white-space: nowrap;
     }
 
+    /* ── 로비 어록 (무작위 대사 한 줄) ─────────────── */
+    .lobby-quote {
+      position: relative;
+      margin: 22px 0 26px;
+      padding: 20px 26px 20px 46px;
+      border-left: 2px solid rgba(207, 159, 78, 0.42);
+      background: linear-gradient(90deg, rgba(207, 159, 78, 0.06), transparent 62%);
+      cursor: pointer;
+      transition: border-color 0.2s ease, background 0.2s ease;
+    }
+
+    .lobby-quote:hover {
+      border-left-color: var(--accent);
+      background: linear-gradient(90deg, rgba(207, 159, 78, 0.1), transparent 62%);
+    }
+
+    .lobby-quote[hidden] {
+      display: none;
+    }
+
+    /* 여는 따옴표를 큼직한 장식으로 */
+    .lobby-quote::before {
+      content: "\201C";
+      position: absolute;
+      left: 12px;
+      top: 6px;
+      color: rgba(207, 159, 78, 0.34);
+      font-family: var(--serif);
+      font-size: 42px;
+      line-height: 1;
+      pointer-events: none;
+    }
+
+    .lobby-quote-text {
+      margin: 0;
+      color: var(--text);
+      font-family: var(--serif);
+      font-size: clamp(14px, 1.7vw, 17px);
+      font-style: italic;
+      line-height: 1.75;
+      letter-spacing: 0.01em;
+      transition: opacity 0.25s ease;
+    }
+
+    .lobby-quote.is-swapping .lobby-quote-text {
+      opacity: 0;
+    }
+
+    /* 터치 기기엔 hover가 없으므로 항상 은은하게 띄워두고, 커서가 올라가면 또렷해진다 */
+    .lobby-quote-hint {
+      display: block;
+      margin-top: 9px;
+      color: var(--muted);
+      font-size: 10.5px;
+      letter-spacing: 0.1em;
+      opacity: 0.5;
+      transition: opacity 0.2s ease;
+    }
+
+    .lobby-quote:hover .lobby-quote-hint,
+    .lobby-quote:focus-visible .lobby-quote-hint {
+      opacity: 1;
+    }
+
+    @media (max-width: 640px) {
+      .lobby-quote {
+        padding: 16px 16px 16px 38px;
+      }
+    }
+
     .lobby-footer {
       display: flex;
       align-items: center;
@@ -2406,6 +2476,12 @@
           </div>
         </div>
       </section>
+
+      <blockquote id="lobbyQuote" class="lobby-quote" tabindex="0"
+                  role="button" aria-label="다른 대사 보기" hidden>
+        <p id="lobbyQuoteText" class="lobby-quote-text"></p>
+        <span class="lobby-quote-hint">눌러서 다른 대사 보기</span>
+      </blockquote>
 
       <main id="episodeGrid" class="episode-grid"></main>
 
@@ -3338,6 +3414,59 @@
     // 로비 커버 콜라주에 쓸 배경 3장. 왼쪽부터 북방주(고향) → 수도주(정치) → 스프링필드(가문).
     const LOBBY_COVER_ASSETS = ["북방주_대로변_낮", "수도주_광장_아침", "스프링필드_저택_길가_밤"];
 
+    // ── 로비 어록 ────────────────────────────────────
+    // 본문 대사 중 스포일러가 없는 것만 골라둔 풀(meta.quotes)에서 하나를 띄운다.
+    // 화자와 출처는 일부러 표시하지 않는다 — 후킹이 목적이라 익명일수록 낫다.
+    let lastQuoteText = null;
+
+    function pickQuote() {
+      const pool = projectMeta.quotes;
+      if (!Array.isArray(pool) || !pool.length) return null;
+      if (pool.length === 1) return pool[0];
+      // 연달아 같은 문장이 나오지 않게 직전 것은 제외하고 뽑는다
+      const fresh = pool.filter(q => q.text !== lastQuoteText);
+      return fresh[Math.floor(Math.random() * fresh.length)];
+    }
+
+    // 챕터 목록(로비 최상단)에서만 보여준다. 한 번 뽑은 문장은 그 방문 동안 유지하고,
+    // 눌렀을 때만 다시 뽑는다 — 챕터를 드나들 때마다 바뀌면 읽던 문장이 사라져 산만하다.
+    function showLobbyQuote() {
+      const box = document.getElementById("lobbyQuote");
+      const textEl = document.getElementById("lobbyQuoteText");
+      if (!box || !textEl) return;
+
+      if (!Array.isArray(projectMeta.quotes) || !projectMeta.quotes.length) {
+        box.hidden = true;
+        return;
+      }
+      if (!lastQuoteText) {
+        const quote = pickQuote();
+        lastQuoteText = quote.text;
+        textEl.textContent = quote.text;
+      }
+      box.hidden = false;
+    }
+
+    function hideLobbyQuote() {
+      const box = document.getElementById("lobbyQuote");
+      if (box) box.hidden = true;
+    }
+
+    function swapLobbyQuote() {
+      const box = document.getElementById("lobbyQuote");
+      const textEl = document.getElementById("lobbyQuoteText");
+      if (!box || box.hidden) return;
+      const quote = pickQuote();
+      if (!quote) return;
+
+      box.classList.add("is-swapping");
+      window.setTimeout(() => {
+        lastQuoteText = quote.text;
+        textEl.textContent = quote.text;
+        box.classList.remove("is-swapping");
+      }, 250);
+    }
+
     function renderLobbyCover() {
       const panes = document.querySelectorAll("#lobbyHeroCollage .lobby-hero-pane");
       panes.forEach((pane, index) => {
@@ -3352,6 +3481,7 @@
       updateTimelineMenu();
       updateBoardMenu();
       renderLobbyCover();
+      hideLobbyQuote();
 
       if (!episodesCache.length) {
         episodeGrid.innerHTML = `
@@ -3366,6 +3496,7 @@
 
       // 챕터 정보가 전혀 없는 옛 프로젝트는 전체 화 리스트로 보여준다
       if (!chapters.length) {
+        showLobbyQuote();
         renderEpisodeList(sortedEpisodes());
         return;
       }
@@ -3379,6 +3510,7 @@
         currentChapterKey = null;
       }
 
+      showLobbyQuote();
       renderChapterCards(chapters);
     }
 
@@ -7106,6 +7238,15 @@
     document.getElementById("timelineMenuBtn").addEventListener("click", openTimelineScreen);
     document.getElementById("timelineBackBtn").addEventListener("click", closeTimelineScreen);
     document.getElementById("boardMenuBtn").addEventListener("click", openBoardScreen);
+
+    const lobbyQuoteBox = document.getElementById("lobbyQuote");
+    lobbyQuoteBox?.addEventListener("click", swapLobbyQuote);
+    lobbyQuoteBox?.addEventListener("keydown", event => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        swapLobbyQuote();
+      }
+    });
     document.getElementById("boardBackBtn").addEventListener("click", closeBoardScreen);
     document.addEventListener("keydown", event => {
       if (event.key !== "Escape") return;
