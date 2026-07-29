@@ -2778,10 +2778,37 @@
       cursor: pointer;
     }
 
+    /* 들어본 자리 기록. 눈금마다 신호 세기만큼 밝게 남는다. */
+    .radio-scale {
+      position: relative;
+      height: 16px;
+      margin-top: -6px;
+      border-top: 1px solid rgba(217, 180, 111, 0.14);
+    }
+
+    .radio-mark {
+      position: absolute;
+      top: 3px;
+      width: 2px;
+      height: 9px;
+      margin-left: -1px;
+      border-radius: 1px;
+      background: #f0ca87;
+    }
+
     .radio-actions {
       display: flex;
       gap: 9px;
       justify-content: flex-end;
+    }
+
+    /* 청취 중에는 화면이 잠깐 지글거린다 — 정보를 얻는 데 시간이 든다는 표시 */
+    .radio-set.is-listening .radio-message {
+      opacity: 0.5;
+    }
+
+    .radio-set.is-listening .radio-meter-fill {
+      transition: none;
     }
 
     .radio-actions button {
@@ -3163,8 +3190,12 @@
                min="0" max="100" step="1" value="0"
                aria-describedby="radioState" />
 
+        <!-- 이미 들어본 자리를 남겨둔다. 손으로 지도에 표시하는 것과 같다. -->
+        <div id="radioScale" class="radio-scale" aria-hidden="true"></div>
+
         <div class="radio-actions">
-          <button id="radioLockBtn" class="primary" disabled>고정</button>
+          <button id="radioListenBtn" class="primary">청취</button>
+          <button id="radioLockBtn" disabled>고정</button>
           <button id="radioSkipBtn" class="small">건너뛰기</button>
         </div>
       </div>
@@ -7378,7 +7409,11 @@
         // 지정이 없으면 매번 다른 자리에 숨는다 (양 끝은 피한다)
         : dialToFreq(8 + Math.floor(Math.random() * 85));
 
-      radioSession = { message, target, locked: false, onDone, seed: message.length };
+      // sampled: 마지막으로 '청취'한 자리. 다이얼 위치가 아니라 이 값만이 정보다.
+      radioSession = {
+        message, target, locked: false, onDone,
+        seed: message.length, sampled: null, marks: []
+      };
 
       document.getElementById("minigameTitle").textContent = config.title || "무전";
       document.getElementById("minigameBrief").textContent =
@@ -7396,35 +7431,99 @@
         : 0;
       dial.disabled = false;
       document.getElementById("radioLockBtn").disabled = true;
+      document.getElementById("radioListenBtn").disabled = false;
       document.getElementById("radioMessage").classList.remove("is-locked");
+      document.getElementById("radioScale").innerHTML = "";
 
       showScreen("minigame");
-      renderRadio();
+      renderDial();
+      renderSignal();
     }
 
-    function renderRadio() {
+    // 다이얼을 돌리면 눈금 숫자만 바뀐다. 신호는 알려주지 않는다 —
+    // 한 번 훑는 것으로 100개 자리의 정보가 다 새어나오면 찾을 것이 없다.
+    function renderDial() {
       if (!radioSession) return;
-      const dial = document.getElementById("radioDial");
-      const freq = dialToFreq(dial.value);
-      const distance = Math.abs(freq - radioSession.target);
-      const strength = Math.max(0, 1 - distance / RADIO_REACH);
-      const close = distance <= RADIO_CATCH;
+      document.getElementById("radioFreq").textContent =
+        dialToFreq(document.getElementById("radioDial").value).toFixed(1);
+    }
 
-      document.getElementById("radioFreq").textContent = freq.toFixed(1);
-      document.getElementById("radioMeterFill").style.width = `${Math.round(strength * 100)}%`;
+    function signalAt(dial) {
+      const distance = Math.abs(dialToFreq(dial) - radioSession.target);
+      return {
+        distance,
+        strength: Math.max(0, 1 - distance / RADIO_REACH),
+        close: distance <= RADIO_CATCH
+      };
+    }
+
+    // 마지막으로 청취한 자리만 반영한다.
+    function renderSignal() {
+      if (!radioSession) return;
+      const heard = radioSession.sampled;
+      const { strength, close } = heard === null
+        ? { strength: 0, close: false }
+        : signalAt(heard);
+
+      document.getElementById("radioMeterFill").style.width =
+        `${Math.round(strength * 100)}%`;
 
       const state = document.getElementById("radioState");
       state.classList.toggle("is-close", close && !radioSession.locked);
       state.classList.toggle("is-locked", radioSession.locked);
       state.textContent = radioSession.locked
         ? "수신 완료"
+        : heard === null ? "청취 전"
         : close ? "신호 포착" : strength > 0.45 ? "가까움" : "잡음";
 
       document.getElementById("radioMessage").textContent = radioSession.locked
         ? radioSession.message
         : garble(radioSession.message, strength, radioSession.seed);
 
-      document.getElementById("radioLockBtn").disabled = !close || radioSession.locked;
+      // 신호를 잡은 순간 강조를 '청취'에서 '고정'으로 넘긴다 —
+      // 100%를 띄워놓고 뭘 눌러야 할지 모르는 상태를 만들지 않는다.
+      const lock = document.getElementById("radioLockBtn");
+      lock.disabled = !close || radioSession.locked;
+      lock.classList.toggle("primary", !lock.disabled);
+      document.getElementById("radioListenBtn")
+        .classList.toggle("primary", lock.disabled);
+    }
+
+    function renderRadioMarks() {
+      const host = document.getElementById("radioScale");
+      host.innerHTML = "";
+      for (const mark of radioSession.marks) {
+        const tick = document.createElement("span");
+        tick.className = "radio-mark";
+        tick.style.left = `${mark.dial}%`;
+        // 세기만큼 밝게 — 어느 쪽이 더 뜨거웠는지 눈으로 남는다
+        tick.style.opacity = (0.2 + mark.strength * 0.8).toFixed(2);
+        tick.style.height = `${5 + Math.round(mark.strength * 8)}px`;
+        host.append(tick);
+      }
+    }
+
+    function listenRadio() {
+      if (!radioSession || radioSession.locked) return;
+      const set = document.querySelector(".radio-set");
+      const listen = document.getElementById("radioListenBtn");
+      const dial = Number(document.getElementById("radioDial").value);
+
+      listen.disabled = true;
+      set.classList.add("is-listening");
+
+      // 듣는 데 잠깐 걸린다. 이 시간이 '한 번 훑기'를 막는 비용이다.
+      setTimeout(() => {
+        if (!radioSession) return;
+        radioSession.sampled = dial;
+        const { strength } = signalAt(dial);
+        radioSession.marks = radioSession.marks.filter(m => m.dial !== dial);
+        radioSession.marks.push({ dial, strength });
+        set.classList.remove("is-listening");
+        listen.disabled = false;
+        renderSignal();
+        renderRadioMarks();
+      }, 420);
     }
 
     function lockRadio() {
@@ -7432,7 +7531,8 @@
       radioSession.locked = true;
       document.getElementById("radioMessage").classList.add("is-locked");
       document.getElementById("radioDial").disabled = true;
-      renderRadio();
+      document.getElementById("radioListenBtn").disabled = true;
+      renderSignal();
       const lock = document.getElementById("radioLockBtn");
       lock.disabled = false;
       lock.textContent = "닫기";
@@ -7443,6 +7543,8 @@
       radioSession = null;
       document.getElementById("radioLockBtn").textContent = "고정";
       document.getElementById("radioDial").disabled = false;
+      document.getElementById("radioListenBtn").disabled = false;
+      document.querySelector(".radio-set").classList.remove("is-listening");
       session?.onDone?.(result);
     }
 
@@ -8457,7 +8559,8 @@
       });
     });
 
-    document.getElementById("radioDial").addEventListener("input", renderRadio);
+    document.getElementById("radioDial").addEventListener("input", renderDial);
+    document.getElementById("radioListenBtn").addEventListener("click", listenRadio);
     document.getElementById("radioLockBtn").addEventListener("click", () => {
       if (!radioSession) return;
       // 같은 단추가 '고정' → '닫기'로 이어진다
