@@ -1664,46 +1664,48 @@
       white-space: nowrap;
     }
 
-    /* ── 로비 어록 (무작위 대사 한 줄) ─────────────── */
+    /* ── 로비 어록 (무작위 대사 한 줄) ───────────────
+       본문이 주인공이므로 일부러 눈에 덜 띄게 둔다.
+       배경·테두리 없이 옅은 글씨만 두고, 커서를 올렸을 때만 또렷해진다. */
     .lobby-quote {
       position: relative;
-      margin: 22px 0 26px;
-      padding: 20px 26px 20px 46px;
-      border-left: 2px solid rgba(207, 159, 78, 0.42);
-      background: linear-gradient(90deg, rgba(207, 159, 78, 0.06), transparent 62%);
+      margin: 26px 0 4px;
+      padding: 0 8px 0 22px;
       cursor: pointer;
-      transition: border-color 0.2s ease, background 0.2s ease;
+      opacity: 0.42;
+      transition: opacity 0.3s ease;
     }
 
-    .lobby-quote:hover {
-      border-left-color: var(--accent);
-      background: linear-gradient(90deg, rgba(207, 159, 78, 0.1), transparent 62%);
+    .lobby-quote:hover,
+    .lobby-quote:focus-visible {
+      opacity: 0.85;
     }
 
     .lobby-quote[hidden] {
       display: none;
     }
 
-    /* 여는 따옴표를 큼직한 장식으로 */
+    /* 여는 따옴표 — 장식이 아니라 작은 표식 정도로만 */
     .lobby-quote::before {
       content: "\201C";
       position: absolute;
-      left: 12px;
-      top: 6px;
-      color: rgba(207, 159, 78, 0.34);
+      left: 2px;
+      top: -1px;
+      color: var(--muted);
       font-family: var(--serif);
-      font-size: 42px;
-      line-height: 1;
+      font-size: 19px;
+      line-height: 1.4;
       pointer-events: none;
     }
 
     .lobby-quote-text {
       margin: 0;
-      color: var(--text);
+      color: var(--muted);
       font-family: var(--serif);
-      font-size: clamp(14px, 1.7vw, 17px);
+      font-size: 12.5px;
       font-style: italic;
-      line-height: 1.75;
+      font-weight: 400;
+      line-height: 1.7;
       letter-spacing: 0.01em;
       transition: opacity 0.25s ease;
     }
@@ -1712,25 +1714,25 @@
       opacity: 0;
     }
 
-    /* 터치 기기엔 hover가 없으므로 항상 은은하게 띄워두고, 커서가 올라가면 또렷해진다 */
+    /* 힌트는 커서를 올렸을 때만. 터치 기기에서는 어록 자체가 옅게 보이는 것으로 충분하다 */
     .lobby-quote-hint {
       display: block;
-      margin-top: 9px;
+      margin-top: 5px;
       color: var(--muted);
-      font-size: 10.5px;
+      font-size: 9.5px;
       letter-spacing: 0.1em;
-      opacity: 0.5;
+      opacity: 0;
       transition: opacity 0.2s ease;
     }
 
     .lobby-quote:hover .lobby-quote-hint,
     .lobby-quote:focus-visible .lobby-quote-hint {
-      opacity: 1;
+      opacity: 0.75;
     }
 
     @media (max-width: 640px) {
       .lobby-quote {
-        padding: 16px 16px 16px 38px;
+        padding: 0 4px 0 20px;
       }
     }
 
@@ -2477,13 +2479,13 @@
         </div>
       </section>
 
+      <main id="episodeGrid" class="episode-grid"></main>
+
       <blockquote id="lobbyQuote" class="lobby-quote" tabindex="0"
                   role="button" aria-label="다른 대사 보기" hidden>
         <p id="lobbyQuoteText" class="lobby-quote-text"></p>
         <span class="lobby-quote-hint">눌러서 다른 대사 보기</span>
       </blockquote>
-
-      <main id="episodeGrid" class="episode-grid"></main>
 
       <nav class="lobby-menu">
         <button id="timelineMenuBtn" class="lobby-menu-item">
