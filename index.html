@@ -622,30 +622,16 @@
       opacity: 1;
     }
 
-    /* 해독해서 새겨진 전문. 줄 전체를 쓰는 별도 행이라 잘리지 않는다.
-       무전 화면과 같은 서체·색을 써서, 작가가 쓴 부제가 아니라 독자가
-       무전기에서 뜯어온 글자라는 것을 표시한다. */
-    .episode-row.has-transmission {
-      flex-wrap: wrap;
-    }
-
-    .episode-row-transmission {
-      width: 100%;
-      margin: 10px 0 0;
-      padding-top: 9px;
-      border-top: 1px dashed rgba(78, 159, 143, 0.28);
+    /* 해독해서 새겨진 전문. 다른 부제와 같은 자리·같은 서체를 쓰고 색으로만
+       구분한다 — 한글은 고정폭 서체에서 글자 사이가 벌어져 보기 나쁘다. */
+    .episode-row-subtitle.is-transmission {
       color: #7fc9ba;
-      font-family: ui-monospace, "Courier New", monospace;
-      font-size: 12px;
-      line-height: 1.75;
-      letter-spacing: 0.01em;
-      word-break: keep-all;
     }
 
-    .episode-row-transmission::before {
+    .episode-row-subtitle.is-transmission::before {
       content: "수신 ";
       color: rgba(127, 201, 186, 0.55);
-      letter-spacing: 0.1em;
+      letter-spacing: 0.12em;
     }
 
     .episode-row-order {
@@ -680,7 +666,9 @@
     .episode-row-actions {
       margin-left: auto;
       display: grid;
-      grid-template-columns: 22px 64px auto;
+      /* 내용에 맞춰 줄어든다. 22px 64px으로 못 박아두면 기호도 진행률도 없는
+         줄에서까지 146px을 예약해, 정작 제목이 쓸 자리를 빼앗는다. */
+      grid-template-columns: auto auto auto;
       align-items: center;
       gap: 8px;
       flex: none;
@@ -2654,6 +2642,45 @@
         margin-left: 31px;
         padding-left: 0;
       }
+
+      /* ── 화 목록 ────────────────────────────────
+         번호(42px)와 오른쪽 조작부(146px)가 자리를 다 먹어, 정작 제목·부제가
+         99px만 쓰고 있었다. 긴 제목은 세 줄로 감기고 부제는 전부 잘렸다.
+         제목이 줄을 이끌고, 부제는 아래 줄 전체를 쓰게 나눈다. */
+      .episode-row {
+        flex-wrap: wrap;
+        row-gap: 2px;
+      }
+
+      /* 제목과 부제를 줄의 직접 자식으로 꺼내 각자 자리를 잡게 한다 */
+      .episode-row-text {
+        display: contents;
+      }
+
+      .episode-row-order {
+        order: 1;
+      }
+
+      .episode-row-title {
+        order: 2;
+        flex: 1;
+        min-width: 0;
+      }
+
+      .episode-row-actions {
+        order: 3;
+      }
+
+      .episode-row-subtitle {
+        order: 4;
+        width: 100%;
+        /* 번호 칸(42px + gap 14px)만큼 들여 제목 아래에 맞춘다 */
+        padding-left: 56px;
+        /* 자리가 생겼으므로 잘라내지 않고 접는다 */
+        white-space: normal;
+        overflow: visible;
+        word-break: keep-all;
+      }
     }
 
     /* ── 무전 미니게임 ─────────────────────────────
@@ -4387,18 +4414,20 @@
         titleEl.textContent = episodeDisplayName(episode);
         textCol.append(titleEl);
 
-        if (episode.subtitle) {
-          const subtitleEl = document.createElement("span");
-          subtitleEl.className = "episode-row-subtitle";
-          subtitleEl.textContent = episode.subtitle;
-          textCol.append(subtitleEl);
-        }
-
-        /* 해독한 전문. 부제 자리에 넣으면 모바일에서 텍스트 칸이 99px밖에
-           안 되어 잘린다 — 읽으려고 찾아낸 글이므로 줄 전체를 쓰게 한다. */
+        /* 해독한 전문도 부제 자리를 쓴다 — 모든 줄이 같은 구조(번호·제목·부제)를
+           갖게 해서 목록이 들쭉날쭉해지지 않는다. */
         const decoded = isMinigame(episode) && solvedGames.has(episode.id)
           ? String(episode.gameMessage || "").trim()
           : "";
+        const subtitleText = decoded || episode.subtitle;
+
+        if (subtitleText) {
+          const subtitleEl = document.createElement("span");
+          subtitleEl.className = "episode-row-subtitle";
+          if (decoded) subtitleEl.classList.add("is-transmission");
+          subtitleEl.textContent = subtitleText;
+          textCol.append(subtitleEl);
+        }
 
         const actions = document.createElement("div");
         actions.className = "episode-row-actions";
@@ -4449,15 +4478,6 @@
 
         actions.append(viewButton);
         row.append(orderEl, textCol, actions);
-
-        if (decoded) {
-          // 줄을 감싸게 만드는 것은 전문이 있는 줄에만 걸어, 다른 줄의 배치는 건드리지 않는다
-          row.classList.add("has-transmission");
-          const transcript = document.createElement("p");
-          transcript.className = "episode-row-transmission";
-          transcript.textContent = decoded;
-          row.append(transcript);
-        }
 
         row.addEventListener("click", open);
         list.append(row);
