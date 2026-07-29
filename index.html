@@ -2492,8 +2492,12 @@
       white-space: nowrap;
     }
 
-    .episode-row-actions .primary {
+    /* 버튼은 늘 3열이다. .primary에만 걸어두면 잠긴 화의 버튼(primary 아님)이
+       고정을 잃고, 기호도 진행률도 없는 줄에서는 22px 칸에 들어가 찌그러진다. */
+    .episode-row-actions > button {
       grid-column: 3;
+      /* 자물쇠 버튼이 '감상'보다 좁아 줄마다 폭이 달라 보이므로 맞춘다 */
+      min-width: 44px;
     }
 
     .episode-row-progress.is-done {
@@ -7050,12 +7054,9 @@
           ? `「${episodeDisplayName(previous)}」${objectParticle(episodeDisplayName(previous))}`
             + " 아직 끝까지 읽지 않았습니다."
           : "앞 이야기를 아직 읽지 않았습니다.",
+        // '앞 이야기로'는 두지 않는다. 1화만 열린 상태에서 9화를 누르면
+        // 그 앞 화(8화)도 잠겨 있어서, 잠긴 화를 그대로 열어버렸다.
         actions: [
-          previous && {
-            label: "앞 이야기로",
-            primary: true,
-            onClick: () => openViewer(previous.id)
-          },
           previous && {
             label: "건너뛰고 열기",
             onClick: () => {
@@ -7063,7 +7064,7 @@
               openViewer(episode.id);
             }
           },
-          { label: "닫기" }
+          { label: "닫기", primary: true }
         ].filter(Boolean)
       });
     }
