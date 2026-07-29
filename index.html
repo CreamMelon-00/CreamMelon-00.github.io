@@ -3247,6 +3247,7 @@
       glossaryCache = await storeGetAll(STORES.glossary);
       progressCache = await storeGetAll(STORES.progress);
       projectMeta = (await storeGet(STORES.meta, "project")) || { ...DEFAULT_PROJECT };
+      glossaryIndexCache = null;
     }
 
     async function seedInitialData() {
@@ -4365,6 +4366,77 @@
       return new Map(glossaryCache.map(item => [item.term, item]));
     }
 
+    // 용어 색인. 두 가지를 따로 센다 — 판정 기준이 다르기 때문이다.
+    //
+    //   firstOf   : 링크를 걸 화. 대사·연출·내레이션 '본문'에만 기준을 둔다.
+    //               소속 라벨은 링크 대상이 아니므로 여기서 제외한다.
+    //   byEpisode : 사전을 열어줄 화. 라벨·장면 이름까지 독자 눈에 보인 글자를
+    //               모두 센다. '하노버 용병단'처럼 라벨에만 등장하는 용어도
+    //               읽었으면 사전이 열려야 하므로 이쪽은 넓게 잡는다.
+    let glossaryIndexCache = null;
+
+    function glossaryIndex() {
+      if (glossaryIndexCache) return glossaryIndexCache;
+
+      const terms = [...glossaryMap().keys()];
+      const byEpisode = new Map();
+      const firstOf = new Map();
+      const ordered = [...episodesCache]
+        .sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
+
+      for (const episode of ordered) {
+        const entries = parseScenario(episode.script);
+
+        const bodyText = entries
+          .filter(entry => entry.type === "dialogue"
+            || entry.type === "direction"
+            || entry.type === "narration")
+          .map(entry => entry.text)
+          .join("\n");
+
+        // 독자 눈에 닿는 글자 전부 (본문 + 화자/소속 + 장면 이름)
+        const seenText = entries
+          .map(entry => [entry.text, entry.speaker, entry.affiliation, entry.caption]
+            .filter(Boolean).join(" "))
+          .join("\n");
+
+        const found = new Set();
+        for (const term of terms) {
+          if (bodyText.includes(term) && !firstOf.has(term)) {
+            firstOf.set(term, episode.id);
+          }
+          if (seenText.includes(term)) found.add(term);
+        }
+        byEpisode.set(episode.id, found);
+      }
+
+      glossaryIndexCache = { byEpisode, firstOf };
+      return glossaryIndexCache;
+    }
+
+    // 이 화에서 링크를 걸어도 되는 용어 (= 이 화가 그 용어의 첫 등장 화)
+    function linkableTermsFor(episodeId) {
+      if (!episodeId) return [];
+      const { firstOf } = glossaryIndex();
+      const terms = [];
+      for (const [term, firstId] of firstOf) {
+        if (firstId === episodeId) terms.push(term);
+      }
+      // 긴 용어부터 — '건국의 아버지들'이 '아버지'로 쪼개지지 않게
+      return terms.sort((a, b) => b.length - a.length);
+    }
+
+    // 독자가 끝까지 읽은 화에 등장한 용어만 모은다
+    function readGlossaryTerms() {
+      const { byEpisode } = glossaryIndex();
+      const opened = new Set();
+      for (const [episodeId, terms] of byEpisode) {
+        if (!isEpisodeRead(episodeId)) continue;
+        for (const term of terms) opened.add(term);
+      }
+      return opened;
+    }
+
     function clearGlossaryForm() {
       editingGlossaryTerm = null;
       glossaryTermInput.value = "";
@@ -4534,8 +4606,6 @@
         entry.type === "narration"
       ) {
         collectGlossaryTermsFromText(entry.text, targetMap);
-        // 소속 라벨에도 사전 링크가 걸리므로 목록에도 함께 담는다
-        collectGlossaryTermsFromText(entry.affiliation, targetMap);
       }
     }
 
@@ -4560,13 +4630,27 @@
     function openLobbyGlossaryModal() {
       const list = document.getElementById("lobbyGlossaryList");
       const summary = document.getElementById("lobbyGlossarySummary");
-      const entries = [...glossaryCache].sort((a, b) =>
-        String(a.term).localeCompare(String(b.term), "ko"));
+      const opened = readGlossaryTerms();
+      const entries = glossaryCache
+        .filter(item => opened.has(item.term))
+        .sort((a, b) => String(a.term).localeCompare(String(b.term), "ko"));
+      const remaining = glossaryCache.length - entries.length;
 
       list.innerHTML = "";
-      summary.textContent = entries.length
-        ? `이야기에 나오는 이름 ${entries.length}개입니다. 본문에서 밑줄 그어진 말을 눌러도 열립니다.`
+      summary.textContent = glossaryCache.length
+        ? `읽은 이야기에서 만난 이름 ${entries.length} / ${glossaryCache.length}개입니다.`
         : "아직 등록된 용어가 없습니다.";
+
+      if (!entries.length) {
+        list.innerHTML = `
+          <div class="glossary-empty">
+            아직 만난 이름이 없습니다.<br />
+            이야기를 읽으면 그 안에 나온 이름이 이곳에 하나씩 쌓입니다.
+          </div>
+        `;
+        document.getElementById("lobbyGlossaryModal").classList.add("show");
+        return;
+      }
 
       for (const entry of entries) {
         const article = document.createElement("article");
@@ -4584,13 +4668,22 @@
         list.append(article);
       }
 
+      // 남은 개수만 알려준다 — 이름 자체를 '???'로 늘어놓으면 사전이 지저분해진다
+      if (remaining > 0) {
+        const note = document.createElement("div");
+        note.className = "glossary-empty";
+        note.textContent = `아직 만나지 않은 이름 ${remaining}개가 더 있습니다.`;
+        list.append(note);
+      }
+
       document.getElementById("lobbyGlossaryModal").classList.add("show");
     }
 
     function updateLobbyGlossaryMenu() {
       const counter = document.getElementById("lobbyGlossaryMenuCount");
       if (!counter) return;
-      counter.textContent = glossaryCache.length ? `${glossaryCache.length}개` : "";
+      const total = glossaryCache.length;
+      counter.textContent = total ? `${readGlossaryTerms().size} / ${total}` : "";
     }
 
     function openViewerGlossaryModal() {
@@ -5570,42 +5663,6 @@
       return out.length ? out : [{ type: "plain", text }];
     }
 
-    // 화자 소속 라벨에 사전 링크를 건다. 본문과 달리 마크업이 없는 짧은 문자열이라
-    // 용어 분해만 하면 된다.
-    function renderAffiliationWithTerms(target, affiliation) {
-      target.textContent = "";
-      if (!affiliation) return;
-
-      const map = glossaryMap();
-      const terms = [...map.keys()].sort((a, b) => b.length - a.length);
-      const parts = splitPlainByTerms(affiliation, terms, new Set());
-
-      for (const part of parts) {
-        if (part.type !== "term" || !map.has(part.text)) {
-          target.append(document.createTextNode(part.text));
-          continue;
-        }
-        const span = document.createElement("span");
-        span.className = "glossary-term";
-        span.textContent = part.text;
-        span.title = "클릭해서 설명 보기";
-        span.tabIndex = 0;
-        span.role = "button";
-        span.addEventListener("click", event => {
-          event.stopPropagation();
-          showGlossaryPopup(part.text);
-        });
-        span.addEventListener("keydown", event => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            event.stopPropagation();
-            showGlossaryPopup(part.text);
-          }
-        });
-        target.append(span);
-      }
-    }
-
     function splitRichText(rawText) {
       const text = String(rawText ?? "");
       // 통신 [ ] 안에 용어 [ ]가 한 겹 들어갈 수 있다 (19편 등)
@@ -5613,8 +5670,10 @@
       const segments = [];
       let lastIndex = 0;
 
-      // 긴 용어부터 찾아야 '건국의 아버지들'이 '아버지'로 쪼개지지 않는다
-      const terms = [...glossaryMap().keys()].sort((a, b) => b.length - a.length);
+      // 링크는 그 용어가 '처음 등장한 화'에서만 건다. 이미 한 번 소개된 말을
+      // 매 화 밑줄 그어두면 뒤로 갈수록 본문이 지저분해지기만 한다.
+      const terms = linkableTermsFor(viewerEpisodeId);
+      const linkable = new Set(terms);
       const usedTerms = new Set();
       const pushPlain = value => {
         if (value) segments.push(...splitPlainByTerms(value, terms, usedTerms));
@@ -5641,8 +5700,11 @@
           const inner = innerMarkupText(token);
           // 작가가 직접 감싼 용어가 우선이다. 같은 줄에서 또 자동 링크되지 않게 표시해둔다
           usedTerms.add(inner);
+          // 첫 등장 화가 아니면 링크를 걸지 않고 글자만 남긴다.
+          // (사전에 없는 대괄호는 통신 메시지 표기이므로 그대로 넘긴다)
+          const registered = glossaryMap().has(inner);
           segments.push({
-            type: "glossary",
+            type: registered && !linkable.has(inner) ? "plain" : "glossary",
             text: inner
           });
         }
@@ -6261,9 +6323,9 @@
       if (entry.type === "dialogue") {
         screens.viewer.classList.remove("is-scene-intro");
         dialogueSpeaker.textContent = entry.speaker || "???";
-        // 소속 라벨('통합파 의원', '연합 감독관' …)은 독자가 파벌 이름을
-        // 가장 자주 마주치는 자리다. 여기에도 사전 링크를 걸어준다.
-        renderAffiliationWithTerms(dialogueAffiliation, entry.affiliation || "");
+        // 소속 라벨은 인물의 직함을 보여주는 자리다. 여기에 사전 링크를 걸면
+        // 말할 때마다 밑줄이 따라다녀 이름표가 아니라 각주처럼 보인다 — 걸지 않는다.
+        dialogueAffiliation.textContent = entry.affiliation || "";
         queueTypewriter(entry.text, entry);
         viewerStageMessage.innerHTML = "";
       }

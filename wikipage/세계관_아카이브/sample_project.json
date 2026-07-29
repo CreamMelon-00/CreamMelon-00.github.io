@@ -1,0 +1,29 @@
+{
+  "app": "세계관 아카이브",
+  "formatVersion": 1,
+  "exportedAt": "2026-07-29T00:00:00.000Z",
+  "state": {
+    "version": 1,
+    "active": "home",
+    "theme": "dark",
+    "view": "split",
+    "docs": [
+      {
+        "id": "home",
+        "title": "세계관 대문",
+        "folder": "00_홈",
+        "type": "대문",
+        "era": "시대 공통",
+        "canon": "확정",
+        "status": "작성 중",
+        "tags": [
+          "안내"
+        ],
+        "memo": "",
+        "createdAt": "2026-07-29T00:00:00.000Z",
+        "updatedAt": "2026-07-29T00:00:00.000Z",
+        "content": "# 세계관 대문\n\n새 세계관 문서를 작성합니다.\n"
+      }
+    ]
+  }
+}

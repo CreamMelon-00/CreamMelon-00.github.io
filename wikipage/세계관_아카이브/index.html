@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>세계관 아카이브</title>
+<style>
+:root{--bg:#111416;--p:#181c1f;--p2:#20252a;--line:#30383f;--text:#e8edef;--muted:#98a4ac;--accent:#68c9b5;--soft:rgba(104,201,181,.13);--danger:#df7777;--warn:#d4ae5f;--side:270px;--right:300px}
+[data-theme=light]{--bg:#edf1f3;--p:#fff;--p2:#f4f7f8;--line:#d7e0e4;--text:#182126;--muted:#64717a;--accent:#167c6b;--soft:rgba(22,124,107,.1);--danger:#b43e3e;--warn:#87651b}
+*{box-sizing:border-box}html,body{height:100%}body{margin:0;overflow:hidden;background:var(--bg);color:var(--text);font-family:Inter,Pretendard,"Noto Sans KR",system-ui,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}.app{height:100vh;display:grid;grid-template-columns:var(--side) minmax(0,1fr) var(--right);grid-template-rows:54px minmax(0,1fr);grid-template-areas:"top top top" "side main right"}
+.top{grid-area:top;background:var(--p);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;padding:0 13px}.brand{width:calc(var(--side) - 13px);font-weight:800;letter-spacing:-.03em}.mark{display:inline-grid;place-items:center;width:28px;height:28px;margin-right:8px;border:1px solid var(--line);border-radius:8px;color:var(--accent);background:var(--soft)}
+.btn{height:34px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--p2);cursor:pointer;white-space:nowrap}.btn:hover{border-color:var(--accent);background:var(--soft)}.btn.primary{border-color:transparent;background:var(--accent);color:#07120f;font-weight:800}.btn.danger:hover{border-color:var(--danger);color:var(--danger)}.spacer{flex:1}.views{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}.views button{border:0;background:transparent;color:var(--muted);padding:7px 10px;cursor:pointer}.views button.on{background:var(--soft);color:var(--accent)}
+.side{grid-area:side;background:var(--p);border-right:1px solid var(--line);display:flex;flex-direction:column;min-width:0}.sidehead{padding:11px;border-bottom:1px solid var(--line)}.search{width:100%;height:38px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--p2);outline:0}.search:focus,.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--soft)}.sidebuttons{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}.tree{overflow:auto;padding:8px 8px 30px}.folder{margin-bottom:8px}.foldername{padding:7px;color:var(--muted);font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;display:flex}.count{margin-left:auto;background:var(--p2);border-radius:999px;padding:1px 6px}.doc{width:100%;border:0;background:transparent;color:var(--muted);padding:8px;border-radius:8px;text-align:left;display:flex;gap:8px;cursor:pointer}.doc:hover{background:var(--p2);color:var(--text)}.doc.on{background:var(--soft);color:var(--accent)}.doc span:nth-child(2){overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}.dot{width:7px;height:7px;margin-top:7px;border-radius:50%;background:var(--line)}.dot.draft{background:var(--warn)}.dot.done{background:var(--accent)}.dot.conflict{background:var(--danger)}
+.main{grid-area:main;min-width:0;min-height:0;display:flex;flex-direction:column}.dochead{height:61px;flex:none;padding:8px 16px;background:var(--p2);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}.title{min-width:0;flex:1;border:0;background:transparent;outline:0;font-size:22px;font-weight:800;letter-spacing:-.04em}.savestate{font-size:12px;color:var(--muted)}.work{min-height:0;flex:1;display:grid;grid-template-columns:1fr 1fr}.work[data-view=edit],.work[data-view=preview]{grid-template-columns:1fr}.work[data-view=edit] .previewpane{display:none}.work[data-view=preview] .editorpane{display:none}.editorpane{min-width:0;border-right:1px solid var(--line)}.editor{width:100%;height:100%;resize:none;border:0;outline:0;background:var(--p);color:var(--text);padding:25px clamp(20px,4vw,58px) 90px;font:15px/1.75 ui-monospace,SFMono-Regular,Consolas,monospace}.previewpane{min-width:0;overflow:auto;background:var(--p)}.preview{max-width:860px;margin:auto;padding:27px clamp(22px,5vw,65px) 100px;line-height:1.8}.preview h1,.preview h2,.preview h3{line-height:1.35;letter-spacing:-.03em;margin:1.7em 0 .6em}.preview h1{font-size:2rem;border-bottom:1px solid var(--line);padding-bottom:.35em}.preview h2{font-size:1.5rem;border-bottom:1px solid var(--line);padding-bottom:.25em}.preview h3{font-size:1.22rem}.preview p{margin:.85em 0}.preview blockquote{margin:1em 0;padding:.4em 1em;border-left:3px solid var(--accent);background:var(--soft);color:var(--muted)}.preview code{font-family:ui-monospace,monospace;background:var(--p2);padding:.12em .35em;border-radius:4px}.preview pre{overflow:auto;padding:14px;border:1px solid var(--line);border-radius:9px;background:var(--p2)}.preview a{color:var(--accent);border-bottom:1px dashed currentColor;text-decoration:none;cursor:pointer}.preview a.missing{color:var(--danger)}.preview table{width:100%;border-collapse:collapse}.preview th,.preview td{border:1px solid var(--line);padding:7px 9px;text-align:left}.preview th{background:var(--p2)}
+.right{grid-area:right;background:var(--p);border-left:1px solid var(--line);overflow:auto}.section{padding:14px;border-bottom:1px solid var(--line)}.section h3{margin:0 0 11px;color:var(--muted);font-size:11px;letter-spacing:.1em;text-transform:uppercase}.field{margin-bottom:10px}.field label{display:block;margin-bottom:4px;color:var(--muted);font-size:12px}.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:var(--p2);padding:8px;outline:0}.field textarea{min-height:72px;resize:vertical}.links{display:grid;gap:5px}.chip{border:1px solid var(--line);border-radius:8px;background:var(--p2);padding:7px 8px;text-align:left;cursor:pointer}.chip:hover{border-color:var(--accent)}.empty{color:var(--muted);font-size:13px}.stats{display:grid;grid-template-columns:1fr 1fr;gap:7px}.stat{padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--p2)}.stat strong{display:block;font-size:18px}.stat span{font-size:11px;color:var(--muted)}
+dialog{width:min(520px,calc(100vw - 28px));padding:0;border:1px solid var(--line);border-radius:13px;background:var(--p);color:var(--text)}dialog::backdrop{background:rgba(0,0,0,.65)}.modalhead{padding:17px 19px 11px;border-bottom:1px solid var(--line)}.modalhead h2{margin:0;font-size:19px}.modalbody{padding:17px 19px}.modalactions{padding:11px 19px 17px;display:flex;justify-content:flex-end;gap:8px}.toast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,20px);opacity:0;padding:10px 14px;border:1px solid var(--line);border-radius:9px;background:var(--p2);transition:.2s;pointer-events:none;z-index:20}.toast.show{opacity:1;transform:translate(-50%,0)}
+@media(max-width:900px){body{overflow:auto}.app{height:auto;min-height:100vh;grid-template-columns:1fr;grid-template-rows:54px auto auto auto;grid-template-areas:"top" "side" "main" "right"}.brand{width:auto}.brandtext{display:none}.hide-small{display:none}.side{max-height:260px;border-right:0;border-bottom:1px solid var(--line)}.main{min-height:70vh}.right{border-left:0;border-top:1px solid var(--line)}.work[data-view=split]{grid-template-columns:1fr}.work[data-view=split] .editorpane{min-height:46vh;border-right:0;border-bottom:1px solid var(--line)}.work[data-view=split] .previewpane{min-height:46vh}}
+</style>
+</head>
+<body>
+<div class="app" id="app" data-theme="dark">
+<header class="top">
+  <div class="brand"><span class="mark">◈</span><span class="brandtext">세계관 아카이브</span></div>
+  <div class="views hide-small"><button data-view="edit">편집</button><button data-view="split" class="on">분할</button><button data-view="preview">미리보기</button></div>
+  <div class="spacer"></div>
+  <button class="btn hide-small" id="exportMd">현재 문서 .md</button>
+  <button class="btn hide-small" id="exportAll">프로젝트 백업</button>
+  <button class="btn hide-small" id="importAll">백업 불러오기</button>
+  <button class="btn" id="theme">◐</button>
+</header>
+
+<aside class="side">
+  <div class="sidehead">
+    <input class="search" id="search" placeholder="문서 검색  Ctrl+K">
+    <div class="sidebuttons"><button class="btn primary" id="new">새 문서</button><button class="btn" id="copy">복제</button></div>
+  </div>
+  <nav class="tree" id="tree"></nav>
+</aside>
+
+<main class="main">
+  <div class="dochead"><input class="title" id="title" placeholder="문서 제목"><span class="savestate" id="save">저장됨</span><button class="btn danger" id="del">×</button></div>
+  <section class="work" id="work" data-view="split">
+    <div class="editorpane"><textarea class="editor" id="editor" spellcheck="false"></textarea></div>
+    <div class="previewpane"><article class="preview" id="preview"></article></div>
+  </section>
+</main>
+
+<aside class="right">
+  <section class="section">
+    <h3>문서 속성</h3>
+    <div class="field"><label>폴더</label><input id="folder" list="folders"><datalist id="folders"></datalist></div>
+    <div class="field"><label>분류</label><input id="type" list="types"><datalist id="types"><option>대문</option><option>개념</option><option>국가</option><option>세력</option><option>인물</option><option>사건</option><option>기술</option><option>병기</option><option>지역</option><option>서사</option><option>연표</option><option>메모</option></datalist></div>
+    <div class="field"><label>시대</label><input id="era" list="eras"><datalist id="eras"><option>시대 공통</option><option>대전쟁 이전</option><option>대전쟁</option><option>서사 시점</option><option>현대</option><option>미정</option></datalist></div>
+    <div class="field"><label>정사 등급</label><select id="canon"><option>확정</option><option>잠정</option><option>구 설정</option><option>폐기 예정</option></select></div>
+    <div class="field"><label>작업 상태</label><select id="status"><option>작성 중</option><option>검토 필요</option><option>충돌 의심</option><option>완료</option></select></div>
+    <div class="field"><label>태그</label><input id="tags" placeholder="쉼표로 구분"></div>
+    <div class="field"><label>검토 메모</label><textarea id="memo" placeholder="시대 차이, 충돌, 보강할 내용"></textarea></div>
+  </section>
+  <section class="section"><h3>연결된 문서</h3><div class="links" id="out"></div></section>
+  <section class="section"><h3>역링크</h3><div class="links" id="back"></div></section>
+  <section class="section"><h3>통계</h3><div class="stats"><div class="stat"><strong id="chars">0</strong><span>글자</span></div><div class="stat"><strong id="words">0</strong><span>어절</span></div><div class="stat"><strong id="links">0</strong><span>내부 링크</span></div><div class="stat"><strong id="docs">0</strong><span>전체 문서</span></div></div></section>
+  <section class="section"><h3>백업</h3><div style="display:grid;gap:7px"><button class="btn" id="exportMd2">현재 문서 .md</button><button class="btn" id="exportAll2">프로젝트 백업</button><button class="btn" id="importAll2">백업 불러오기</button></div></section>
+</aside>
+</div>
+
+<dialog id="dialog"><form id="form"><div class="modalhead"><h2>새 문서 만들기</h2></div><div class="modalbody">
+<div class="field"><label>제목</label><input id="newTitle" required></div>
+<div class="field"><label>폴더</label><input id="newFolder" value="미분류" list="folders"></div>
+<div class="field"><label>문서 유형</label><select id="template"><option value="empty">빈 문서</option><option value="concept">핵심 개념</option><option value="nation">국가</option><option value="character">인물</option><option value="event">사건</option><option value="technology">기술·병기</option><option value="story">서사</option></select></div>
+</div><div class="modalactions"><button type="button" class="btn" id="cancel">취소</button><button class="btn primary">만들기</button></div></form></dialog>
+<input type="file" id="file" accept=".json" hidden>
+<div class="toast" id="toast"></div>
+
+<script>
+(()=>{
+"use strict";
+const KEY="worldbuilding-archive-v1", folderOrder=["00_홈","01_핵심 규칙","02_지역","03_세력","04_인물","05_사건","06_기술과 병기","07_연표","08_서사","09_검토","미분류"];
+const now=()=>new Date().toISOString(), id=()=>`doc-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,7)}`;
+const seed={version:1,active:"home",theme:"dark",view:"split",docs:[
+{id:"home",title:"세계관 대문",folder:"00_홈",type:"대문",era:"시대 공통",canon:"확정",status:"작성 중",tags:["안내"],memo:"",createdAt:now(),updatedAt:now(),content:`# 세계관 대문
+
+이 문서는 새 세계관 설정 문서의 출발점입니다.
+
+## 작성 원칙
+
+- 하나의 개념은 하나의 문서로 분리합니다.
+- 다른 문서는 \`[[문서 제목]]\`으로 연결합니다.
+- 서로 다른 시대의 설정은 **시대** 속성으로 구분합니다.
+- 확정되지 않은 내용은 **잠정**, 오래된 내용은 **구 설정**으로 표시합니다.
+- 충돌 가능성이 있는 내용은 오른쪽의 **검토 메모**에 기록합니다.
+
+## 추천 시작점
+
+- [[노에시스]]
+- [[폭발과 연소]]
+- [[그렌빌리아]]
+- [[미트로프 연방]]
+- [[세계 연표]]`},
+{id:"noesis",title:"노에시스",folder:"01_핵심 규칙",type:"개념",era:"시대 공통",canon:"잠정",status:"검토 필요",tags:["핵심 규칙"],memo:"대기 조성비가 아닌 포화도 또는 유효 밀도로 재정의할지 검토.",createdAt:now(),updatedAt:now(),content:`# 노에시스
+
+## 한 문장 정의
+
+사람의 사고 행위에서 발생하고, 물질과 반응에 간섭하는 준물질.
+
+## 확정할 사항
+
+- 물질인가, 장(field)인가
+- 대기 중 농도를 어떤 단위로 표현할 것인가
+- 일반 연소와 폭발성 연쇄반응을 어떻게 구분하는가
+
+## 관련 문서
+
+- [[폭발과 연소]]
+- [[노에마]]
+- [[누스]]`},
+{id:"combustion",title:"폭발과 연소",folder:"01_핵심 규칙",type:"개념",era:"시대 공통",canon:"잠정",status:"충돌 의심",tags:["화약","기술 규칙"],memo:"흑색화약과 무연화약을 가르는 임계 조건을 확정해야 함.",createdAt:now(),updatedAt:now(),content:`# 폭발과 연소
+
+## 기본 규칙
+
+일반적인 화염과 지속 연소는 가능하지만, 압력과 반응 속도가 서로를 증폭시키는 급격한 반응은 [[노에시스]]의 간섭을 받는다.
+
+## 기술 판정표
+
+| 기술 | 가능 여부 | 비고 |
+|---|---|---|
+| 장작·석탄 연소 | 가능 | 지속 연소 |
+| 보일러 | 가능 | 외연기관 |
+| 흑색화약 | 제한적 | 느린 표면연소 |
+| 무연화약 | 불안정 | 고압 급속 연소 |
+| 고폭약 | 거의 불가능 | 폭굉 전파 붕괴 |
+| 내연기관 | 실용성 낮음 | 반복 점화 불안정 |`}
+]};
+let state;
+try{state=JSON.parse(localStorage.getItem(KEY))||structuredClone(seed)}catch{state=structuredClone(seed)}
+const $=s=>document.querySelector(s), E={app:$("#app"),tree:$("#tree"),search:$("#search"),title:$("#title"),editor:$("#editor"),preview:$("#preview"),work:$("#work"),save:$("#save"),folder:$("#folder"),type:$("#type"),era:$("#era"),canon:$("#canon"),status:$("#status"),tags:$("#tags"),memo:$("#memo"),out:$("#out"),back:$("#back"),chars:$("#chars"),words:$("#words"),links:$("#links"),docs:$("#docs"),folders:$("#folders"),dialog:$("#dialog"),form:$("#form"),newTitle:$("#newTitle"),newFolder:$("#newFolder"),template:$("#template"),file:$("#file"),toast:$("#toast")};
+let timer,toastTimer;
+const active=()=>state.docs.find(d=>d.id===state.active)||state.docs[0];
+function save(){E.save.textContent="저장 중";clearTimeout(timer);timer=setTimeout(()=>{localStorage.setItem(KEY,JSON.stringify(state));E.save.textContent="저장됨"},350)}
+function toast(s){clearTimeout(toastTimer);E.toast.textContent=s;E.toast.classList.add("show");toastTimer=setTimeout(()=>E.toast.classList.remove("show"),2000)}
+const esc=s=>String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
+const find=t=>state.docs.find(d=>d.title.trim().toLowerCase()===t.trim().toLowerCase());
+function linksOf(s){let a=[],r=/\[\[([^\]|#]+)(?:#[^\]|]+)?(?:\|[^\]]+)?\]\]/g,m;while((m=r.exec(s||"")))a.push(m[1].trim());return [...new Set(a)]}
+function inline(raw){let tokens=[];let s=String(raw).replace(/\[\[([^\]]+)\]\]/g,(_,v)=>{tokens.push(v);return `@@W${tokens.length-1}@@`});s=esc(s).replace(/`([^`]+)`/g,"<code>$1</code>").replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>").replace(/\*([^*]+)\*/g,"<em>$1</em>").replace(/~~([^~]+)~~/g,"<del>$1</del>");tokens.forEach((v,i)=>{let p=v.split("|"),target=p[0].split("#")[0].trim(),label=(p[1]||p[0]).trim(),cl=find(target)?"":" missing";s=s.replace(`@@W${i}@@`,`<a class="wiki${cl}" data-wiki="${esc(target)}">${esc(label)}</a>`)});return s}
+function md(text){let lines=String(text||"").replace(/\r\n/g,"\n").split("\n"),h="",list=null,code=false,buf=[],table=[];
+const close=()=>{if(list){h+=`</${list}>`;list=null}},flush=()=>{if(!table.length)return;let row=x=>x.trim().replace(/^\||\|$/g,"").split("|").map(v=>v.trim());if(table.length>1&&/^\s*\|?[\s:-]+\|/.test(table[1])){let hd=row(table[0]),rows=table.slice(2).map(row);h+="<table><thead><tr>"+hd.map(x=>`<th>${inline(x)}</th>`).join("")+"</tr></thead><tbody>"+rows.map(r=>"<tr>"+r.map(x=>`<td>${inline(x)}</td>`).join("")+"</tr>").join("")+"</tbody></table>"}else h+=table.map(x=>`<p>${inline(x)}</p>`).join("");table=[]};
+for(let line of lines){if(line.startsWith("```")){flush();close();if(!code){code=true;buf=[]}else{h+=`<pre><code>${esc(buf.join("\n"))}</code></pre>`;code=false}continue}if(code){buf.push(line);continue}if(line.trim().startsWith("|")&&line.includes("|")){close();table.push(line);continue}else flush();if(!line.trim()){close();continue}let m;if(m=line.match(/^(#{1,6})\s+(.+)$/)){close();let n=m[1].length;h+=`<h${n}>${inline(m[2])}</h${n}>`}else if(/^---+$/.test(line.trim())){close();h+="<hr>"}else if(m=line.match(/^>\s?(.*)$/)){close();h+=`<blockquote>${inline(m[1])}</blockquote>`}else if(m=line.match(/^\s*[-*+]\s+(.+)$/)){if(list!=="ul"){close();list="ul";h+="<ul>"}h+=`<li>${inline(m[1])}</li>`}else if(m=line.match(/^\s*\d+\.\s+(.+)$/)){if(list!=="ol"){close();list="ol";h+="<ol>"}h+=`<li>${inline(m[1])}</li>`}else{close();h+=`<p>${inline(line)}</p>`}}flush();close();return h||'<p class="empty">내용이 없습니다.</p>'}
+const icon=t=>({"대문":"⌂","개념":"◇","국가":"⚑","세력":"♟","인물":"●","사건":"◆","기술":"⚙","병기":"⚔","지역":"▧","서사":"≡","연표":"↦","메모":"□"}[t]||"□");
+function dot(d){if(d.status==="충돌 의심")return"conflict";if(d.status==="완료"&&d.canon==="확정")return"done";if(d.status!=="완료"||d.canon==="잠정")return"draft";return""}
+function folders(){let a=[...new Set(state.docs.map(d=>d.folder||"미분류"))];return a.sort((x,y)=>{let a=folderOrder.indexOf(x),b=folderOrder.indexOf(y);return(a<0?999:a)-(b<0?999:b)||x.localeCompare(y,"ko")})}
+function side(){let q=E.search.value.trim().toLowerCase(),docs=state.docs.filter(d=>!q||[d.title,d.folder,d.type,d.era,d.canon,d.status,...(d.tags||[]),d.content,d.memo].join(" ").toLowerCase().includes(q)),map=new Map;docs.forEach(d=>{let f=d.folder||"미분류";if(!map.has(f))map.set(f,[]);map.get(f).push(d)});E.tree.innerHTML=folders().filter(f=>map.has(f)).map(f=>`<section class="folder"><div class="foldername">${esc(f)}<span class="count">${map.get(f).length}</span></div>${map.get(f).sort((a,b)=>a.title.localeCompare(b.title,"ko")).map(d=>`<button class="doc ${d.id===state.active?"on":""}" data-id="${d.id}"><span>${icon(d.type)}</span><span>${esc(d.title)}</span><i class="dot ${dot(d)}"></i></button>`).join("")}</section>`).join("")||'<p class="empty">검색 결과가 없습니다.</p>';E.tree.querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>open(b.dataset.id));E.folders.innerHTML=folders().map(f=>`<option>${esc(f)}</option>`).join("")}
+function relation(){let d=active(),outs=linksOf(d.content),backs=state.docs.filter(x=>x.id!==d.id&&linksOf(x.content).some(t=>t.toLowerCase()===d.title.toLowerCase()));E.out.innerHTML=outs.length?outs.map(t=>`<button class="chip" data-title="${esc(t)}">${find(t)?icon(find(t).type):"?"} ${esc(t)}</button>`).join(""):'<div class="empty">연결된 문서가 없습니다.</div>';E.back.innerHTML=backs.length?backs.map(x=>`<button class="chip" data-id="${x.id}">${icon(x.type)} ${esc(x.title)}</button>`).join(""):'<div class="empty">역링크가 없습니다.</div>';E.out.querySelectorAll("[data-title]").forEach(b=>b.onclick=()=>wiki(b.dataset.title));E.back.querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>open(b.dataset.id))}
+function preview(){let d=active(),c=d?.content||"";E.preview.innerHTML=md(c);E.preview.querySelectorAll("[data-wiki]").forEach(a=>a.onclick=()=>wiki(a.dataset.wiki));relation();E.chars.textContent=c.length.toLocaleString("ko-KR");E.words.textContent=(c.trim()?c.trim().split(/\s+/).length:0).toLocaleString("ko-KR");E.links.textContent=linksOf(c).length;E.docs.textContent=state.docs.length}
+function render(){let d=active();E.title.value=d?.title||"";E.editor.value=d?.content||"";E.folder.value=d?.folder||"";E.type.value=d?.type||"";E.era.value=d?.era||"";E.canon.value=d?.canon||"잠정";E.status.value=d?.status||"작성 중";E.tags.value=(d?.tags||[]).join(", ");E.memo.value=d?.memo||"";E.app.dataset.theme=state.theme;E.work.dataset.view=state.view;document.querySelectorAll("[data-view]").forEach(b=>b.classList.toggle("on",b.dataset.view===state.view));side();preview()}
+function open(x){if(state.docs.some(d=>d.id===x)){state.active=x;render();save()}}
+function wiki(t){let d=find(t);if(d)return open(d.id);if(confirm(`"${t}" 문서가 없습니다. 새로 만들까요?`)){let n=make(t,"미분류","empty");state.docs.push(n);state.active=n.id;render();save()}}
+const tpl=(k,t)=>({empty:`# ${t}\n\n`,concept:`# ${t}\n\n## 한 문장 정의\n\n## 작동 원리\n\n## 제한과 예외\n\n## 시대별 변화\n\n## 관련 문서\n`,nation:`# ${t}\n\n## 개요\n\n## 지리\n\n## 정치 체제\n\n## 역사\n\n## 사회와 문화\n\n## 산업과 기술\n\n## 군사와 치안\n\n## 주요 세력\n\n## 관련 사건\n`,character:`# ${t}\n\n## 개요\n\n## 소속과 직책\n\n## 외형\n\n## 성격과 가치관\n\n## 과거\n\n## 주요 행적\n\n## 능력과 장비\n\n## 인간관계\n`,event:`# ${t}\n\n## 개요\n\n## 시기\n\n## 장소\n\n## 원인\n\n## 참여 세력과 인물\n\n## 전개\n\n## 결과\n\n## 장기적 영향\n`,technology:`# ${t}\n\n## 개요\n\n## 작동 원리\n\n## 자원과 설비\n\n## 성능\n\n## 한계\n\n## 보급 상황\n\n## 시대별 변화\n`,story:`# ${t}\n\n## 개요\n\n## 시점과 장소\n\n## 등장인물\n\n## 사건 순서\n\n## 핵심 갈등\n\n## 공개되는 설정\n\n## 복선과 회수\n\n## 설정 검토\n`}[k]||`# ${t}\n\n`);
+function make(t,f,k){let m={empty:["메모","미정"],concept:["개념","시대 공통"],nation:["국가","현대"],character:["인물","서사 시점"],event:["사건","미정"],technology:["기술","현대"],story:["서사","서사 시점"]}[k]||["메모","미정"],n=now();return{id:id(),title:t,folder:f||"미분류",type:m[0],era:m[1],canon:"잠정",status:"작성 중",tags:[],memo:"",createdAt:n,updatedAt:n,content:tpl(k,t)}}
+function update(k,v){let d=active();if(!d)return;d[k]=v;d.updatedAt=now();side();preview();save()}
+function dl(name,text,type){let u=URL.createObjectURL(new Blob([text],{type})),a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),500)}
+function safe(s){return(s||"문서").replace(/[\\/:*?"<>|]/g,"_")}
+function fm(d){return`---\nid: ${d.id}\n분류: ${d.type}\n폴더: ${d.folder}\n시대: ${d.era}\n정사: ${d.canon}\n상태: ${d.status}\n태그: ${(d.tags||[]).join(", ")}\n검토메모: ${JSON.stringify(d.memo||"")}\n---\n\n`}
+function exportMd(){let d=active();dl(safe(d.title)+".md",fm(d)+(d.content||""),"text/markdown;charset=utf-8");toast("Markdown으로 내보냈습니다.")}
+function exportAll(){dl(`세계관_아카이브_${new Date().toISOString().slice(0,10)}.json`,JSON.stringify({app:"세계관 아카이브",formatVersion:1,exportedAt:now(),state},null,2),"application/json");toast("프로젝트 백업을 만들었습니다.")}
+function importAll(file){let r=new FileReader;r.onload=()=>{try{let x=JSON.parse(r.result),s=x.state||x;if(!Array.isArray(s.docs))throw Error("올바른 백업 형식이 아닙니다.");if(confirm("현재 프로젝트를 백업 파일의 내용으로 바꿀까요?")){state=s;if(!state.docs.some(d=>d.id===state.active))state.active=state.docs[0]?.id;render();save();toast("프로젝트를 불러왔습니다.")}}catch(e){alert("백업 파일을 읽지 못했습니다.\n"+e.message)}E.file.value=""};r.readAsText(file,"utf-8")}
+E.search.oninput=side;E.title.oninput=()=>update("title",E.title.value);E.editor.oninput=()=>update("content",E.editor.value);[["folder","folder"],["type","type"],["era","era"],["canon","canon"],["status","status"],["memo","memo"]].forEach(([el,k])=>E[el].oninput=()=>update(k,E[el].value));E.tags.oninput=()=>update("tags",E.tags.value.split(",").map(x=>x.trim()).filter(Boolean));
+$("#new").onclick=()=>{E.dialog.showModal();setTimeout(()=>E.newTitle.focus(),20)};$("#cancel").onclick=()=>E.dialog.close();E.form.onsubmit=e=>{e.preventDefault();let t=E.newTitle.value.trim();if(!t)return;if(find(t))return toast("같은 제목의 문서가 있습니다.");let d=make(t,E.newFolder.value,E.template.value);state.docs.push(d);state.active=d.id;E.dialog.close();E.form.reset();E.newFolder.value="미분류";render();save()};
+$("#copy").onclick=()=>{let d=active(),n=structuredClone(d),base=d.title+" 복사본",t=base,i=2;while(find(t))t=base+" "+i++;n.id=id();n.title=t;n.canon="잠정";n.status="작성 중";n.createdAt=n.updatedAt=now();state.docs.push(n);state.active=n.id;render();save();toast("문서를 복제했습니다.")};
+$("#del").onclick=()=>{let d=active();if(!d||!confirm(`"${d.title}" 문서를 삭제할까요?`))return;let i=state.docs.indexOf(d);state.docs.splice(i,1);state.active=state.docs[Math.max(0,i-1)]?.id;render();save();toast("문서를 삭제했습니다.")};
+document.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>{state.view=b.dataset.view;render();save()});$("#theme").onclick=()=>{state.theme=state.theme==="light"?"dark":"light";render();save()};
+["#exportMd","#exportMd2"].forEach(s=>$(s).onclick=exportMd);["#exportAll","#exportAll2"].forEach(s=>$(s).onclick=exportAll);["#importAll","#importAll2"].forEach(s=>$(s).onclick=()=>E.file.click());E.file.onchange=()=>E.file.files[0]&&importAll(E.file.files[0]);
+E.editor.onkeydown=e=>{if(e.key==="Tab"){e.preventDefault();let a=E.editor.selectionStart,b=E.editor.selectionEnd;E.editor.value=E.editor.value.slice(0,a)+"  "+E.editor.value.slice(b);E.editor.selectionStart=E.editor.selectionEnd=a+2;update("content",E.editor.value)}};
+window.onkeydown=e=>{let m=e.ctrlKey||e.metaKey;if(m&&e.key.toLowerCase()==="s"){e.preventDefault();localStorage.setItem(KEY,JSON.stringify(state));toast("저장했습니다.")}if(m&&e.key.toLowerCase()==="k"){e.preventDefault();E.search.focus();E.search.select()}if(m&&e.key.toLowerCase()==="n"){e.preventDefault();E.dialog.showModal();setTimeout(()=>E.newTitle.focus(),20)}};
+render();save();
+})();
+</script>
+</body>
+</html>
