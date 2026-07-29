@@ -1,9 +1,9 @@
 {
   "app": "세계관 아카이브",
-  "formatVersion": 1,
+  "formatVersion": 2,
   "exportedAt": "2026-07-29T00:00:00.000Z",
   "state": {
-    "version": 1,
+    "version": 2,
     "active": "home",
     "theme": "dark",
     "view": "split",
@@ -22,7 +22,9 @@
         "memo": "",
         "createdAt": "2026-07-29T00:00:00.000Z",
         "updatedAt": "2026-07-29T00:00:00.000Z",
-        "content": "# 세계관 대문\n\n새 세계관 문서를 작성합니다.\n"
+        "content": "# 세계관 대문\n\n새 세계관 문서를 작성합니다.\n",
+        "parentId": null,
+        "sortOrder": 0
       }
     ]
   }
