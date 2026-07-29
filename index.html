@@ -622,6 +622,32 @@
       opacity: 1;
     }
 
+    /* 해독해서 새겨진 전문. 줄 전체를 쓰는 별도 행이라 잘리지 않는다.
+       무전 화면과 같은 서체·색을 써서, 작가가 쓴 부제가 아니라 독자가
+       무전기에서 뜯어온 글자라는 것을 표시한다. */
+    .episode-row.has-transmission {
+      flex-wrap: wrap;
+    }
+
+    .episode-row-transmission {
+      width: 100%;
+      margin: 10px 0 0;
+      padding-top: 9px;
+      border-top: 1px dashed rgba(78, 159, 143, 0.28);
+      color: #7fc9ba;
+      font-family: ui-monospace, "Courier New", monospace;
+      font-size: 12px;
+      line-height: 1.75;
+      letter-spacing: 0.01em;
+      word-break: keep-all;
+    }
+
+    .episode-row-transmission::before {
+      content: "수신 ";
+      color: rgba(127, 201, 186, 0.55);
+      letter-spacing: 0.1em;
+    }
+
     .episode-row-order {
       flex: none;
       min-width: 42px;
@@ -4332,6 +4358,9 @@
         list.innerHTML = `<div class="empty-state">이 챕터에는 아직 수록된 화가 없습니다.</div>`;
       }
 
+      // 줄마다 localStorage를 다시 읽지 않도록 한 번만 꺼낸다
+      const solvedGames = minigamesDone();
+
       let numbered = 0;
       episodes.forEach(episode => {
         const row = document.createElement("div");
@@ -4364,6 +4393,12 @@
           subtitleEl.textContent = episode.subtitle;
           textCol.append(subtitleEl);
         }
+
+        /* 해독한 전문. 부제 자리에 넣으면 모바일에서 텍스트 칸이 99px밖에
+           안 되어 잘린다 — 읽으려고 찾아낸 글이므로 줄 전체를 쓰게 한다. */
+        const decoded = isMinigame(episode) && solvedGames.has(episode.id)
+          ? String(episode.gameMessage || "").trim()
+          : "";
 
         const actions = document.createElement("div");
         actions.className = "episode-row-actions";
@@ -4414,6 +4449,16 @@
 
         actions.append(viewButton);
         row.append(orderEl, textCol, actions);
+
+        if (decoded) {
+          // 줄을 감싸게 만드는 것은 전문이 있는 줄에만 걸어, 다른 줄의 배치는 건드리지 않는다
+          row.classList.add("has-transmission");
+          const transcript = document.createElement("p");
+          transcript.className = "episode-row-transmission";
+          transcript.textContent = decoded;
+          row.append(transcript);
+        }
+
         row.addEventListener("click", open);
         list.append(row);
       });
