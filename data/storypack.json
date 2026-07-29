@@ -1,7 +1,7 @@
 {
   "format": "story-dialogue-studio",
   "version": 1,
-  "exportedAt": "2026-07-29T08:00:51.317Z",
+  "exportedAt": "2026-07-29T08:07:20.414Z",
   "meta": {
     "key": "project",
     "title": "스토리 플레이어",
@@ -8913,8 +8913,7 @@
       "gameTarget": "1407",
       "gameMessage": "하노버 철수 완료. 보안관 건은 정리됐다. 다음 지시까지 대기한다.",
       "gameBrief": "누군가의 무전을 가로챈다. 다이얼을 돌려 전문을 찾아라.",
-      "title": "잡음 속에서",
-      "subtitle": "누군가 아직 송신하고 있다",
+      "title": "잡음",
       "description": "",
       "coverAssetId": "",
       "script": [
