@@ -1,7 +1,7 @@
 {
   "format": "story-dialogue-studio",
   "version": 1,
-  "exportedAt": "2026-07-29T08:43:27.839Z",
+  "exportedAt": "2026-07-30T09:03:40.253Z",
   "meta": {
     "key": "project",
     "title": "스토리 플레이어",
@@ -8929,7 +8929,7 @@
       "role": "minigame",
       "game": "무전",
       "gameTarget": "1409",
-      "gameMessage": "의회에 헌병 진입. 감독관도 안에 있다. 이건 우리 쪽 지시가 아니다.",
+      "gameMessage": "의회에 헌병 진입. 감독관도 안에 있다. 대체 상황이 어떻게 돌아가는 거야?!",
       "gameBrief": "누군가의 무전을 가로챈다. 다이얼을 돌려 전문을 찾아라.",
       "title": "잡음",
       "subtitle": "",
@@ -8939,7 +8939,7 @@
         ""
       ],
       "createdAt": "2026-07-29T08:43:27.827Z",
-      "updatedAt": "2026-07-29T08:43:27.827Z"
+      "updatedAt": "2026-07-30T09:03:40.230Z"
     }
   ],
   "assets": [
