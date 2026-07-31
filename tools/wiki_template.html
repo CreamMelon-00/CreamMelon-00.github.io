@@ -1,0 +1,808 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>세계관 아카이브</title>
+<style>
+:root{
+  --bg:#f7f5f0; --panel:#fffefb; --panel2:#efece4; --line:#e0dad0;
+  --text:#211e18; --muted:#77705f; --accent:#8a5320; --soft:#f2e8d8;
+  --warn:#9a6b06; --danger:#a02f26; --ok:#2f6b41;
+  --serif:"Nanum Myeongjo","Batang","Apple SD Gothic Neo",Georgia,serif;
+  --sans:"Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;
+  --shadow:0 1px 2px rgba(60,45,25,.05),0 6px 18px rgba(60,45,25,.05);
+}
+:root[data-theme="dark"]{
+  --bg:#14131a; --panel:#1c1b23; --panel2:#25232e; --line:#332f3d;
+  --text:#e8e4dc; --muted:#9a92a4; --accent:#dbab68; --soft:#2b2533;
+  --warn:#dcb057; --danger:#e58179; --ok:#77c78d;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.28);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px}
+/* 긴 URL이나 붙어 있는 긴 토큰이 칸을 밀어내지 않게 한다. */
+.body,.infobox td,.infobox th,.crumb,.chrono,.quote,.rail{overflow-wrap:anywhere;word-break:normal}
+.body pre,.body code{overflow-wrap:normal}
+img{max-width:100%;height:auto}
+#app{display:grid;grid-template-columns:280px minmax(0,1fr);height:100vh}
+
+/* ── 왼쪽 목록 ── */
+.side{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-width:0}
+.sidehead{padding:14px;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center}
+.brand{font-family:var(--serif);font-weight:700;font-size:16px;flex:1}
+.search{margin:12px 14px 4px;position:relative}
+.search input{width:100%;height:34px;padding:0 10px;border:1px solid var(--line);border-radius:7px;background:var(--panel2);color:var(--text);outline:0;font-family:inherit}
+.search input:focus{border-color:var(--accent)}
+.tree{overflow:auto;padding:8px 8px 40px;flex:1}
+.foldername{padding:12px 8px 5px;color:var(--muted);font-size:10.5px;font-weight:800;letter-spacing:.1em;display:flex}
+.foldername span{margin-left:auto;opacity:.7}
+.doc{width:100%;border:0;background:0;color:var(--muted);text-align:left;display:flex;gap:7px;align-items:center;
+  padding:6px 8px;border-radius:7px;cursor:pointer;font-family:inherit;font-size:13.5px;line-height:1.35}
+.doc:hover{background:var(--panel2);color:var(--text)}
+.doc.on{background:var(--soft);color:var(--accent);font-weight:700}
+.doc .ic{width:15px;text-align:center;flex:none;opacity:.75}
+.doc .tt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.doc .more{flex:none;font-size:10px;min-width:16px;height:16px;line-height:16px;text-align:center;
+  border-radius:9px;background:var(--panel2);color:var(--muted);padding:0 4px}
+.doc.on .more{background:var(--panel);color:var(--accent)}
+.doc:hover .more{color:var(--accent)}
+.dot{width:6px;height:6px;border-radius:50%;flex:none;background:var(--line)}
+.dot.draft{background:var(--warn)}.dot.done{background:var(--ok)}.dot.conflict{background:var(--danger)}
+
+/* ── 본문 ── */
+.main{overflow:auto;position:relative}
+/* 인포박스를 띄우지 않고 오른쪽 칸에 둔다.
+   띄우면 표·틀·시간선마다 clear 를 걸어 피해야 하고, 그때마다 빈 공간과
+   끊긴 밑줄이 생긴다. 칸으로 두면 본문은 언제나 한 폭을 쓴다. */
+.wrap{display:grid;gap:0 36px;max-width:1140px;margin:0 auto;padding:38px 40px 120px;
+  grid-template-columns:minmax(0,1fr) 300px;
+  grid-template-rows:auto 1fr;
+  grid-template-areas:"main ib" "main toc"}
+article{grid-area:main;min-width:0}
+.crumb{color:var(--muted);font-size:12px;margin-bottom:10px}
+h1.doctitle{font-family:var(--serif);font-size:33px;line-height:1.22;margin:0 0 15px;letter-spacing:-.015em}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.chip{font-size:11px;padding:3px 10px;border-radius:999px;background:var(--panel2);color:var(--muted);
+  border:1px solid transparent;letter-spacing:.02em}
+.chip.canon-확정{color:var(--ok);border-color:var(--ok)}
+.chip.canon-잠정{color:var(--warn);border-color:var(--warn)}
+.chip.canon-구\ 설정,.chip.canon-폐기\ 예정{color:var(--danger);border-color:var(--danger)}
+.chip.st-충돌\ 의심{color:var(--danger);border-color:var(--danger)}
+/* ── 인포박스 ── */
+#infobox{grid-area:ib}
+.infobox{width:100%;margin:0 0 22px;border:1px solid var(--line);border-radius:12px;
+  background:var(--panel);overflow:hidden;font-size:12.5px;box-shadow:var(--shadow)}
+.infobox .ibhead{padding:10px 13px;background:var(--panel2);border-bottom:1px solid var(--line);
+  font-family:var(--serif);font-weight:700;font-size:14.5px;text-align:center;letter-spacing:.01em}
+.imgslot{display:block;width:100%;background:var(--panel2);border-bottom:1px solid var(--line)}
+.imgslot img{display:block;width:100%;height:auto}
+/* 이미지가 없을 때의 자리 — 빈 상자 대신 문양을 깐다. */
+.imgph{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;
+  min-height:172px;padding:20px 14px;color:var(--muted);text-align:center;
+  border-bottom:1px solid var(--line);overflow:hidden;
+  background:var(--panel2)}
+.imgph .motif{position:absolute;inset:0;opacity:.5;pointer-events:none}
+.imgph .mark{position:relative;font-size:26px;opacity:.75;color:var(--tone,var(--accent))}
+.imgph .lab{position:relative;font-size:11.5px;font-family:var(--serif)}
+.imgph .path{position:relative;font-size:10px;word-break:break-all;opacity:.6;font-family:ui-monospace,monospace}
+.imgcap{padding:7px 12px;color:var(--muted);font-size:11.5px;text-align:center;border-bottom:1px solid var(--line);line-height:1.5}
+.infobox table{width:100%;border-collapse:collapse}
+.infobox th,.infobox td{padding:6px 11px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;line-height:1.55}
+.infobox th{width:37%;color:var(--muted);font-weight:600;font-size:11.5px;background:color-mix(in srgb,var(--panel2) 55%,transparent)}
+.infobox tr:last-child th,.infobox tr:last-child td{border-bottom:0}
+.infobox td.tbd{color:var(--warn);opacity:.85}
+.body-img{margin:1.4em 0}
+.body-img img{max-width:100%;border-radius:8px;display:block}
+.body-img figcaption{color:var(--muted);font-size:12px;margin-top:6px;text-align:center}
+.body-img .imgph{border:1px dashed var(--line);border-radius:8px}
+
+/* ── 항목별 접기 ── */
+details.sec{margin:0}
+details.sec>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px}
+details.sec>summary::-webkit-details-marker{display:none}
+details.sec>summary:before{content:"";flex:none;width:6px;height:6px;margin-top:-3px;
+  border-right:1.6px solid var(--accent);border-bottom:1.6px solid var(--accent);
+  transform:rotate(45deg);transition:transform .15s;opacity:.6}
+details.sec:not([open])>summary:before{transform:rotate(-45deg);margin-top:0}
+details.sec>summary:hover:before{opacity:1}
+details.sec.lv2>summary{margin:2em 0 .6em;padding-bottom:.3em;border-bottom:1px solid var(--line)}
+details.sec.lv2>summary .secttl{font-family:var(--serif);font-size:20px}
+details.sec.lv3>summary{margin:1.7em 0 .5em}
+details.sec.lv3>summary .secttl{font-size:15.5px;color:var(--accent);font-weight:700}
+details.sec:not([open])>summary{opacity:.72}
+details.sec:not([open])>summary:after{content:"…";color:var(--muted);margin-left:2px}
+.foldbar{display:flex;gap:8px;align-items:center;margin:18px 0 2px}
+.foldbar button{border:1px solid var(--line);background:var(--panel2);color:var(--muted);border-radius:6px;
+  padding:3px 10px;font-size:11.5px;cursor:pointer;font-family:inherit}
+.foldbar button:hover{color:var(--accent);border-color:var(--accent)}
+details.memo{margin:14px 0 26px;border:1px solid var(--line);border-radius:9px;background:var(--panel);overflow:hidden}
+details.memo>summary{cursor:pointer;padding:9px 13px;font-size:12.5px;color:var(--muted);list-style:none}
+details.memo>summary::-webkit-details-marker{display:none}
+details.memo>summary:before{content:"▸ ";color:var(--accent)}
+details.memo[open]>summary:before{content:"▾ "}
+details.memo>summary:hover{color:var(--text);background:var(--panel2)}
+details.memo .inner{padding:2px 16px 12px;border-top:1px solid var(--line)}
+
+/* 읽기 편한 본문.
+   폭 제한은 '읽는 글'에만 건다. 표·틀·시간선·인용 상자 같은 구조물은
+   문서 전체 폭을 쓰게 두어야 인포박스와 오른쪽 끝이 맞는다. */
+.body{font-size:15.5px;line-height:1.85}
+.body p,.body ul,.body ol,.body>blockquote,.secbody>blockquote{max-width:70ch}
+/* 상자 안의 글은 상자 폭을 그대로 쓴다 */
+.body .quote p,.body td p,.body th p,.body li>ul,.body li>ol{max-width:none}
+.body p{margin:0 0 1.05em}
+/* 첫 문단은 도입부처럼 조금 키운다. */
+.lead{font-family:var(--serif);font-size:17px;line-height:1.8;color:var(--text);margin:0 0 1.3em;
+  max-width:70ch}
+.lead em,.lead strong{font-weight:700}
+/* 국가 문서의 고유 명칭처럼, 제목 아래 짧게 놓인 한 줄 */
+.subtitle{font-family:var(--serif);font-size:14px;color:var(--muted);letter-spacing:.06em;
+  margin:-.4em 0 1.2em;padding-bottom:.5em;border-bottom:1px solid var(--line);max-width:70ch}
+.body h2{font-family:var(--serif);font-size:20px;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:1px solid var(--line)}
+.body h3{font-size:15.5px;margin:1.7em 0 .5em;color:var(--accent)}
+.body h4{font-size:14px;margin:1.4em 0 .4em;color:var(--muted)}
+.body ul,.body ol{margin:0 0 1.05em;padding-left:1.35em}
+.body li{margin:.3em 0}
+.body li>ul,.body li>ol{margin:.3em 0}
+.body blockquote{margin:1.1em 0;padding:.5em 0 .5em 1.1em;border-left:3px solid var(--accent);color:var(--muted);font-family:var(--serif);font-size:15px}
+
+/* ── 분류별 상징색 ── */
+.tone{--tone:hsl(var(--hue) 42% 38%)}
+:root[data-theme="dark"] .tone{--tone:hsl(var(--hue) 48% 66%)}
+
+/* ── 연표 띠 ── */
+.erabar{display:flex;align-items:stretch;gap:3px;margin:0 0 20px;
+  border:1px solid var(--line);border-radius:9px;padding:5px;background:var(--panel)}
+.erabar .seg{flex:1;min-width:0;padding:5px 4px 6px;border-radius:6px;text-align:center;
+  font-size:10px;color:var(--muted);letter-spacing:-.02em;line-height:1.35;
+  border:1px solid transparent;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.erabar .seg .n{display:block;font-size:9.5px;opacity:.55;margin-top:1px}
+.erabar .seg.on{background:color-mix(in srgb,var(--tone,var(--accent)) 16%,transparent);
+  border-color:color-mix(in srgb,var(--tone,var(--accent)) 45%,transparent);
+  color:var(--tone,var(--accent));font-weight:700}
+.erabar .seg.span{background:color-mix(in srgb,var(--accent) 7%,transparent);color:var(--muted)}
+/* 경계 칸 — 시대를 가르는 자리라 좌우에 선을 세운다 */
+.erabar .seg.edge{border-left:1px dashed var(--line);border-right:1px dashed var(--line);
+  border-radius:3px;font-style:italic}
+.erabar .seg.edge.on{border-left-style:solid;border-right-style:solid;font-style:normal}
+.erabar.flat{justify-content:center}
+.erabar.flat .lab{padding:5px 12px 6px;font-size:11px;color:var(--muted)}
+
+/* 대문의 전체 연표 */
+.chrono{margin:1.4em 0;border-left:2px solid var(--line);padding-left:0}
+.chrono .row{position:relative;padding:0 0 18px 22px}
+.chrono .row:before{content:"";position:absolute;left:-6px;top:5px;width:10px;height:10px;
+  border-radius:50%;background:var(--panel);border:2px solid var(--accent)}
+.chrono .row.empty:before{border-color:var(--line)}
+.chrono .era{font-family:var(--serif);font-size:14.5px;font-weight:700;margin-bottom:5px}
+.chrono .row.edge:before{border-color:var(--warn);width:12px;height:12px;left:-7px}
+.chrono .row.edge .era{color:var(--warn)}
+.chrono .edgetag{margin-left:8px;font-family:var(--sans);font-size:10.5px;font-weight:400;
+  color:var(--muted);letter-spacing:0}
+.chrono .row.empty .era{color:var(--muted);font-weight:400}
+.chrono .docs{display:flex;flex-wrap:wrap;gap:5px}
+.chrono .docs a{font-size:12px;padding:3px 9px;border-radius:999px;background:var(--panel2);
+  color:var(--muted);cursor:pointer;border:1px solid transparent}
+.chrono .docs a:hover{color:var(--accent);border-color:var(--accent)}
+.chrono .none{font-size:12px;color:var(--muted);opacity:.6}
+
+/* ── 틀 (탐색 상자) ── */
+.navbox{margin:0 0 22px;border:1px solid var(--line);border-radius:10px;
+  background:var(--panel);overflow:hidden;font-size:12.5px}
+.navbox .nbhead{padding:7px 12px;background:color-mix(in srgb,var(--tone,var(--accent)) 13%,var(--panel2));
+  border-bottom:1px solid var(--line);font-family:var(--serif);font-weight:700;font-size:13.5px;
+  color:var(--tone,var(--accent));letter-spacing:.01em}
+.navbox table{width:100%;border-collapse:collapse}
+.navbox th,.navbox td{padding:6px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;line-height:1.7}
+.navbox th{width:78px;color:var(--muted);font-size:11px;font-weight:700;white-space:nowrap;
+  background:color-mix(in srgb,var(--panel2) 45%,transparent)}
+.navbox tr:last-child th,.navbox tr:last-child td{border-bottom:0}
+.navbox.missing{padding:9px 12px;color:var(--danger);font-size:12px}
+
+/* ── 상세 문서 안내 ── */
+.seealso{margin:1.1em 0;padding:8px 13px;border-left:3px solid var(--accent);
+  background:color-mix(in srgb,var(--soft) 45%,transparent);border-radius:0 7px 7px 0;
+  font-size:13.5px;color:var(--muted)}
+.seealso:before{content:"▸ ";color:var(--accent)}
+.seealso a.wiki{font-weight:700}
+
+/* ── 연혁 (문서 안의 시간선) ── */
+.histline{list-style:none;margin:1.3em 0;padding:0 0 0 4px}
+.histline li{position:relative;display:grid;grid-template-columns:96px 1fr;gap:14px;
+  padding:0 0 14px 20px;border-left:2px solid var(--line);align-items:baseline}
+.histline li:last-child{border-left-color:transparent;padding-bottom:0}
+.histline li:before{content:"";position:absolute;left:-6px;top:7px;width:9px;height:9px;border-radius:50%;
+  background:var(--panel);border:2px solid var(--accent)}
+.histline li.same:before{width:5px;height:5px;left:-4px;top:9px;background:var(--line);border:0}
+.histline .when{font-family:var(--serif);font-size:13px;font-weight:700;color:var(--accent);
+  text-align:right;line-height:1.6}
+.histline li.same .when{color:transparent}
+.histline .what{font-size:14.5px;line-height:1.65}
+@media(max-width:640px){
+  .histline li{grid-template-columns:1fr;gap:2px}
+  .histline .when{text-align:left}
+}
+
+/* ── 인용 블록 네 종류 ── */
+.quote{margin:1.5em 0;padding:0}
+.quote p{margin:0 0 .45em}
+.quote p:last-of-type{margin-bottom:0}
+.quote cite{display:block;margin-top:.7em;font-style:normal;font-size:12px;color:var(--muted);letter-spacing:.02em}
+
+/* 경구 — 문서 머리의 제사 */
+.quote.epigraph{margin:0 0 2em;padding:1.15em 0 1.05em;text-align:center;
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.quote.epigraph p{font-family:var(--serif);font-size:16.5px;line-height:1.75;color:var(--text)}
+.quote.epigraph cite{margin-top:.55em;font-size:11.5px;opacity:.85}
+.quote.epigraph cite:before{content:"— "}
+
+/* 대사 — 대본에서 따온 인물의 말 */
+.quote.dialogue{position:relative;padding:.9em 1.15em .85em 2.5em;border-radius:9px;
+  background:color-mix(in srgb,var(--soft) 55%,transparent);border:1px solid var(--line)}
+.quote.dialogue:before{content:"“";position:absolute;left:.55em;top:.3em;
+  font-family:var(--serif);font-size:30px;line-height:1;color:var(--accent);opacity:.45}
+.quote.dialogue p{font-family:var(--serif);font-size:15px;line-height:1.7}
+.quote.dialogue cite{text-align:right;font-weight:600;color:var(--accent);opacity:.9}
+.quote.dialogue cite:before{content:"— "}
+
+/* 표어 — 세력의 구호 */
+.quote.motto{text-align:center;padding:.5em 0}
+.quote.motto p{font-family:var(--serif);font-size:15.5px;color:var(--accent);letter-spacing:.02em}
+.quote.motto p:before{content:"“"}
+.quote.motto p:after{content:"”"}
+
+/* 조문 — 법조문 */
+.quote.article{padding:1.2em 1.4em;border:1px solid var(--accent);border-radius:9px;
+  background:color-mix(in srgb,var(--soft) 40%,transparent);text-align:center}
+.quote.article p{font-family:var(--serif);font-size:17px;line-height:1.8;letter-spacing:.03em;font-weight:700}
+.quote.article cite{color:var(--accent);opacity:.9}
+.body code{background:var(--panel2);padding:.12em .38em;border-radius:4px;font-size:.87em}
+.body pre{background:var(--panel2);padding:12px 14px;border-radius:8px;overflow:auto;line-height:1.6}
+.body pre code{background:0;padding:0}
+.body hr{border:0;border-top:1px solid var(--line);margin:1.8em 0}
+/* 본문 표는 인포박스 옆에 끼지 않게 아래로 내린다 — 좁은 칸에 눌리면 읽기 어렵다. */
+.body table{border-collapse:collapse;width:100%;margin:1.3em 0;font-size:14px;
+  border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.body .tablewrap{overflow-x:auto;margin:1.3em 0}
+.body .tablewrap table{margin:0}
+.body th,.body td{border-bottom:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top;line-height:1.6}
+.body th{background:var(--panel2);font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.03em}
+.body tbody tr:last-child th,.body tbody tr:last-child td{border-bottom:0}
+.body tbody tr:hover{background:color-mix(in srgb,var(--panel2) 45%,transparent)}
+.body strong{font-weight:700}
+a.wiki{color:var(--accent);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--accent) 35%,transparent);cursor:pointer}
+a.wiki:hover{border-bottom-color:var(--accent)}
+a.wiki.missing{color:var(--muted);border-bottom:1px dashed var(--muted)}
+a.wiki.missing:after{content:"?";font-size:.75em;vertical-align:super;opacity:.7}
+
+/* ── 오른쪽 목차 ── */
+.rail{grid-area:toc;position:sticky;top:38px;align-self:start;font-size:12px}
+.rail h5{margin:0 0 7px;color:var(--muted);font-size:10.5px;letter-spacing:.1em;font-weight:800}
+.rail a{display:block;color:var(--muted);text-decoration:none;padding:3px 0 3px 9px;border-left:2px solid var(--line);line-height:1.4}
+.rail a:hover{color:var(--accent);border-left-color:var(--accent)}
+.rail .sub{padding-left:20px;font-size:11.5px}
+.rail .box{margin-bottom:22px}
+.rail .backlink{border:0;padding:3px 0;color:var(--accent)}
+.empty{color:var(--muted)}
+.iconbtn{border:1px solid var(--line);background:var(--panel2);color:var(--muted);border-radius:7px;
+  width:30px;height:30px;cursor:pointer;font-size:14px;flex:none}
+.iconbtn:hover{color:var(--accent);border-color:var(--accent)}
+#menu{display:none;position:fixed;left:14px;top:14px;z-index:12;width:38px;height:38px;font-size:16px;
+  background:var(--panel);box-shadow:0 2px 10px rgba(0,0,0,.18)}
+#scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:8}
+#scrim.on{display:block}
+@media(max-width:1000px){
+  #app{grid-template-columns:1fr}
+  #menu{display:block}
+  .side{position:fixed;left:0;top:0;bottom:0;width:280px;z-index:9;transform:translateX(-100%);transition:.2s}
+  .side.open{transform:none;box-shadow:0 0 40px rgba(0,0,0,.3)}
+  /* 한 칸으로 접히면 인포박스가 맨 위, 목차는 맨 아래로 간다. */
+  .wrap{padding:64px 20px 100px;
+    grid-template-columns:minmax(0,1fr);
+    grid-template-rows:auto auto auto;
+    grid-template-areas:"ib" "main" "toc"}
+  .rail{position:static;border-top:1px solid var(--line);padding-top:18px;margin-top:26px}
+}
+@media(max-width:760px){
+  .erabar{overflow-x:auto;scrollbar-width:thin}
+  .erabar .seg{min-width:66px;flex:0 0 auto}
+  .body{font-size:15px}
+  h1.doctitle{font-size:27px}
+  .quote.article p{font-size:15.5px}
+}
+</style>
+</head>
+<body>
+<button class="iconbtn" id="menu" title="문서 목록">☰</button>
+<div id="scrim"></div>
+<div id="app">
+  <aside class="side" id="side">
+    <div class="sidehead">
+      <div class="brand">세계관 아카이브</div>
+      <button class="iconbtn" id="theme" title="테마">◐</button>
+    </div>
+    <div class="search"><input id="q" placeholder="검색  (Ctrl+K)" autocomplete="off"></div>
+    <nav class="tree" id="tree"></nav>
+  </aside>
+  <main class="main" id="main">
+    <div class="wrap">
+      <article>
+        <div class="crumb" id="crumb"></div>
+        <h1 class="doctitle" id="title"></h1>
+        <div class="chips" id="chips"></div>
+        <div id="erabar"></div>
+        <div id="navbox"></div>
+        <div id="memoFm"></div>
+        <div class="foldbar" id="foldbar" hidden>
+          <button id="foldAll">모두 접기</button><button id="openAll">모두 펼치기</button>
+        </div>
+        <div class="body" id="body"></div>
+        <div id="memoBody"></div>
+      </article>
+      <div id="infobox"></div>
+      <aside class="rail" id="rail"></aside>
+    </div>
+  </main>
+</div>
+<script>
+const DATA = /*__DATA__*/null;
+const docs = DATA.docs, folderOrder = DATA.folderOrder, todo = DATA.todo || {};
+const templates = DATA.templates || {};
+const MEMO_HEAD = "## 여담";
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
+const byId = x => docs.find(d => d.id === x);
+const findT = t => docs.find(d => d.title.trim().toLowerCase() === String(t).trim().toLowerCase());
+const slug = s => "h-" + String(s).replace(/\s+/g,"-").replace(/[^\w가-힣-]/g,"");
+const icon = t => ({"대문":"⌂","개념":"◇","국가":"⚑","세력":"♟","인물":"●","사건":"◆","기술":"⚙","병기":"⚔","지역":"▧","서사":"≡","연표":"↦","메모":"□"}[t] || "□");
+function dotClass(d){
+  if (d.status === "충돌 의심") return "conflict";
+  if (d.status === "완료" && d.canon === "확정") return "done";
+  if (d.status !== "완료" || d.canon === "잠정") return "draft";
+  return "";
+}
+const sortDocs = (a,b) => (a.sortOrder||0)-(b.sortOrder||0) || a.title.localeCompare(b.title,"ko");
+const childrenOf = id => docs.filter(d => (d.parentId||null) === (id||null)).sort(sortDocs);
+
+/* ── 분류별 상징색 ── */
+const TYPE_HUE = {"대문":32,"개념":264,"국가":208,"세력":14,"인물":338,"사건":42,
+                  "기술":192,"병기":2,"지역":152,"서사":286,"연표":96,"메모":222};
+const hueOf = t => TYPE_HUE[t] ?? 222;
+
+/* ── 시대 축 ── */
+/* '연말 위기'는 근대와 서사 시점을 가르는 경계라서 독립된 칸을 가진다.
+   플레이어 연표의 ERA_ORDER 도 이 사건을 독립 층으로 두고 있다. */
+const ERAS = ["대전쟁 이전","대전쟁","고대","고전","중세","근대","연말 위기","서사 시점","현대(붕괴 이후)"];
+const ERA_SHORT = {"대전쟁 이전":"대전쟁 전","현대(붕괴 이후)":"현대"};
+const ERA_EDGE = new Set(["연말 위기"]);   // 경계 칸은 따로 표시한다
+
+function eraBar(d){
+  const hue = hueOf(d.type);
+  const seg = (e, cls) =>
+    `<div class="seg${cls}${ERA_EDGE.has(e) ? " edge" : ""}">${esc(ERA_SHORT[e] || e)}</div>`;
+  if(d.era === "시대 공통")
+    return `<div class="erabar tone" style="--hue:${hue}">` +
+      ERAS.map(e => seg(e, " span")).join("") + `</div>`;
+  const i = ERAS.indexOf(d.era);
+  if(i < 0)
+    return `<div class="erabar flat"><div class="lab">시대 ${esc(d.era || "미정")}</div></div>`;
+  return `<div class="erabar tone" style="--hue:${hue}">` +
+    ERAS.map((e, j) => seg(e, j === i ? " on" : "")).join("") + `</div>`;
+}
+
+/* 대문에 ```연표``` 를 쓰면 전체 연표가 들어간다. */
+function chronoHtml(){
+  const setting = docs.filter(d => d.type !== "대문" && d.type !== "메모");
+  const rows = ERAS.map(e => {
+    const list = setting.filter(d => d.era === e).sort(sortDocs);
+    return `<div class="row${list.length ? "" : " empty"}${ERA_EDGE.has(e) ? " edge" : ""}">
+      <div class="era">${esc(e)}${ERA_EDGE.has(e) ? `<span class="edgetag">근대와 서사 시점의 경계</span>` : ""}</div>
+      <div class="docs">${list.length
+        ? list.map(d => `<a data-go="${d.id}">${icon(d.type)} ${esc(d.title)}</a>`).join("")
+        : `<span class="none">아직 없다</span>`}</div></div>`;
+  }).join("");
+  const common = setting.filter(d => d.era === "시대 공통").sort(sortDocs);
+  const undated = setting.filter(d => d.era === "미정").sort(sortDocs);
+  const extra = [["시대 공통", common], ["미정", undated]].filter(([, l]) => l.length).map(([t, l]) =>
+    `<div class="row empty"><div class="era">${t}</div><div class="docs">${
+      l.map(d => `<a data-go="${d.id}">${icon(d.type)} ${esc(d.title)}</a>`).join("")}</div></div>`).join("");
+  return `<div class="chrono">${rows}${extra}</div>`;
+}
+
+/* ── 이미지 ──
+   lore/ 문서가 가리키는 경로는 저장소 뿌리 기준이다. 뷰어는 wikipage/ 안에 있으므로 ../ 를 붙인다.
+   파일이 없으면 빈 상자 대신 제목에서 뽑은 문양을 깐다. */
+function imgSrc(p){ return /^(https?:|\.\.\/|\/)/.test(p) ? p : "../" + p }
+function hashOf(s){ let h = 0; for(const c of String(s)) h = (h * 31 + c.codePointAt(0)) >>> 0; return h }
+function motifSvg(seed, hue){
+  const h = hashOf(seed), kind = h % 4;
+  const c = `hsl(${hue} 38% 52%)`;
+  const g = s => `<svg class="motif" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"
+    xmlns="http://www.w3.org/2000/svg"><g fill="none" stroke="${c}" stroke-width=".7">${s}</g></svg>`;
+  if(kind === 0) return g([18,28,38,48,58].map(r => `<circle cx="50" cy="52" r="${r}"/>`).join(""));
+  if(kind === 1) return g([12,30,48,66,84].map(y => `<path d="M-5 ${y} L50 ${y + 22} L105 ${y}"/>`).join(""));
+  if(kind === 2) return g(Array.from({length:9}, (_, i) =>
+    `<path d="M${i*14-30} 105 L${i*14+40} -5"/><path d="M${i*14-30} -5 L${i*14+40} 105"/>`).join(""));
+  return g(Array.from({length:11}, (_, i) =>
+    `<path d="M50 104 L${i*12-10} -6"/>`).join("") + `<circle cx="50" cy="104" r="7"/>`);
+}
+function placeholder(src, label, type){
+  const hue = hueOf(type);
+  return `<div class="imgph tone" style="--hue:${hue}">${motifSvg(label || src, hue)}
+    <div class="mark">${icon(type)}</div>
+    <div class="lab">${esc(label || "이미지 자리")}</div>
+    <div class="path">${esc(src)}</div></div>`;
+}
+/* 이미지가 없을 때. 문양 자리로 바꾸고, 같은 글이 두 번 나오지 않게 캡션 줄은 지운다. */
+function imgFail(el){
+  const slot = el.closest(".imgslot") || el.closest("figure");
+  if(!slot) return;
+  const next = slot.nextElementSibling;
+  if(next && next.classList.contains("imgcap")) next.remove();
+  slot.innerHTML = placeholder(el.dataset.phSrc, el.dataset.phLabel, el.dataset.phType);
+}
+const phAttrs = (src, label, type) =>
+  `data-ph-src="${esc(src)}" data-ph-label="${esc(label || "")}" data-ph-type="${esc(type || "메모")}" onerror="imgFail(this)"`;
+let curType = "메모";
+function imgHtml(src, alt){
+  return `<figure class="body-img"><img src="${esc(imgSrc(src))}" alt="${esc(alt||"")}"
+    ${phAttrs(src, alt, curType)}>${alt ? `<figcaption>${esc(alt)}</figcaption>` : ""}</figure>`;
+}
+
+/* ── 인용 블록 ──
+   ```경구 / ```대사 / ```표어 / ```조문 으로 감싼다.
+   '—' 로 시작하는 줄은 출처로 빠진다. */
+/* ── 틀 ──
+   ```틀
+   연방
+   ```
+   lore/_틀/연방.md 를 불러 탐색 상자로 그린다. */
+function navboxHtml(name){
+  const t = templates[name];
+  if(!t) return `<div class="navbox missing">틀 「${esc(name)}」을 찾지 못했다 — <code>lore/_틀/${esc(name)}.md</code></div>`;
+  const hue = t.hue || 222;
+  return `<nav class="navbox tone" style="--hue:${hue}">
+    <div class="nbhead">${esc(t.title)}</div>
+    <table>${t.groups.map(([k, v]) =>
+      `<tr><th>${esc(k)}</th><td>${inline(v)}</td></tr>`).join("")}</table></nav>`;
+}
+
+/* ── 상세 문서 안내 ──
+   ```상세
+   연방의 역사
+   ``` */
+function seeAlsoHtml(lines){
+  const names = lines.map(l => l.trim()).filter(Boolean);
+  if(!names.length) return "";
+  const links = names.map(n => inline(`[[${n}]]`)).join(" · ");
+  return `<div class="seealso">자세한 내용은 ${links} 문서를 참고할 것.</div>`;
+}
+
+/* ── 연혁 ──
+   ```연혁
+   건국 | 소국들을 규합했다
+   ``` */
+function historyHtml(lines){
+  let last = "";
+  const rows = lines.map(l => l.trim()).filter(Boolean).map(l => {
+    const i = l.indexOf("|");
+    const when = i < 0 ? "" : l.slice(0, i).trim();
+    const what = i < 0 ? l : l.slice(i + 1).trim();
+    const same = when === last;
+    last = when || last;
+    return `<li${same ? ' class="same"' : ""}>
+      <span class="when">${same ? "" : inline(when)}</span>
+      <span class="what">${inline(what)}</span></li>`;
+  }).join("");
+  return `<ol class="histline">${rows}</ol>`;
+}
+
+const FENCE = {"경구":"epigraph", "대사":"dialogue", "표어":"motto", "조문":"article"};
+function renderFence(kind, lines){
+  if(kind === "연표") return chronoHtml();
+  if(kind === "틀") return navboxHtml(lines.map(l=>l.trim()).filter(Boolean)[0] || "");
+  if(kind === "상세") return seeAlsoHtml(lines);
+  if(kind === "연혁") return historyHtml(lines);
+  const cls = FENCE[kind];
+  if(!cls) return `<pre><code>${esc(lines.join("\n"))}</code></pre>`;
+  const cites = [], body = [];
+  lines.forEach(l => (/^\s*—/.test(l) ? cites : body).push(l));
+  const text = body.filter(x => x.trim()).map(x => `<p>${inline(x)}</p>`).join("");
+  const cite = cites.length
+    ? `<cite>${inline(cites.map(c => c.replace(/^\s*—\s*/, "")).join(" · "))}</cite>` : "";
+  return `<figure class="quote ${cls}">${text}${cite}</figure>`;
+}
+
+/* ── 마크다운 ── */
+function inline(raw){
+  const tokens = [];
+  let s = String(raw).replace(/\[\[([^\]]+)\]\]/g, (_,v) => { tokens.push(v); return `@@W${tokens.length-1}@@` });
+  s = esc(s).replace(/`([^`]+)`/g,"<code>$1</code>")
+            .replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>")
+            .replace(/\*([^*]+)\*/g,"<em>$1</em>")
+            .replace(/~~([^~]+)~~/g,"<del>$1</del>")
+            .replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_,alt,src) => imgHtml(src, alt))
+            .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+  tokens.forEach((v,i) => {
+    const p = v.split("|"), target = p[0].split("#")[0].trim(), label = (p[1]||p[0]).trim();
+    const cl = findT(target) ? "" : " missing";
+    s = s.replace(`@@W${i}@@`, `<a class="wiki${cl}" data-wiki="${esc(target)}">${esc(label)}</a>`);
+  });
+  return s;
+}
+function md(text){
+  const lines = String(text||"").replace(/\r\n/g,"\n").split("\n");
+  let h="", list=null, code=false, buf=[], table=[];
+  const close = () => { if(list){ h += `</${list}>`; list=null } };
+  const flush = () => {
+    if(!table.length) return;
+    const row = x => x.trim().replace(/^\||\|$/g,"").split("|").map(v=>v.trim());
+    if(table.length>1 && /^\s*\|?[\s:-]+\|/.test(table[1])){
+      const hd=row(table[0]), rows=table.slice(2).map(row);
+      h += "<table><thead><tr>"+hd.map(x=>`<th>${inline(x)}</th>`).join("")+"</tr></thead><tbody>"
+        + rows.map(r=>"<tr>"+r.map(x=>`<td>${inline(x)}</td>`).join("")+"</tr>").join("")+"</tbody></table>";
+    } else h += table.map(x=>`<p>${inline(x)}</p>`).join("");
+    table=[];
+  };
+  let fence = "";
+  for(const line of lines){
+    if(line.startsWith("```")){
+      flush();close();
+      if(!code){ code=true; fence=line.slice(3).trim(); buf=[] }
+      else { h += renderFence(fence, buf); code=false; fence="" }
+      continue;
+    }
+    if(code){ buf.push(line); continue }
+    if(line.trim().startsWith("|") && line.includes("|")){ close(); table.push(line); continue } else flush();
+    if(!line.trim()){ close(); continue }
+    let m;
+    if(m = line.match(/^(#{1,6})\s+(.+)$/)){ close(); const n=m[1].length, t=m[2];
+      h += `<h${n} id="${slug(t.replace(/[*`\[\]]/g,""))}">${inline(t)}</h${n}>` }
+    else if(/^---+$/.test(line.trim())){ close(); h += "<hr>" }
+    else if(m = line.match(/^>\s?(.*)$/)){ close(); h += `<blockquote>${inline(m[1])}</blockquote>` }
+    else if(m = line.match(/^(\s*)[-*+]\s+(.+)$/)){ if(list!=="ul"){close();list="ul";h+="<ul>"} h += `<li>${inline(m[2])}</li>` }
+    else if(m = line.match(/^\s*\d+\.\s+(.+)$/)){ if(list!=="ol"){close();list="ol";h+="<ol>"} h += `<li>${inline(m[1])}</li>` }
+    else { close(); h += `<p>${inline(line)}</p>` }
+  }
+  flush(); close();
+  return h || '<p class="empty">내용이 없습니다.</p>';
+}
+
+/* ── 상태 ── */
+let active = docs.find(d => d.folder === "00_홈") ? docs.find(d => d.folder === "00_홈").id : docs[0].id;
+let query = "";
+
+function visibleSet(){
+  if(!query) return new Set(docs.map(d=>d.id));
+  const q = query.toLowerCase();
+  const hit = new Set(docs.filter(d =>
+    [d.title,d.folder,d.type,d.era,d.canon,d.status,...(d.tags||[]),d.content,d.memo].join(" ").toLowerCase().includes(q)
+  ).map(d=>d.id));
+  [...hit].forEach(id => { let d = byId(id); while(d && d.parentId){ hit.add(d.parentId); d = byId(d.parentId) } });
+  return hit;
+}
+/* 목록은 두 단계까지만 보여준다. 그 아래는 문서에 들어가 오른쪽 '하위 문서'로 넘어간다.
+   검색 중일 때는 깊이 제한을 풀어, 깊은 문서도 찾을 수 있게 한다. */
+const MAX_DEPTH = 1;
+function descendantCount(id){
+  let n = 0, stack = [id];
+  while(stack.length){ const kids = childrenOf(stack.pop()); n += kids.length; kids.forEach(k => stack.push(k.id)) }
+  return n;
+}
+function nodeHtml(d, depth, vis){
+  if(!vis.has(d.id)) return "";
+  const limited = !query && depth >= MAX_DEPTH;
+  const kids = limited ? "" : childrenOf(d.id).map(k => nodeHtml(k, depth + 1, vis)).join("");
+  const hidden = limited ? descendantCount(d.id) : 0;
+  const badge = hidden ? `<span class="more" title="하위 문서 ${hidden}밋">${hidden}</span>` : "";
+  return `<button class="doc${d.id === active ? " on" : ""}" data-id="${d.id}" style="padding-left:${8 + depth * 15}px">
+    <span class="ic">${icon(d.type)}</span><span class="tt">${esc(d.title)}</span>${badge}<span class="dot ${dotClass(d)}"></span>
+  </button>${kids}`;
+}
+function renderTree(){
+  const vis = visibleSet();
+  const groups = new Map();
+  docs.filter(d=>vis.has(d.id)).forEach(d => {
+    if(!groups.has(d.folder)) groups.set(d.folder,0);
+    groups.set(d.folder, groups.get(d.folder)+1);
+  });
+  const order = [...groups.keys()].sort((a,b)=>{
+    const x=folderOrder.indexOf(a), y=folderOrder.indexOf(b);
+    return (x<0?999:x)-(y<0?999:y) || a.localeCompare(b,"ko");
+  });
+  $("#tree").innerHTML = order.map(f => {
+    const roots = docs.filter(d => d.folder===f && vis.has(d.id) &&
+      (!d.parentId || !byId(d.parentId) || byId(d.parentId).folder !== f)).sort(sortDocs);
+    return `<section><div class="foldername">${esc(f)}<span>${groups.get(f)}</span></div>
+      ${roots.map(d=>nodeHtml(d,0,vis)).join("")}</section>`;
+  }).join("") || '<p class="empty" style="padding:10px">결과가 없습니다.</p>';
+  $("#tree").querySelectorAll(".doc").forEach(b => b.onclick = () => go(b.dataset.id));
+}
+
+function splitMemo(content){
+  const i = content.indexOf(MEMO_HEAD);
+  if(i < 0) return [content, ""];
+  return [content.slice(0,i).trimEnd(), content.slice(i + MEMO_HEAD.length).trim()];
+}
+/* ```틀 블록은 본문에서 떼어내 문서 맨 위에 따로 놓는다.
+   본문 안에 두면 인포박스에 밀려 아래로 내려가고 위에 빈 자리가 생긴다. */
+function pullNavbox(text){
+  const m = String(text).match(/(?:^|\n)```틀\n([^\n]*)\n```\n?/);
+  if(!m) return { name: "", rest: text };
+  return { name: m[1].trim(), rest: text.replace(m[0], "\n") };
+}
+
+/* 본문 첫 줄의 `# 제목`은 위에 큰 제목으로 이미 나오므로 덜어낸다. */
+function dropH1(text, title){
+  const lines = String(text).split("\n");
+  let i = 0;
+  while(i < lines.length && !lines[i].trim()) i++;
+  const m = lines[i] && lines[i].match(/^#\s+(.+)$/);
+  if(m && m[1].trim() === String(title).trim()) return lines.slice(i+1).join("\n").replace(/^\n+/,"");
+  return text;
+}
+/* ── 인포박스 ── */
+function infoboxHtml(d){
+  const hasImg = !!d.image, rows = d.summary || [];
+  if(!hasImg && !rows.length) return "";
+  const img = hasImg
+    ? `<div class="imgslot"><img src="${esc(imgSrc(d.image))}" alt="${esc(d.title)}"
+        ${phAttrs(d.image, d.imageCaption || d.title, d.type)}></div>`
+    : "";
+  const cap = d.imageCaption ? `<div class="imgcap">${inline(d.imageCaption)}</div>` : "";
+  const table = rows.length
+    ? `<table>${rows.map(([k,v]) => {
+        const tbd = /^(미정|미착수|없음)$/.test(String(v).trim()) ? " class=\"tbd\"" : "";
+        return `<tr><th>${inline(k)}</th><td${tbd}>${inline(v)}</td></tr>`;
+      }).join("")}</table>`
+    : "";
+  return `<aside class="infobox tone" style="--hue:${hueOf(d.type)};border-top:3px solid var(--tone)">
+    <div class="ibhead">${esc(d.title)}</div>${img}${cap}${table}</aside>`;
+}
+
+/* ── 항목별 접기 ── */
+function foldify(nodes, level){
+  const frag = document.createDocumentFragment();
+  let i = 0;
+  while(i < nodes.length){
+    const n = nodes[i];
+    if(n.tagName === "H" + level){
+      const bucket = [];
+      let j = i + 1;
+      while(j < nodes.length && nodes[j].tagName !== "H" + level){ bucket.push(nodes[j]); j++ }
+      const det = document.createElement("details");
+      det.className = "sec lv" + level;
+      det.open = true;
+      if(n.id) det.id = n.id;
+      const sum = document.createElement("summary");
+      sum.innerHTML = `<span class="secttl">${n.innerHTML}</span>`;
+      det.appendChild(sum);
+      const body = document.createElement("div");
+      body.className = "secbody";
+      body.appendChild(level < 3 ? foldify(bucket, level + 1) : listFrag(bucket));
+      det.appendChild(body);
+      frag.appendChild(det);
+      i = j;
+    } else { frag.appendChild(n); i++ }
+  }
+  return frag;
+}
+function listFrag(nodes){ const f = document.createDocumentFragment(); nodes.forEach(n => f.appendChild(n)); return f }
+function revealTo(el){ let p = el; while(p){ if(p.tagName === "DETAILS") p.open = true; p = p.parentElement } }
+
+function crumbOf(d){
+  const path = []; let cur = d;
+  while(cur){ path.unshift(cur); cur = cur.parentId ? byId(cur.parentId) : null }
+  return [d.folder, ...path.slice(0,-1).map(x=>x.title)].join("  ›  ");
+}
+function render(){
+  const d = byId(active) || docs[0];
+  const [main, memo] = splitMemo(d.content);
+  $("#crumb").textContent = crumbOf(d);
+  $("#title").textContent = d.title;
+  $("#chips").innerHTML = [
+    `<span class="chip">${esc(d.type)}</span>`,
+    `<span class="chip">${esc(d.era)}</span>`,
+    `<span class="chip canon-${esc(d.canon)}">정사 ${esc(d.canon)}</span>`,
+    `<span class="chip st-${esc(d.status)}">${esc(d.status)}</span>`,
+    ...(d.tags||[]).map(t=>`<span class="chip">#${esc(t)}</span>`),
+  ].join("");
+  $("#memoFm").innerHTML = d.memo
+    ? `<details class="memo"><summary>검토 메모</summary><div class="inner body">${md(d.memo)}</div></details>` : "";
+  curType = d.type;
+  const nav = pullNavbox(main);
+  $("#erabar").innerHTML = eraBar(d);
+  $("#navbox").innerHTML = nav.name ? navboxHtml(nav.name) : "";
+  $("#infobox").innerHTML = infoboxHtml(d);
+  $("#body").innerHTML = md(dropH1(nav.rest, d.title));
+
+  /* 첫 소제목 앞의 문단을 손본다. 아주 짧고 마침표가 없는 한 줄은 부제로,
+     그 다음(또는 첫) 문단을 도입부로 표시한다. */
+  let sawSub = false;
+  for(const el of $("#body").children){
+    if(/^H[1-6]$/.test(el.tagName) || el.tagName === "DETAILS") break;
+    if(el.tagName !== "P") continue;
+    const t = el.textContent.trim();
+    if(!sawSub && t.length <= 20 && !/[.!?…다]$/.test(t)){ el.classList.add("subtitle"); sawSub = true; continue }
+    el.classList.add("lead"); break;
+  }
+
+  const heads2 = [...$("#body").querySelectorAll("h2,h3")];
+  if(heads2.length){
+    const frag = foldify([...$("#body").children], 2);
+    $("#body").innerHTML = "";
+    $("#body").appendChild(frag);
+  }
+  $("#foldbar").hidden = !$("#body").querySelector("details.sec");
+  $("#memoBody").innerHTML = memo
+    ? `<details class="memo"><summary>여담</summary><div class="inner body">${md(memo)}</div></details>` : "";
+
+  document.querySelectorAll("[data-wiki]").forEach(a => a.onclick = () => {
+    const t = findT(a.dataset.wiki);
+    if(t) go(t.id); else alert(`아직 없는 문서입니다: ${a.dataset.wiki}`);
+  });
+
+  // 오른쪽: 이 문서의 목차 + 하위 문서 + 역링크
+  const heads = [...$("#body").querySelectorAll("details.sec")].map(s => ({
+    id: s.id, text: s.querySelector(".secttl").textContent, tagName: s.classList.contains("lv3") ? "H3" : "H2"
+  }));
+  const kids = childrenOf(d.id);
+  const backs = docs.filter(x => x.id!==d.id &&
+    new RegExp(`\\[\\[${d.title.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}(\\||#|\\]\\])`).test(x.content));
+  $("#rail").innerHTML =
+    (heads.length ? `<div class="box"><h5>이 문서</h5>${heads.map(h =>
+      `<a class="${h.tagName==="H3"?"sub":""}" data-jump="${esc(h.id)}">${esc(h.text)}</a>`).join("")}</div>` : "") +
+    (kids.length ? `<div class="box"><h5>하위 문서</h5>${kids.map(k =>
+      `<a class="backlink" data-go="${k.id}">${esc(k.title)}</a>`).join("")}</div>` : "") +
+    (backs.length ? `<div class="box"><h5>여기를 가리키는 문서 ${backs.length}</h5>${backs.map(b =>
+      `<a class="backlink" data-go="${b.id}">${esc(b.title)}</a>`).join("")}</div>` : "");
+  document.querySelectorAll("[data-go]").forEach(a => a.onclick = () => go(a.dataset.go));
+  $("#rail").querySelectorAll("[data-jump]").forEach(a => a.onclick = () => {
+    const el = document.getElementById(a.dataset.jump);
+    if(!el) return;
+    revealTo(el);
+    el.scrollIntoView({behavior:"smooth", block:"start"});
+  });
+
+  renderTree();
+}
+function go(id){
+  active = id; query = ""; $("#q").value = "";
+  render();
+  $("#main").scrollTop = 0;
+  if(innerWidth <= 1000) closeSide();
+  location.hash = encodeURIComponent(byId(id).title);
+}
+
+const setFold = open => $("#body").querySelectorAll("details.sec").forEach(s => s.open = open);
+$("#foldAll").onclick = () => setFold(false);
+$("#openAll").onclick = () => setFold(true);
+const closeSide = () => { $("#side").classList.remove("open"); $("#scrim").classList.remove("on") };
+$("#menu").onclick = () => {
+  const open = $("#side").classList.toggle("open");
+  $("#scrim").classList.toggle("on", open);
+};
+$("#scrim").onclick = closeSide;
+$("#q").oninput = e => { query = e.target.value.trim(); renderTree() };
+$("#theme").onclick = () => {
+  const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+  document.documentElement.dataset.theme = next;
+  try { localStorage.setItem("wiki-theme", next) } catch(e) {}
+};
+addEventListener("keydown", e => {
+  if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==="k"){ e.preventDefault(); $("#q").focus(); $("#q").select() }
+  if(e.key==="Escape" && document.activeElement===$("#q")){ query=""; $("#q").value=""; renderTree(); $("#q").blur() }
+});
+try {
+  const t = localStorage.getItem("wiki-theme");
+  document.documentElement.dataset.theme = t || (matchMedia("(prefers-color-scheme:dark)").matches ? "dark" : "light");
+} catch(e) { document.documentElement.dataset.theme = "light" }
+
+const fromHash = location.hash ? findT(decodeURIComponent(location.hash.slice(1))) : null;
+if(fromHash) active = fromHash.id;
+render();
+</script>
+</body>
+</html>

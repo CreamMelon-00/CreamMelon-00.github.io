@@ -1,0 +1,808 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>세계관 아카이브</title>
+<style>
+:root{
+  --bg:#f7f5f0; --panel:#fffefb; --panel2:#efece4; --line:#e0dad0;
+  --text:#211e18; --muted:#77705f; --accent:#8a5320; --soft:#f2e8d8;
+  --warn:#9a6b06; --danger:#a02f26; --ok:#2f6b41;
+  --serif:"Nanum Myeongjo","Batang","Apple SD Gothic Neo",Georgia,serif;
+  --sans:"Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;
+  --shadow:0 1px 2px rgba(60,45,25,.05),0 6px 18px rgba(60,45,25,.05);
+}
+:root[data-theme="dark"]{
+  --bg:#14131a; --panel:#1c1b23; --panel2:#25232e; --line:#332f3d;
+  --text:#e8e4dc; --muted:#9a92a4; --accent:#dbab68; --soft:#2b2533;
+  --warn:#dcb057; --danger:#e58179; --ok:#77c78d;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.28);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px}
+/* 긴 URL이나 붙어 있는 긴 토큰이 칸을 밀어내지 않게 한다. */
+.body,.infobox td,.infobox th,.crumb,.chrono,.quote,.rail{overflow-wrap:anywhere;word-break:normal}
+.body pre,.body code{overflow-wrap:normal}
+img{max-width:100%;height:auto}
+#app{display:grid;grid-template-columns:280px minmax(0,1fr);height:100vh}
+
+/* ── 왼쪽 목록 ── */
+.side{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-width:0}
+.sidehead{padding:14px;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center}
+.brand{font-family:var(--serif);font-weight:700;font-size:16px;flex:1}
+.search{margin:12px 14px 4px;position:relative}
+.search input{width:100%;height:34px;padding:0 10px;border:1px solid var(--line);border-radius:7px;background:var(--panel2);color:var(--text);outline:0;font-family:inherit}
+.search input:focus{border-color:var(--accent)}
+.tree{overflow:auto;padding:8px 8px 40px;flex:1}
+.foldername{padding:12px 8px 5px;color:var(--muted);font-size:10.5px;font-weight:800;letter-spacing:.1em;display:flex}
+.foldername span{margin-left:auto;opacity:.7}
+.doc{width:100%;border:0;background:0;color:var(--muted);text-align:left;display:flex;gap:7px;align-items:center;
+  padding:6px 8px;border-radius:7px;cursor:pointer;font-family:inherit;font-size:13.5px;line-height:1.35}
+.doc:hover{background:var(--panel2);color:var(--text)}
+.doc.on{background:var(--soft);color:var(--accent);font-weight:700}
+.doc .ic{width:15px;text-align:center;flex:none;opacity:.75}
+.doc .tt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.doc .more{flex:none;font-size:10px;min-width:16px;height:16px;line-height:16px;text-align:center;
+  border-radius:9px;background:var(--panel2);color:var(--muted);padding:0 4px}
+.doc.on .more{background:var(--panel);color:var(--accent)}
+.doc:hover .more{color:var(--accent)}
+.dot{width:6px;height:6px;border-radius:50%;flex:none;background:var(--line)}
+.dot.draft{background:var(--warn)}.dot.done{background:var(--ok)}.dot.conflict{background:var(--danger)}
+
+/* ── 본문 ── */
+.main{overflow:auto;position:relative}
+/* 인포박스를 띄우지 않고 오른쪽 칸에 둔다.
+   띄우면 표·틀·시간선마다 clear 를 걸어 피해야 하고, 그때마다 빈 공간과
+   끊긴 밑줄이 생긴다. 칸으로 두면 본문은 언제나 한 폭을 쓴다. */
+.wrap{display:grid;gap:0 36px;max-width:1140px;margin:0 auto;padding:38px 40px 120px;
+  grid-template-columns:minmax(0,1fr) 300px;
+  grid-template-rows:auto 1fr;
+  grid-template-areas:"main ib" "main toc"}
+article{grid-area:main;min-width:0}
+.crumb{color:var(--muted);font-size:12px;margin-bottom:10px}
+h1.doctitle{font-family:var(--serif);font-size:33px;line-height:1.22;margin:0 0 15px;letter-spacing:-.015em}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.chip{font-size:11px;padding:3px 10px;border-radius:999px;background:var(--panel2);color:var(--muted);
+  border:1px solid transparent;letter-spacing:.02em}
+.chip.canon-확정{color:var(--ok);border-color:var(--ok)}
+.chip.canon-잠정{color:var(--warn);border-color:var(--warn)}
+.chip.canon-구\ 설정,.chip.canon-폐기\ 예정{color:var(--danger);border-color:var(--danger)}
+.chip.st-충돌\ 의심{color:var(--danger);border-color:var(--danger)}
+/* ── 인포박스 ── */
+#infobox{grid-area:ib}
+.infobox{width:100%;margin:0 0 22px;border:1px solid var(--line);border-radius:12px;
+  background:var(--panel);overflow:hidden;font-size:12.5px;box-shadow:var(--shadow)}
+.infobox .ibhead{padding:10px 13px;background:var(--panel2);border-bottom:1px solid var(--line);
+  font-family:var(--serif);font-weight:700;font-size:14.5px;text-align:center;letter-spacing:.01em}
+.imgslot{display:block;width:100%;background:var(--panel2);border-bottom:1px solid var(--line)}
+.imgslot img{display:block;width:100%;height:auto}
+/* 이미지가 없을 때의 자리 — 빈 상자 대신 문양을 깐다. */
+.imgph{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;
+  min-height:172px;padding:20px 14px;color:var(--muted);text-align:center;
+  border-bottom:1px solid var(--line);overflow:hidden;
+  background:var(--panel2)}
+.imgph .motif{position:absolute;inset:0;opacity:.5;pointer-events:none}
+.imgph .mark{position:relative;font-size:26px;opacity:.75;color:var(--tone,var(--accent))}
+.imgph .lab{position:relative;font-size:11.5px;font-family:var(--serif)}
+.imgph .path{position:relative;font-size:10px;word-break:break-all;opacity:.6;font-family:ui-monospace,monospace}
+.imgcap{padding:7px 12px;color:var(--muted);font-size:11.5px;text-align:center;border-bottom:1px solid var(--line);line-height:1.5}
+.infobox table{width:100%;border-collapse:collapse}
+.infobox th,.infobox td{padding:6px 11px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;line-height:1.55}
+.infobox th{width:37%;color:var(--muted);font-weight:600;font-size:11.5px;background:color-mix(in srgb,var(--panel2) 55%,transparent)}
+.infobox tr:last-child th,.infobox tr:last-child td{border-bottom:0}
+.infobox td.tbd{color:var(--warn);opacity:.85}
+.body-img{margin:1.4em 0}
+.body-img img{max-width:100%;border-radius:8px;display:block}
+.body-img figcaption{color:var(--muted);font-size:12px;margin-top:6px;text-align:center}
+.body-img .imgph{border:1px dashed var(--line);border-radius:8px}
+
+/* ── 항목별 접기 ── */
+details.sec{margin:0}
+details.sec>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px}
+details.sec>summary::-webkit-details-marker{display:none}
+details.sec>summary:before{content:"";flex:none;width:6px;height:6px;margin-top:-3px;
+  border-right:1.6px solid var(--accent);border-bottom:1.6px solid var(--accent);
+  transform:rotate(45deg);transition:transform .15s;opacity:.6}
+details.sec:not([open])>summary:before{transform:rotate(-45deg);margin-top:0}
+details.sec>summary:hover:before{opacity:1}
+details.sec.lv2>summary{margin:2em 0 .6em;padding-bottom:.3em;border-bottom:1px solid var(--line)}
+details.sec.lv2>summary .secttl{font-family:var(--serif);font-size:20px}
+details.sec.lv3>summary{margin:1.7em 0 .5em}
+details.sec.lv3>summary .secttl{font-size:15.5px;color:var(--accent);font-weight:700}
+details.sec:not([open])>summary{opacity:.72}
+details.sec:not([open])>summary:after{content:"…";color:var(--muted);margin-left:2px}
+.foldbar{display:flex;gap:8px;align-items:center;margin:18px 0 2px}
+.foldbar button{border:1px solid var(--line);background:var(--panel2);color:var(--muted);border-radius:6px;
+  padding:3px 10px;font-size:11.5px;cursor:pointer;font-family:inherit}
+.foldbar button:hover{color:var(--accent);border-color:var(--accent)}
+details.memo{margin:14px 0 26px;border:1px solid var(--line);border-radius:9px;background:var(--panel);overflow:hidden}
+details.memo>summary{cursor:pointer;padding:9px 13px;font-size:12.5px;color:var(--muted);list-style:none}
+details.memo>summary::-webkit-details-marker{display:none}
+details.memo>summary:before{content:"▸ ";color:var(--accent)}
+details.memo[open]>summary:before{content:"▾ "}
+details.memo>summary:hover{color:var(--text);background:var(--panel2)}
+details.memo .inner{padding:2px 16px 12px;border-top:1px solid var(--line)}
+
+/* 읽기 편한 본문.
+   폭 제한은 '읽는 글'에만 건다. 표·틀·시간선·인용 상자 같은 구조물은
+   문서 전체 폭을 쓰게 두어야 인포박스와 오른쪽 끝이 맞는다. */
+.body{font-size:15.5px;line-height:1.85}
+.body p,.body ul,.body ol,.body>blockquote,.secbody>blockquote{max-width:70ch}
+/* 상자 안의 글은 상자 폭을 그대로 쓴다 */
+.body .quote p,.body td p,.body th p,.body li>ul,.body li>ol{max-width:none}
+.body p{margin:0 0 1.05em}
+/* 첫 문단은 도입부처럼 조금 키운다. */
+.lead{font-family:var(--serif);font-size:17px;line-height:1.8;color:var(--text);margin:0 0 1.3em;
+  max-width:70ch}
+.lead em,.lead strong{font-weight:700}
+/* 국가 문서의 고유 명칭처럼, 제목 아래 짧게 놓인 한 줄 */
+.subtitle{font-family:var(--serif);font-size:14px;color:var(--muted);letter-spacing:.06em;
+  margin:-.4em 0 1.2em;padding-bottom:.5em;border-bottom:1px solid var(--line);max-width:70ch}
+.body h2{font-family:var(--serif);font-size:20px;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:1px solid var(--line)}
+.body h3{font-size:15.5px;margin:1.7em 0 .5em;color:var(--accent)}
+.body h4{font-size:14px;margin:1.4em 0 .4em;color:var(--muted)}
+.body ul,.body ol{margin:0 0 1.05em;padding-left:1.35em}
+.body li{margin:.3em 0}
+.body li>ul,.body li>ol{margin:.3em 0}
+.body blockquote{margin:1.1em 0;padding:.5em 0 .5em 1.1em;border-left:3px solid var(--accent);color:var(--muted);font-family:var(--serif);font-size:15px}
+
+/* ── 분류별 상징색 ── */
+.tone{--tone:hsl(var(--hue) 42% 38%)}
+:root[data-theme="dark"] .tone{--tone:hsl(var(--hue) 48% 66%)}
+
+/* ── 연표 띠 ── */
+.erabar{display:flex;align-items:stretch;gap:3px;margin:0 0 20px;
+  border:1px solid var(--line);border-radius:9px;padding:5px;background:var(--panel)}
+.erabar .seg{flex:1;min-width:0;padding:5px 4px 6px;border-radius:6px;text-align:center;
+  font-size:10px;color:var(--muted);letter-spacing:-.02em;line-height:1.35;
+  border:1px solid transparent;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.erabar .seg .n{display:block;font-size:9.5px;opacity:.55;margin-top:1px}
+.erabar .seg.on{background:color-mix(in srgb,var(--tone,var(--accent)) 16%,transparent);
+  border-color:color-mix(in srgb,var(--tone,var(--accent)) 45%,transparent);
+  color:var(--tone,var(--accent));font-weight:700}
+.erabar .seg.span{background:color-mix(in srgb,var(--accent) 7%,transparent);color:var(--muted)}
+/* 경계 칸 — 시대를 가르는 자리라 좌우에 선을 세운다 */
+.erabar .seg.edge{border-left:1px dashed var(--line);border-right:1px dashed var(--line);
+  border-radius:3px;font-style:italic}
+.erabar .seg.edge.on{border-left-style:solid;border-right-style:solid;font-style:normal}
+.erabar.flat{justify-content:center}
+.erabar.flat .lab{padding:5px 12px 6px;font-size:11px;color:var(--muted)}
+
+/* 대문의 전체 연표 */
+.chrono{margin:1.4em 0;border-left:2px solid var(--line);padding-left:0}
+.chrono .row{position:relative;padding:0 0 18px 22px}
+.chrono .row:before{content:"";position:absolute;left:-6px;top:5px;width:10px;height:10px;
+  border-radius:50%;background:var(--panel);border:2px solid var(--accent)}
+.chrono .row.empty:before{border-color:var(--line)}
+.chrono .era{font-family:var(--serif);font-size:14.5px;font-weight:700;margin-bottom:5px}
+.chrono .row.edge:before{border-color:var(--warn);width:12px;height:12px;left:-7px}
+.chrono .row.edge .era{color:var(--warn)}
+.chrono .edgetag{margin-left:8px;font-family:var(--sans);font-size:10.5px;font-weight:400;
+  color:var(--muted);letter-spacing:0}
+.chrono .row.empty .era{color:var(--muted);font-weight:400}
+.chrono .docs{display:flex;flex-wrap:wrap;gap:5px}
+.chrono .docs a{font-size:12px;padding:3px 9px;border-radius:999px;background:var(--panel2);
+  color:var(--muted);cursor:pointer;border:1px solid transparent}
+.chrono .docs a:hover{color:var(--accent);border-color:var(--accent)}
+.chrono .none{font-size:12px;color:var(--muted);opacity:.6}
+
+/* ── 틀 (탐색 상자) ── */
+.navbox{margin:0 0 22px;border:1px solid var(--line);border-radius:10px;
+  background:var(--panel);overflow:hidden;font-size:12.5px}
+.navbox .nbhead{padding:7px 12px;background:color-mix(in srgb,var(--tone,var(--accent)) 13%,var(--panel2));
+  border-bottom:1px solid var(--line);font-family:var(--serif);font-weight:700;font-size:13.5px;
+  color:var(--tone,var(--accent));letter-spacing:.01em}
+.navbox table{width:100%;border-collapse:collapse}
+.navbox th,.navbox td{padding:6px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;line-height:1.7}
+.navbox th{width:78px;color:var(--muted);font-size:11px;font-weight:700;white-space:nowrap;
+  background:color-mix(in srgb,var(--panel2) 45%,transparent)}
+.navbox tr:last-child th,.navbox tr:last-child td{border-bottom:0}
+.navbox.missing{padding:9px 12px;color:var(--danger);font-size:12px}
+
+/* ── 상세 문서 안내 ── */
+.seealso{margin:1.1em 0;padding:8px 13px;border-left:3px solid var(--accent);
+  background:color-mix(in srgb,var(--soft) 45%,transparent);border-radius:0 7px 7px 0;
+  font-size:13.5px;color:var(--muted)}
+.seealso:before{content:"▸ ";color:var(--accent)}
+.seealso a.wiki{font-weight:700}
+
+/* ── 연혁 (문서 안의 시간선) ── */
+.histline{list-style:none;margin:1.3em 0;padding:0 0 0 4px}
+.histline li{position:relative;display:grid;grid-template-columns:96px 1fr;gap:14px;
+  padding:0 0 14px 20px;border-left:2px solid var(--line);align-items:baseline}
+.histline li:last-child{border-left-color:transparent;padding-bottom:0}
+.histline li:before{content:"";position:absolute;left:-6px;top:7px;width:9px;height:9px;border-radius:50%;
+  background:var(--panel);border:2px solid var(--accent)}
+.histline li.same:before{width:5px;height:5px;left:-4px;top:9px;background:var(--line);border:0}
+.histline .when{font-family:var(--serif);font-size:13px;font-weight:700;color:var(--accent);
+  text-align:right;line-height:1.6}
+.histline li.same .when{color:transparent}
+.histline .what{font-size:14.5px;line-height:1.65}
+@media(max-width:640px){
+  .histline li{grid-template-columns:1fr;gap:2px}
+  .histline .when{text-align:left}
+}
+
+/* ── 인용 블록 네 종류 ── */
+.quote{margin:1.5em 0;padding:0}
+.quote p{margin:0 0 .45em}
+.quote p:last-of-type{margin-bottom:0}
+.quote cite{display:block;margin-top:.7em;font-style:normal;font-size:12px;color:var(--muted);letter-spacing:.02em}
+
+/* 경구 — 문서 머리의 제사 */
+.quote.epigraph{margin:0 0 2em;padding:1.15em 0 1.05em;text-align:center;
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.quote.epigraph p{font-family:var(--serif);font-size:16.5px;line-height:1.75;color:var(--text)}
+.quote.epigraph cite{margin-top:.55em;font-size:11.5px;opacity:.85}
+.quote.epigraph cite:before{content:"— "}
+
+/* 대사 — 대본에서 따온 인물의 말 */
+.quote.dialogue{position:relative;padding:.9em 1.15em .85em 2.5em;border-radius:9px;
+  background:color-mix(in srgb,var(--soft) 55%,transparent);border:1px solid var(--line)}
+.quote.dialogue:before{content:"“";position:absolute;left:.55em;top:.3em;
+  font-family:var(--serif);font-size:30px;line-height:1;color:var(--accent);opacity:.45}
+.quote.dialogue p{font-family:var(--serif);font-size:15px;line-height:1.7}
+.quote.dialogue cite{text-align:right;font-weight:600;color:var(--accent);opacity:.9}
+.quote.dialogue cite:before{content:"— "}
+
+/* 표어 — 세력의 구호 */
+.quote.motto{text-align:center;padding:.5em 0}
+.quote.motto p{font-family:var(--serif);font-size:15.5px;color:var(--accent);letter-spacing:.02em}
+.quote.motto p:before{content:"“"}
+.quote.motto p:after{content:"”"}
+
+/* 조문 — 법조문 */
+.quote.article{padding:1.2em 1.4em;border:1px solid var(--accent);border-radius:9px;
+  background:color-mix(in srgb,var(--soft) 40%,transparent);text-align:center}
+.quote.article p{font-family:var(--serif);font-size:17px;line-height:1.8;letter-spacing:.03em;font-weight:700}
+.quote.article cite{color:var(--accent);opacity:.9}
+.body code{background:var(--panel2);padding:.12em .38em;border-radius:4px;font-size:.87em}
+.body pre{background:var(--panel2);padding:12px 14px;border-radius:8px;overflow:auto;line-height:1.6}
+.body pre code{background:0;padding:0}
+.body hr{border:0;border-top:1px solid var(--line);margin:1.8em 0}
+/* 본문 표는 인포박스 옆에 끼지 않게 아래로 내린다 — 좁은 칸에 눌리면 읽기 어렵다. */
+.body table{border-collapse:collapse;width:100%;margin:1.3em 0;font-size:14px;
+  border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.body .tablewrap{overflow-x:auto;margin:1.3em 0}
+.body .tablewrap table{margin:0}
+.body th,.body td{border-bottom:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top;line-height:1.6}
+.body th{background:var(--panel2);font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.03em}
+.body tbody tr:last-child th,.body tbody tr:last-child td{border-bottom:0}
+.body tbody tr:hover{background:color-mix(in srgb,var(--panel2) 45%,transparent)}
+.body strong{font-weight:700}
+a.wiki{color:var(--accent);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--accent) 35%,transparent);cursor:pointer}
+a.wiki:hover{border-bottom-color:var(--accent)}
+a.wiki.missing{color:var(--muted);border-bottom:1px dashed var(--muted)}
+a.wiki.missing:after{content:"?";font-size:.75em;vertical-align:super;opacity:.7}
+
+/* ── 오른쪽 목차 ── */
+.rail{grid-area:toc;position:sticky;top:38px;align-self:start;font-size:12px}
+.rail h5{margin:0 0 7px;color:var(--muted);font-size:10.5px;letter-spacing:.1em;font-weight:800}
+.rail a{display:block;color:var(--muted);text-decoration:none;padding:3px 0 3px 9px;border-left:2px solid var(--line);line-height:1.4}
+.rail a:hover{color:var(--accent);border-left-color:var(--accent)}
+.rail .sub{padding-left:20px;font-size:11.5px}
+.rail .box{margin-bottom:22px}
+.rail .backlink{border:0;padding:3px 0;color:var(--accent)}
+.empty{color:var(--muted)}
+.iconbtn{border:1px solid var(--line);background:var(--panel2);color:var(--muted);border-radius:7px;
+  width:30px;height:30px;cursor:pointer;font-size:14px;flex:none}
+.iconbtn:hover{color:var(--accent);border-color:var(--accent)}
+#menu{display:none;position:fixed;left:14px;top:14px;z-index:12;width:38px;height:38px;font-size:16px;
+  background:var(--panel);box-shadow:0 2px 10px rgba(0,0,0,.18)}
+#scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:8}
+#scrim.on{display:block}
+@media(max-width:1000px){
+  #app{grid-template-columns:1fr}
+  #menu{display:block}
+  .side{position:fixed;left:0;top:0;bottom:0;width:280px;z-index:9;transform:translateX(-100%);transition:.2s}
+  .side.open{transform:none;box-shadow:0 0 40px rgba(0,0,0,.3)}
+  /* 한 칸으로 접히면 인포박스가 맨 위, 목차는 맨 아래로 간다. */
+  .wrap{padding:64px 20px 100px;
+    grid-template-columns:minmax(0,1fr);
+    grid-template-rows:auto auto auto;
+    grid-template-areas:"ib" "main" "toc"}
+  .rail{position:static;border-top:1px solid var(--line);padding-top:18px;margin-top:26px}
+}
+@media(max-width:760px){
+  .erabar{overflow-x:auto;scrollbar-width:thin}
+  .erabar .seg{min-width:66px;flex:0 0 auto}
+  .body{font-size:15px}
+  h1.doctitle{font-size:27px}
+  .quote.article p{font-size:15.5px}
+}
+</style>
+</head>
+<body>
+<button class="iconbtn" id="menu" title="문서 목록">☰</button>
+<div id="scrim"></div>
+<div id="app">
+  <aside class="side" id="side">
+    <div class="sidehead">
+      <div class="brand">세계관 아카이브</div>
+      <button class="iconbtn" id="theme" title="테마">◐</button>
+    </div>
+    <div class="search"><input id="q" placeholder="검색  (Ctrl+K)" autocomplete="off"></div>
+    <nav class="tree" id="tree"></nav>
+  </aside>
+  <main class="main" id="main">
+    <div class="wrap">
+      <article>
+        <div class="crumb" id="crumb"></div>
+        <h1 class="doctitle" id="title"></h1>
+        <div class="chips" id="chips"></div>
+        <div id="erabar"></div>
+        <div id="navbox"></div>
+        <div id="memoFm"></div>
+        <div class="foldbar" id="foldbar" hidden>
+          <button id="foldAll">모두 접기</button><button id="openAll">모두 펼치기</button>
+        </div>
+        <div class="body" id="body"></div>
+        <div id="memoBody"></div>
+      </article>
+      <div id="infobox"></div>
+      <aside class="rail" id="rail"></aside>
+    </div>
+  </main>
+</div>
+<script>
+const DATA = {"docs":[{"title":"세계관 대문","id":"home","type":"대문","folder":"00_홈","sortOrder":0,"era":"시대 공통","canon":"확정","status":"작성 중","tags":["안내","코어"],"memo":"§0 코어 원문(세계관 정리.md 1~44행)을 문장 그대로 옮김. 링크와 시작점 절은 옮긴 사람이 붙인 것으로 본문과 분리해 표시.","image":"","imageCaption":"","summary":[],"content":"# 세계관 대문\n\n### 무슨 목적인가?\n\n과거 존재했던 초대륙들을 하나씩 차용하고, 대륙마다 개별적인 주제를 부여, 주제에 따른 문제 상황을 만들어둔 뒤, 플레이어를 던져놓고 그 문제 상황을 해결하는 경험을 제공하는 세계관\n\n### 무엇이 다른가?\n\n‘명백히 설명할 수 있는 원리’를 가진 세계\n\n대륙 단위로 끊어서 진행할 수 있어 프로젝트 진척과 여러 컨셉을 시도하기에 유리한 설정\n\n다른 IP에서 비교적 조명하지 않는, ‘이해관계’, ‘집단’, ‘세력’ 중심의 전개\n(중요: 그렇다고 ‘캐릭터’의 매력을 포기하겠다는 것이 절대, 절대, 절대로 아님!!!!!!)\n\n### 어떤 게 있는가?\n\n이해관계, 집단, 세력, 인물이 가진 ‘신념’에 따라 동작하는 ‘능력’\n\n세계관 규칙, 개연성을 형성하며, IP의 핵심적인 기둥이 될 ‘신물질’\n\n대륙의 주제에 따라 다르게 동작하는 신물질을 통해 형성하는 대륙별 고유 ‘규칙’\n\n### 어떻게 할 것인가?\n\n심심할 때마다 자잘한 설정이나 큰 틀을 대략적으로 잡아가며 작성\n\n지금 작성된 내용은 추후 프로젝트, 기타 창작 활동에 사용.\n\n먼 훗날 이를 통합하는 대형 프로젝트에 도전\n\n### 무엇을 하고 있는가?\n\n‘대륙에게 개별적인 주제를 부여 -> 주제에 따른 문제 상황’을 만드는 중.\n\n가끔씩 추후 사용될 여지가 있는 ‘캐릭터’도 만드는 중.\n\n그냥 심심해서 이리저리 써보는 것도 있음\n\n[세계관 초안](https://docs.google.com/document/d/1V2rzeJ9Lu-FBoMMDjLTt4QuMs9QgHQCNWIc3HnDbM5I/edit?tab=t.h14bfmmjikhl)\n\n---\n\n## 여담\n\n위 본문은 `세계관 정리.md` §0 코어(1~44행)다. 아래는 원고에 없는, 위키 운항용 안내다.\n\n**시대 기준** — 이 위키의 '현재'는 **국가 체제가 모두 무너진 이후**, 국지 세력이 난립하는 시기다. 《가문과 가족》을 비롯한 메인 서사는 이 기준에서 **과거**에 해당한다. 각 문서의 `시대` 속성은 이 기준을 따른다.\n\n**초자연 층은 독자에게 숨겨져 있다**. 《가문과 가족》 22편 전체에 `노에시스` · `노에마` · `누스` · `카시마르` · `신성제국` · `드레드노`가 **한 번도 등장하지 않는다.** 헌법이 [[누스]]라는 사실조차 대본은 초자연이 아니라 법리로만 설명한다. 초자연 층은 《마왕과 용사》에서 드러나는 구조다.\n\n그래서 이 위키에는 **독자가 아직 모르는 것이 적혀 있다.** 이 위키는 비공개이므로 그대로 적지만, 작중 설명과 여기 적힌 것이 어긋나 보이는 자리는 대개 이 은폐 구조 때문이다. 그런 자리는 두 설명을 함께 적어둔다. → [[연방 헌법]]의 사례\n\n**시작점**\n\n- [[핵심 개념]] — 이 세계의 규칙. 반드시 '진실'만 적는 자리\n- [[그렌빌리아 대륙]] — Vol.1의 무대\n- [[위키 작성 규칙]] — 옮기는 방식과 속성 어휘\n\n**연표** — 시대 순으로 늘어놓은 문서들. 빈 자리가 아직 안 쓴 구간이다.\n\n```연표\n```\n\n**원본 자료**\n\n- 설정 원고 `세계관 정리.md` — 272KB, 3,271줄\n- 정합성 점검 `세계관_정합성_점검_메모.md` — 2026-07-29\n- 대본 단일 원본 `script/` — 《가문과 가족》 20편 + 프롤로그·에필로그","parentId":null},{"title":"노모스","id":"nomos","type":"개념","folder":"01_핵심 규칙","sortOrder":20,"era":"시대 공통","canon":"확정","status":"완료","tags":["핵심 규칙","노모스"],"memo":"원문(세계관 정리.md 98~113행) 문장 그대로. 작가 메모에 따라 '심화'는 작성하지 않음.","image":"resource/wiki/노모스.png","imageCaption":"노모스가 펼쳐진 영역","summary":[["한 줄 정의","활성 [[노에시스]]만 존재하게 된 영역"],["형성 주체","반드시 구사자로 격상된다"],["주체의 분비량","사고 행위를 통해 거의 무한"],["일반인 진입","동화"],["구사자·능력자 진입","감화"],["주체 이탈 시","활성 노에시스가 주체에게 흡수되고 노모스는 소멸"],["남는 것","흡수한 만큼의 초월적인 힘"]],"content":"# 노모스\n\n```경구\n한처음, 천지가 창조되기 전부터 말씀이 계셨다. 말씀은 하느님과 함께 계셨고 하느님과 똑같은 분이셨다.\n— 요한복음 1:1\n```\n\n## 개념\n\n노모스는 어떤 주체로 인해 ‘노에시스’가 연쇄적으로 활성되어 ‘활성 노에시스’만 존재하게 된 영역을 의미한다. 해당 영역 내에서 노에시스를 활성화시킨 주체는 반드시 ‘구사자’로 격상되며, 사고 행위를 통해 ‘활성 노에시스’를 거의 무한히 분비할 수 있게 된다.\n\n노모스에 ‘노에마 능력자’ 혹은 ‘구사자’가 아니면서, 동시에 뚜렷한 가치관이나 철학을 가지고 있지 않은 사람이 진입할 경우, 노모스를 형성한 주체의 신념, 가치관, 사상 등에 **동화**된다.\n\n‘노에마 능력자’ 혹은 ‘구사자’라고 하더라도, 노모스에 진입한 상태에서 주체를 통한 신념, 가치관 등의 변화를 겪게될 경우, 위와 동일한 과정을 거쳐 **감화**될 수 있다.\n\n노모스를 형성한 주체가 노모스 밖으로 벗어날 경우, 활성 노에시스의 안정성이 급격히 붕괴하면서 노모스의 주체에게 흡수되려는 성질을 띠게 된다. 노모스에 존재했던 활성 노에시스가 모두 주체에게 흡수될 경우, 노모스는 사라지나, 그 영향력만큼 주체에게 초월적인 힘을 부여해줄 수 있게 된다.\n\n## 관련 문서\n\n- [[노에시스]]\n- [[노에마]]\n\n## 여담\n\n**심화는 일부러 비워두었다.** [[핵심 개념]]에 적힌 방침에 따른 것이다 — 이 개념은 앞으로 바뀔 여지를 남겨두었다.\n\n**동화와 감화는 다른 절차다.** 뚜렷한 가치관이 없는 일반인은 **동화**, 이미 구사자·능력자인 사람이 노모스 안에서 신념이 흔들려 넘어가는 것은 **감화**다.\n\n**노모스를 스스로 걷는 것이 강해지는 수단이 된다.** 주체가 노모스 밖으로 나가면 그 안의 활성 노에시스가 전부 주체에게 흡수되고, 그만큼 초월적인 힘이 남는다. 규칙만 보면 노모스를 크게 펼친 뒤 걷어들이는 것이 가장 강력한 수순이 된다.","parentId":"core-concepts"},{"title":"노에마","id":"noema","type":"개념","folder":"01_핵심 규칙","sortOrder":10,"era":"시대 공통","canon":"확정","status":"완료","tags":["핵심 규칙","노에마"],"memo":"원문(세계관 정리.md 83~96행) 문장 그대로. 작가 메모에 따라 '심화'는 작성하지 않음 — 추후 구현 과정에서 극적 효과를 위해 설정이 변동될 수 있는 항목.","image":"resource/wiki/노에마.png","imageCaption":"노에마 구사 장면","summary":[["한 줄 정의","[[노에시스]]를 사용한 모든 초자연적 행위의 총칭"],["동사","구사하다"],["요구 조건","일정 수준의 활성 노에시스"],["사용자 등급","구사자 / 노에마 능력자"],["유형","활성 노에시스를 직접 다루는 쪽 / 에너지로 환원하는 쪽"],["확인된 실례","[[헌병대]] — 매개체는 [[연방 헌법]]"]],"content":"# 노에마\n\n```경구\n어찌 되었든 너희들이 원하는 바를 행하라. 그러나 먼저 의욕할 수 있는 사람이 되어라!\n— 프리드리히 빌헬름 니체 (독일의 철학자)\n```\n\n## 개념\n\n노에마는 ‘노에시스’를 사용한 모든 초자연적 행위를 총칭한다. 노에마는 ‘구사하다’라는 단어로 표현할 수 있다. ‘노에마를 사용하다’와 ‘구사하다’ 모두 ‘노에마를 사용한 초자연적 행위’를 의미한다.\n\n모든 노에마는 일정 수준의 ‘활성 노에시스’를 요구하며, 노에시스를 온전히 활성화시킬 수 있으면서, 본인이 직접 원하는 형태로 다룰 수 있는 사람을 ‘구사자’라고 칭한다.\n\n구사자가 아닌 사람도 ‘특정 매개체’를 통해 노에마를 구사할 수 있으나, 이 경우 ‘구사자’가 아닌 ‘노에마 능력자’라는 이름으로 칭한다.\n\n노에마는 활성 노에시스를 직접 다루는 유형과, 활성 노에시스를 소모해 특정 에너지로 환원해 사용하는 유형으로 분류할 수 있으며, 전자의 경우 ‘활성 노에시스’의 특성이 유지되고, 후자의 경우 개인의 노에시스 형태에 따라 다른 성질의 에너지로 환원된다.\n\n## 관련 문서\n\n- [[노에시스]]\n- [[노모스]]\n- [[누스]] — 구사자가 아닌 사람을 노에마 능력자로 만드는 ‘특정 매개체’\n\n## 여담\n\n**심화는 일부러 비워두었다.** [[핵심 개념]]에 적힌 방침에 따른 것이다 — 노에마·노모스·누스는 앞으로 바뀔 여지를 남겨두었다.\n\n**용어 구분이 헷갈리기 쉬운 자리.** 노에시스를 스스로 활성화해 원하는 형태로 다루는 쪽이 **구사자**, 매개체를 거쳐야 하는 쪽이 **노에마 능력자**다. 둘은 다른 등급이며, [[노모스]] 안에서는 활성화의 주체가 반드시 구사자로 격상된다.\n\n**확인된 실례 — [[헌병대]]**. [[연방]]의 헌병은 구사자가 아니라 **노에마 능력자**이며, 매개체는 [[연방 헌법]]다. 1인의 역량이 하나의 군단에 버금간다고 하므로, 매개체를 거친 능력자라도 위력 자체는 낮지 않다는 뜻이 된다. 대신 매개체에 종속되므로 그 누스가 훼손되면 힘을 잃는다.","parentId":"core-concepts"},{"title":"노에시스","id":"noesis","type":"개념","folder":"01_핵심 규칙","sortOrder":0,"era":"시대 공통","canon":"확정","status":"완료","tags":["핵심 규칙","노에시스"],"memo":"2026-07-31 정합성 점검 반영 2건. (1) 원문 63행 '공기 중의 70%를 차지'는 부피비로 읽히면 호흡·연소·기압·부력이 전부 깨지므로, 대기와 중첩된 준물질의 '포화도 70'으로 재정의. (2) 원문 67~69행 '연쇄적인 연소 반응을 억제'는 범위가 너무 넓어 흑색화약만 살아남는 이유가 나오지 않으므로, '자기증폭하는 발열 반응의 전파면 붕괴'로 정밀화. 그 외 문장은 원문 그대로.","image":"resource/wiki/노에시스.png","imageCaption":"활성 노에시스의 형질 예시","summary":[["한 줄 정의","사람의 사고 행위에서 분비되는, 물질과 반응 사이의 모호한 개념"],["성격","대기와 중첩되어 존재하는 준물질"],["상태","활성 / 비활성"],["억제 대상","스스로 가속되는 발열 반응의 전파면"],["포화도","그렌빌리아 70 — 대륙 중 최고"],["형태를 결정하는 것","그 사람의 신념 · 사상 · 경험 · 가치관"],["파생 개념","[[노에마]] · [[노모스]] · [[누스]] · [[카시마르]]"]],"content":"# 노에시스\n\n```틀\n핵심 개념\n```\n\n```경구\n생각을 바꾸면 세상이 바뀔 것이다.\n— 노먼 빈센트 필 (미국의 작가)\n```\n\n## 개념\n\n노에시스는 우리가 사는 현실과 이 세계의 가장 근본적인 차이점으로. ‘사람의 사고 행위’에서 분비되는, 물질과 반응 사이의 모호한 개념이다.\n\n노에시스는 대기와 중첩되어 존재하는 준물질이며, 일반적인 기체처럼 공기의 조성비를 차지하지 않는다. 공기 중 노에시스의 농도는 대륙별로 다르며 ‘포화도’로 표기하는데, 이 수치는 대기 조성비가 아니라, 일정 부피 안에서 연쇄반응을 간섭할 수 있는 노에시스의 유효 밀도를 의미한다. 노에시스의 농도가 가장 높은 대륙인 ‘그렌빌리아 대륙’의 포화도는 자그마치 70에 달할 정도이다.\n\n노에시스는 **활성** 상태와 **비활성** 상태로 분류될 수 있으며, 사람의 사고 행위에서 막 분비된 노에시스는 기본적으로 비활성 상태로 존재하며, 이 상태에서의 노에시스는 무색무취의 기체 형태를 띤다.\n\n비활성 상태의 노에시스는 짧은 시간 안에 스스로 가속되는 발열 반응의 전파면을 붕괴시킨다. 반응 속도가 일정 한계 이하인 화염과 표면연소는 유지되지만, 압력 상승과 반응 속도가 서로를 증폭시키기 시작하면 노에시스의 간섭이 급격히 커진다. 이로 인해 대기 중 노에시스의 농도가 높은 대륙 (ex. 그렌빌리아, 로디니아, 판노티아) 등에서는 ‘폭발’이 발생하기 어렵다.\n\n단, ‘연쇄적인 연소 반응’을 억제할 뿐, 연소 자체를 억제하지는 않는다.\n\n## 심화\n\n사람마다 분비하는 노에시스의 형태는 각각 차이가 있으나, 비활성 상태에서 일정 시간이 지나면 그 특징은 모두 휘발된다. 노에시스의 형태는 그 사람의 ‘신념’, ‘사상’, ‘경험’, ‘가치관’에 따라 달라지는 모습을 보였다.\n\n이러한 개개인이 가진 노에시스의 형태는 노에시스가 활성 상태로 전환될 때 나타난다. 특정 ‘노에마’로 주변의 비활성 노에시스가 활성화될 경우, 활성화시킨 주체의 노에시스 특징을 따라간다.\n\n활성 상태의 노에시스는 비활성 상태와는 달리 뚜렷한 물질로 나타났으며, 유체, 고체, 액체, 기체, 플라즈마, 장(field) 등 개인의 노에시스 특성에 따라 다른 물리, 시각적 형질을 지니게 된다.\n\n활성 상태의 노에시스에 노출된 사람은, 활성화시킨 주체의 ‘신념’, ‘사상’, ‘경험’, ‘가치관’ 등을 ‘맹목적으로’ 따르게 되나, 내적으로 그러한 것들을 이미 갖추고 있는 사람은 활성 노에시스의 영향이 미미하게 나타난다.\n\n단, 개인이 가진 이러한 ‘신념’ 등의 것들이 변화할 경우, 노에시스 또한 함께 변칙적으로 변화함을 확인하였다.\n\n## 이름\n\n그리스어 **νόησις**(노에시스) — '사유하는 **작용**'을 뜻하는 철학 용어다.\n\n[[핵심 개념]]의 네 이름이 모두 같은 계열이며, 서로 짝을 이루는 개념들이다.\n\n| 이름 | 원어 | 본래 뜻 |\n|---|---|---|\n| 노에시스 | νόησις | 사유하는 **작용** |\n| [[노에마]] | νόημα | 사유**된 것** |\n| [[노모스]] | νόμος | **법** · 관습 |\n| [[누스]] | νοῦς | **지성** 그 자체 |\n\n배치가 정확하다. 사유의 작용(노에시스)에서 사유된 것(노에마)이 나오고, 누스는 사람 밖의 지성이며, 노모스는 한 사람의 신념이 영역 전체의 규칙이 되는 상태다.\n\n## 관련 문서\n\n- [[폭발과 연소]]\n- [[노에마]]\n- [[노모스]]\n- [[누스]]\n- [[카시마르]]\n- [[바다]]\n\n## 여담\n\n**고친 자리 두 곳.** 위 `검토메모`에 근거를 적어두었다. 원문 대조가 필요하면 `세계관 정리.md` 61~81행.\n\n**포화도 70이라는 숫자 자체는 원문 그대로 두었다.** 단위의 의미만 바꾼 것이므로, 다른 대륙의 포화도를 적을 때 이 척도를 기준으로 삼으면 된다. 로디니아·판노티아도 '높다'고만 되어 있고 수치는 아직 없다.\n\n**맞춤법 교정.** 원문의 ‘띈다’를 ‘띤다’로 고쳤다(2026-07-31). 문장 구조와 어휘는 그대로다.\n\n**노에시스에서 파생되는 것들.** 이 문서 하나가 세계관의 두 갈래를 동시에 낳는다. 하나는 기술사 — 화약이 막히자 증기·제철·철도·전기가 비정상적으로 발달했고, 그 기술을 [[연합]]이 [[올림피아드]]로 독점 공급해 대륙 전체가 스팀펑크가 되었다. 다른 하나는 초자연 — [[노에마]] · [[노모스]] · [[누스]], 그리고 신념이 그대로 힘이 되는 구조. 국가별로 노에시스에 어떻게 대응했는지가 그 나라의 성격을 결정한다.","parentId":"core-concepts"},{"title":"누스","id":"nous","type":"개념","folder":"01_핵심 규칙","sortOrder":30,"era":"시대 공통","canon":"확정","status":"완료","tags":["핵심 규칙","누스"],"memo":"원문(세계관 정리.md 115~129행) 문장 그대로. 작가 메모에 따라 '심화'는 작성하지 않음. 개별 누스(연방 헌법, 바실리아의 누스)는 별도 문서로 분리 예정.","image":"resource/wiki/누스.png","imageCaption":"누스의 형태 예시","summary":[["한 줄 정의","사람 이외에 [[노에시스]]를 분비하는 물질의 총칭"],["형태","상징 · 유물 · 보물"],["기능","일반인을 노에마 능력자 또는 구사자로 만든다"],["한계","자체적으로는 노에시스를 활성화할 수 없다"],["약점","파손되면 능력을 잃을 가능성이 높다"],["알려진 누스","[[연방 헌법]] · 바실리아 공동체의 누스"]],"content":"# 누스\n\n```경구\n그러나 나에게는 우리 주 예수 그리스도의 십자가밖에는 아무것도 자랑할 것이 없습니다.\n— 갈라디아서 6:14\n```\n\n## 개념\n\n누스는 ‘사람 이외의 노에시스를 분비하는 물질’을 총칭하는 개념으로서, 주로 특정한 상징, 유물, 보물 등의 형태로 나타날 수 있다.\n\n사물의 성격에 따라 기능도 천차만별이며, 누스를 매개체로 일반인이 노에마를 구사할 수 있게 되거나, 영구적으로 ‘구사자’로 만드는 등의 특수한 활용이 가능하다.\n\n누스를 통해 ‘노에마 능력자’ 혹은 ‘구사자’가 된 사람의 경우, 누스가 파손될 경우 그 능력을 잃어버릴 가능성이 높으나, 이는 상황에 따라 달라질 수 있다.\n\n누스 자체로는 노에시스를 활성화할 수 없으나, 특정한 행위에 감응하여 평소보다 더 넓은 범위의 노에시스를 활성화시키도록 보조하는 역할을 수행할 수도 있다.\n\n## 알려진 누스\n\n- **연방 헌법** — [[헌병대]]가 노에마를 구사하는 **매개체**다. [[연말 위기]] 당시 80~90%가 소실되었고, 남은 부분을 [[세라]]가 복구해 [[연방]]을 장악하려 했다. 세라가 곧 마왕이며, 마왕 토벌 과정에서 이 누스는 완전히 파괴된다. 그래서 위키 기준 현재에는 존재하지 않는다. → [[연방 헌법]]\n- **바실리아 공동체의 누스** — 노에시스에 대한 이해 없이도 노에마를 사용할 수 있게 해주었고, 그로 인해 [[대악몽]]이 촉발되어 공동체와 인접 국가가 모조리 멸망했다. → [[신성제국]]\n\n## 이름\n\n그리스어 **νοῦς**(누스) — '지성' 그 자체를 뜻한다. 사람의 사유 작용([[노에시스]])과 달리, **사람 밖에 있는 지성**이라는 뜻이 이름에 이미 들어 있다.\n\n[[노모스]](νόμος, 법)와 어근이 이어진다. 그래서 [[연방 헌법]]이 누스라는 설정 — 법전이 곧 사람 밖의 지성이라는 구조 — 은 이름 층위에서부터 예고되어 있다.\n\n## 관련 문서\n\n- [[노에시스]]\n- [[노에마]]\n- [[노모스]]\n\n## 여담\n\n**심화는 일부러 비워두었다.** [[핵심 개념]]에 적힌 방침에 따른 것이다 — 이 개념은 앞으로 바뀔 여지를 남겨두었다.\n\n**누스가 서사를 굴리는 방식.** 개념 자체보다 개별 누스가 사건을 만든다. 헌법이 누스라는 설정은 정치 서사를 그대로 초자연 서사로 잇는 장치이고, 바실리아의 누스는 국가 하나를 멸망시킨 원인이다.\n\n**연방 헌법 한 줄로 전부 이어진다**. 헌법이 [[헌병대]]의 매개체이므로, 헌병은 구사자가 아니라 **노에마 능력자**다. 그 헌법이 [[연말 위기]]에 80~90% 불탔으니 헌병이 좀처럼 모습을 드러내지 못하는 것도 설명된다. 지휘권은 [[건국의 아버지들]]의 혈족에게 있어, [[애덤스]]의 딸인 [[세라]]가 민간인 신분으로 헌병을 부릴 수 있다. 그리고 '누스가 파손되면 능력을 잃는다'는 위 규칙 때문에, 헌법의 파괴가 곧 마왕 토벌의 방법이 된다.\n\n**알려진 누스가 아직 둘뿐이다.** 개념의 설명은 자세한데 실례는 [[연방 헌법]]과 바실리아 공동체의 것만 확인된다. 각각 별도 문서로 다룰 예정이다.","parentId":"core-concepts"},{"title":"바다 민족","id":"sea-peoples","type":"개념","folder":"01_핵심 규칙","sortOrder":60,"era":"대전쟁 이전","canon":"확정","status":"완료","tags":["핵심 규칙","바다 민족","고대"],"memo":"원문(세계관 정리.md 145~159행) 문장 그대로. 시대는 '대전쟁 이전'으로 달았다 — 원문이 '대전쟁 이후 완전히 종적을 감추었다'고 하므로 이들의 활동기는 대전쟁 이전이다. '대전쟁'이 무엇인지는 아직 문서가 없다.","image":"resource/wiki/바다 민족.png","imageCaption":"바다 민족의 선단","summary":[["한 줄 정의","신대륙 형성 이전부터 존재했던 구대륙의 민족 집단"],["출신","[[판게아 대륙]] — 구대륙"],["특기","구대륙 최고의 항해술 · 조선술"],["특이 체질","[[바다]]의 노에시스에 일정 수준의 내성"],["후손","현존하는 신대륙 인류 전체"],["소멸","[[대전쟁]] 이후 완전히 종적을 감춤"],["남은 흔적","신대륙에 전해 내려오는 기록뿐"]],"content":"# 바다 민족\n\n```경구\n\"우리는 항해해야 한다. 표류해서도 안 되고, 닻을 내린 채 멈춰서도 안 된다.\"\n— 올리버 웬델 홈스 주니어 (미합중국 연방대법관)\n```\n\n## 개념\n\n신대륙의 형성 이전부터 존재했던 구대륙의 민족 집단. 구대륙의 민족들 중에서도 가장 뛰어난 항해술, 조선술을 갖추고 있었고, 바다에 녹아있는 ‘노에시스’에 대해 일정 수준의 내성을 지니고 있었다.\n\n이러한 특징 덕분에 이들은 구대륙을 벗어나 여러 신대륙에 최초로 발을 들이게 되었으며, 현존하는 신대륙의 인류는 모두 이들의 후손이다.\n\n바다 민족은 여러 다양한 유전적 형질을 가지고 있었다고 전해지며, 이들의 유전적 다양성이 각 대륙별로 다른 인류의 모습에 큰 영향을 주기도 했다.\n\n이들은 ‘대전쟁’ 이후 완전히 종적을 감추어버렸으며, 이들의 흔적조차 신대륙에 한해 전해 내려오는 기록 속에서만 찾아볼 수 있다.\n\n## 그렌빌리아 대륙에서의 계보\n\n[[그렌빌리아 대륙]]에 도달한 바다 민족은 두 갈래로 갈라져 정착했고, 오늘날 두 열강의 기원이 되었다.\n\n- **동부 분지** → 바실리아 공동체 → 훗날의 [[신성제국]]\n- **서부 반도** → 헬라스 공동체 → 훗날의 [[연합]]\n\n같은 뿌리에서 갈라졌지만 방향이 정반대로 갔다. 바실리아에는 숭배할 [[누스]]가 있어 신학으로 기울었고, 헬라스에는 누스가 없어 자연과학으로 기울었다.\n\n## 이름\n\n**Sea Peoples** — 후기 청동기 시대에 지중해를 휩쓸고 여러 문명을 무너뜨린 뒤 사라진, 실재 집단의 학술 명칭이다.\n\n작품의 바다 민족도 같은 궤적을 그린다. 뛰어난 항해술로 여러 대륙에 처음 발을 들이고, [[대전쟁]] 이후 완전히 종적을 감춘다. 실제 '바다 민족'이 청동기 문명 붕괴와 함께 사라져 기록으로만 남은 것과 겹친다.\n\n## 관련 문서\n\n- [[바다]]\n- [[대전쟁]]\n- [[그렌빌리아 대륙]]\n- [[신성제국]]\n- [[연합]]\n\n## 여담\n\n**계보는 흩어져 전해진다.** 바다 민족을 다루는 기록에는 두 갈래의 정착 이야기가 없고, [[신성제국]]과 [[연합]] 각각의 역사 쪽에 따로 남아 있다. 위 절은 그 둘을 한자리에 모은 것이다.\n\n**[[대전쟁]]이 무엇인지 확인됐다**. 구대륙의 세력들이 대륙 단위로 벌인 대륙간 전쟁이며, 신대륙인 그렌빌리아 · 로디니아 · 판노티아는 영향권 밖이었다. 바다 민족은 이 전쟁 이후 사라졌고, [[바다]]의 노에시스 농도도 이 전쟁에서 나왔다. 즉 이들이 사라진 것과 이들이 넘어온 길이 막힌 것이 같은 사건이다.\n\n**구대륙은 [[판게아 대륙]]이다**. 즉 바다 민족의 출신지이자 [[대전쟁]]의 무대다. 그렌빌리아 · 로디니아 · 판노티아가 신대륙, 판게아가 구대륙이라는 구도다. 대륙 이름 넷이 모두 실재한 초대륙에서 온 것이므로([[세계관 대문]]의 \"과거 존재했던 초대륙들을 하나씩 차용\"), 판게아만 구대륙 자리를 맡은 것도 이름의 무게와 맞는다.","parentId":"core-concepts"},{"title":"바다","id":"sea","type":"개념","folder":"01_핵심 규칙","sortOrder":50,"era":"시대 공통","canon":"확정","status":"완료","tags":["핵심 규칙","바다","지리"],"memo":"원문(세계관 정리.md 131~143행) 문장 그대로.","image":"resource/wiki/바다.png","imageCaption":"원양의 노에시스 해역","summary":[["한 줄 정의","대륙과 대륙을 채우며, 엄청난 농도의 [[노에시스]]가 녹아 있는 환경"],["농도","수심이 깊을수록 증가"],["3분 노출","구토감 · 트라우마 · 정신 착란 · 현기증"],["원양","나무로 된 선체가 통째로 부식"],["농도의 유래","[[대전쟁]]"],["낳는 것","[[카시마르]] · 반 카시마르"],["열리는 조건","달의 움직임에 따른 해역별 농도 변화 (주기 미정)"]],"content":"# 바다\n\n```경구\n\"그래도 사람은 패배하기 위해 창조된 게 아니다.\" 그가 말했다. \"인간은 파괴될 순 있지만 패배하지는 않는다.\"\n— 소설 〈노인과 바다〉\n```\n\n## 개념\n\n대륙과 대륙을 채우는 바다에는, 엄청난 농도의 노에시스가 녹아있다. 수심이 깊을수록 노에시스의 농도가 증가하며, 바다에 녹아있는 노에시스는 육지에 존재하는 노에시스와 달리 밀도가 높고, 매우 극단적인 성질을 가지고 있다.\n\n대표적으로, 바다에 녹아있는 노에시스에 약 3분 정도만 노출되어도 정상적인 거동이 불가능할 수준의 구토감, 트라우마, 정신 착란, PTSD 증세, 현기증이 나타나며, 농도가 매우 짙은 원양까지 나갈 경우, 나무로 된 선체는 통째로 부식될 정도이다. 이처럼, 바다는 매우 위험한 환경으로 여겨져 왔다.\n\n과거부터 현대까지 ‘대륙 간’ 교류가 불가능하도록 만드는 주요 원인 중 하나이지만, 아주 먼 과거에는 지금만큼 노에시스 농도가 높지 않았고, ‘달’의 움직임에 따라 특정 해역의 노에시스 농도가 증가하거나, 감소하기도 하는 등. 항해가 아예 불가능한 환경은 아니기도 하다.\n\n## 이 농도는 어디서 왔는가\n\n[[대전쟁]] 때문이다. 구대륙의 세력들이 대륙 단위로 벌인 전쟁이 바다에 노에시스가 대량으로 녹아 있는 원인이다.\n\n## 바다가 낳는 것\n\n- 고인 노에시스는 썩어 [[카시마르]]가 된다. 사람이 자연적으로 분비하는 양보다 바다와 지층에 녹아 있는 양이 압도적으로 많으므로, 카시마르는 사람이 밀집한 곳이 아니라 이렇게 축적된 곳에서 주로 발생한다.\n- 물속에서 이 농도에 **오랜 기간** 노출된 사람은 반쯤 카시마르가 된다. → [[카시마르]]의 '반 카시마르'\n\n## 관련 문서\n\n- [[노에시스]]\n- [[대전쟁]] — 바다의 노에시스 농도를 만든 사건\n- [[카시마르]]\n- [[바다 민족]] — 바다의 노에시스에 내성을 지녔던 유일한 집단\n\n## 여담\n\n**이 설정이 세계관 구조를 결정한다.** 대륙별로 주제를 부여하고 대륙 단위로 끊어서 진행한다는 [[세계관 대문]]의 방침이 성립하는 이유가 바로 이것이다. 바다가 물리적 차단막이라서 대륙끼리 서로를 거의 모른 채 독립적으로 굴러간다.\n\n**동시에 빠져나갈 구멍도 열어두었다.** '아주 먼 과거에는 농도가 낮았다'와 '달의 움직임에 따라 해역별 농도가 변한다'는 두 문장이 대륙 간 왕래를 필요할 때 가능하게 만든다. [[바다 민족]]이 신대륙에 도달한 것도 이 창을 통해서였다.\n\n**고농도의 출처는 확인됐다**. [[대전쟁]]이다. 원문에는 이 연결이 적혀 있지 않았다.\n\n**달의 주기는 아직 미정이다.** 다만 방향은 정해져 있다 — **'타이밍만 잘 맞추면 대륙 간 이동이 가능한 수준'**. 즉 상시 차단이 아니라 조건부로 열리는 문이며, 그 조건을 아는 쪽이 대륙 간 왕래를 독점할 수 있다. 구체적인 주기와 해역 범위는 정해지면 여기에 적을 것.","parentId":"core-concepts"},{"title":"연방 헌법","id":"constitution","type":"개념","folder":"01_핵심 규칙","sortOrder":0,"era":"서사 시점","canon":"확정","status":"작성 중","tags":["핵심 규칙","누스","연방","헌법"],"memo":"원문에 항목이 없던 문서. 작가 확인(2026-07-31)의 '헌법은 누스가 맞고, 연말 위기에 80~90%가 불탔다. 남은 부분을 세라가 복구해 연방을 장악하려 한 것이며, 마왕 토벌 과정에서 파괴될 예정이다. 헌병의 매개체가 헌법이다'와 대본 6·17·18편 대조로 작성했다. 물리적 형태(책)와 수정헌법 제1조 조문은 대본에서 확인한 것이다.","image":"resource/wiki/연방 헌법.png","imageCaption":"헌법전","summary":[["성격","[[누스]]"],["귀속","[[연방]]"],["물리적 형태","책"],["기능","[[헌병대]]가 [[노에마]]를 구사하는 매개체"],["접근 권한","[[건국의 아버지들]]의 혈족"],["소실","[[연말 위기]]에 80~90%가 소실"],["복원","[[세라]]가 조력자와 함께 복원"],["개헌","수정헌법 제 1 조"],["현재","존재하지 않음 — 마왕 토벌 과정에서 파괴"]],"content":"# 연방 헌법\n\n```틀\n핵심 개념\n```\n\n[[연방]]의 헌법은 단순한 문서가 아니라 [[누스]]다. 물리적으로는 **책** 한 권의 형태를 띤다.\n\n## 기능\n\n[[헌병대]]가 [[노에마]]를 구사하는 **매개체**다. 그래서 헌병은 구사자가 아니라 노에마 능력자이며, 이 누스의 상태가 헌병의 역량을 그대로 결정한다.\n\n접근 권한은 [[건국의 아버지들]]의 혈족에게 있다. 6편에서 한 헌병은 세라가 그것을 들고 있는 것만 보고 \"그렇다는 건 ‘건국의 아버지들’과 모종의 관계가 있다는 뜻이겠죠\"라고 곧바로 짐작한다.\n\n## 소실과 복원\n\n[[연말 위기]]의 화재로 **80~90%가 소실**되었다.\n\n이 사건이 [[헌병대]]를 사실상 무력화시켰다. 6편에서 헌병 자신이 그 이유를 말한다.\n\n```대사\n연방을 지켜온 최초의 ‘방패’ 이자, 지금은 최후의 ‘칼날’…\n하하하, 그것도 이제는 옛말이죠. 지금의 우리는 ‘칼날’도, ‘방패’도 될 수 없습니다.\n헌법은 그날 무너졌으니.\n집행할 법이 없다면, 헌병이 무슨 의미가 있을까요. 경찰도, [보안관]도 마찬가지고.\n— 세라와 연방 헌병, 6편\n```\n\n남은 부분은 [[세라]]가 조력자와 함께 밀실에서 복원했다. 6편에서 그 작업이 목격되고, 17편에서 헌병은 \"현재 ‘헌법 복원’이 시급합니다\"를 근거로 [[해리엇]]의 의회 진입 저지를 물리친다.\n\n## 수정헌법 제 1 조\n\n18편 본회의장에서 [[세라]]는 복원 사실을 알리며 \"낡은 헌법도 함께 수리해두었다\"고 말한 뒤 개헌안을 발표한다.\n\n```조문\n모든 인민은. 가족을 위해. 봉사하라.\n— 수정헌법 제 1 조, 18편\n```\n\n그리고 이렇게 마친다.\n\n```대사\n그리고 마지막은, 가족의, 가족에 의한, 가족을 위한 국가가… 지상에서 사라지지 않기를 바라며…\n— 세라, 18편\n```\n\n6편에서 헌병이 세라에게 \"당신이 새로 만들고자 하는 ‘연방’은, ‘무엇에 의한 국가’ 입니까?\"라 물었고, 세라는 \"…‘가족’ 이요\"라 답했다. 그 대답이 여기서 조문이 된다.\n\n## 소멸\n\n마왕 토벌 과정에서 완전히 파괴된다. 그래서 위키 기준 현재에는 존재하지 않는다.\n\n## 관련 문서\n\n- [[누스]] · [[노에마]] · [[노모스]]\n- [[헌병대]]\n- [[세라]] · [[애덤스]] · [[건국의 아버지들]]\n- [[연말 위기]] · [[의회]]\n- [[연방]]\n\n## 여담\n\n**정치 서사와 초자연 서사가 같은 물건에서 만난다.** 대본은 이 누스를 초자연물로 설명하지 않는다. 헌병이 힘을 잃은 이유를 \"집행할 법이 없으니 헌병이 무슨 의미가 있나\"라는 **법리로** 말한다. 설정 층에서는 같은 사실이 \"매개체가 훼손되어 능력을 잃었다\"는 [[누스]] 규칙으로 설명된다. 한 사건에 두 개의 설명이 겹쳐 있고, 둘 다 맞다.\n\n**개헌이 곧 노모스로 보인다.** [[노모스]]는 주체의 신념·가치관에 진입자를 **동화**시키는 영역이고, [[노에시스]]는 활성화시킨 주체의 신념을 맹목적으로 따르게 만든다. 이 누스에 \"모든 인민은 가족을 위해 봉사하라\"를 새기는 것은, 국가 전체를 [[세라]]의 신념으로 덮는 행위가 된다. 세라의 마왕화가 초자연적 폭주가 아니라 **입법 절차**의 형태를 취하는 것으로 추정된다.\n\n**게티즈버그 연설의 뒤집기.** \"가족의, 가족에 의한, 가족을 위한 국가\"는 \"of the people, by the people, for the people\"에서 people을 family로 바꾼 것이다. 17편 제목 「가족에 의한 가족」도 같은 문형이다.\n\n**소실 규모는 작중에서 언급되지 않는다.** 80~90%가 불탔다고 알려져 있으나, 대본은 \"그 날 이후로 헌법이 소실되는 바람에\"까지만 말한다.","parentId":"nous"},{"title":"카시마르","id":"kasimar","type":"개념","folder":"01_핵심 규칙","sortOrder":40,"era":"시대 공통","canon":"확정","status":"작성 중","tags":["핵심 규칙","카시마르","몬스터"],"memo":"원문에 카시마르 단독 항목이 없어, 흩어진 서술을 모으고 작가 확인(2026-07-31)으로 채운 문서다. 발생 조건·반 카시마르화·등급 체계의 적용 범위·붕괴기 대응은 모두 작가 확인분. 미정: 대륙 표준 등급 체계, '연합 토벌'의 '연합'이 무엇인지.","image":"resource/wiki/카시마르.png","imageCaption":"카시마르의 외형","summary":[["한 줄 정의","[[노에시스]]가 고여서 썩은 곳에서 발생하는 존재"],["분포","[[그렌빌리아 대륙]] 전역"],["발생 조건","[[바다]] · 지층 등 노에시스가 축적된 곳"],["등급 체계","[[신성제국]] 내부 척도 (12등급 언급). 대륙 표준은 미정"],["변종","반 카시마르 — 물속 장기 노출로 반쯤 변한 사람"],["격퇴 수단","노에시스"],["붕괴 이후 대응","통일된 주체 없음. 각자도생"]],"content":"# 카시마르\n\n```틀\n핵심 개념\n```\n\n[[노에시스]]가 고여서 썩은 곳에서 발생하는 존재. [[그렌빌리아 대륙]] 전역에 퍼져 있으며, 이 대륙의 몬스터에 해당한다.\n\n## 발생 조건\n\n카시마르는 노에시스가 **고여서 썩은** 곳에서 나온다.\n\n노에시스는 사람의 사고 행위에서 분비되지만, 사람이 자연적으로 발생시키는 양보다 [[바다]]나 지층에 녹아 있는 양이 압도적으로 많다. 그래서 카시마르는 사람이 밀집한 곳이 아니라, **노에시스가 따로 축적된 곳**에서 주로 발생한다. 바다와 깊은 지층, 광맥이 그런 자리다.\n\n## 반 카시마르\n\n원래 사람이었으나 **물속에서 엄청난 농도의 노에시스에 오랜 기간 노출되어 반쯤 카시마르가 된** 존재가 있다.\n\n[[바다]]의 노에시스는 3분만 노출되어도 정상적인 거동이 불가능할 정도인데, 그것을 오랜 기간 견딘 경우다. 사람의 모습을 유지하고 말과 계략도 가능하다.\n\n## 등급 체계\n\n카시마르에는 등급이 매겨진다. 숫자가 클수록 큰 규모다.\n\n단, 이 체계는 **[[신성제국]] 안에서만 통용되는 것**이다. 대륙 표준 등급 체계는 아직 없다.\n\n## 역사\n\n- 고대에는 노에시스와 카시마르 양쪽에 대한 이해가 매우 부족했기에, 당시 사람들은 이들을 단순히 '괴물 아니면 악마'로 규정했다.\n- [[대악몽]]은 카시마르가 대규모로 발생한 사건이다. 이 사건으로 고대 바실리아 공동체와 그 인접 국가들이 모조리 멸망했다.\n- 대악몽 이후 사람들은 드레드 분지를 멀리했고, 그 지역에 ‘드레드’(Dread)라는 이름을 붙여 가까이하지 못하게 했다.\n- 중세에 드레드 분지를 차지한 기사단이 잔존 개체 소탕에 나섰고, 이때 맺은 각 세력·기사단 간의 계약이 [[레콩키스타]]다. → [[신성제국]]\n- 신성제국에서는 '연합 토벌'이라는 정기적인 행사를 통해 카시마르를 토벌한다. 여기서 '연합'은 [[연합]](헬라스)이 아니라 일반 명사로, 신성제국 내 재단·학원들이 연합한다는 뜻이다.\n\n## 대응\n\n- **격퇴에는 노에시스를 쓴다.**\n- **위키 기준 현재**, 국가 체제가 무너진 이후로는 통일된 대응 주체가 없다. 각 세력이 카시마르 대응을 위해 **각자도생**하는 형태에 가깝다. 국지 세력이 난립하는 원인 중 하나다.\n\n## 관련 문서\n\n- [[노에시스]]\n- [[바다]]\n- [[대전쟁]]\n- [[대악몽]]\n- [[신성제국]]\n- [[레콩키스타]]\n- [[신물질]]\n\n## 여담\n\n**이 문서를 핵심 규칙에 둔 이유.** [[노에시스]]에서 직접 파생되는 존재이고 대륙 전역에 걸쳐 있어서, 특정 국가 문서 밑에 두면 신성제국 소속처럼 보인다. 국가사에서 카시마르가 등장하는 자리는 각 국가 문서에서 이 문서로 링크만 걸 예정이다.\n\n**두 규칙이 하나로 이어진다.** [[대전쟁]]으로 바다에 노에시스가 대량 녹아들었고, 고인 노에시스는 썩어 카시마르가 되고, 그 물에 오래 잠긴 사람은 반 카시마르가 된다. 바다가 단순한 장애물이 아니라 이 세계의 몬스터 발생원이다.\n\n**남은 미정.** 대륙 표준 등급 체계. 현재 있는 것은 신성제국 내부 척도뿐이다.","parentId":"core-concepts"},{"title":"폭발과 연소","id":"combustion","type":"개념","folder":"01_핵심 규칙","sortOrder":0,"era":"시대 공통","canon":"확정","status":"완료","tags":["핵심 규칙","화약","기술 규칙"],"memo":"원문 §핵심 개념에는 없던 문서. 2026-07-31 정합성 점검에서 확정한 화약 판정 기준을 한 자리에 모은 것이다. 판정표와 '기술의 기준' 6개 문장은 점검 메모 §2·§3·§5에서 왔고 작가 승인을 받았다. 휴대 병기 계보는 작가 확인(올림피아드가 화포 소형화에 성공, 그것이 감독관의 무장)에 따른 것.","image":"resource/wiki/폭발과 연소.png","imageCaption":"화포의 노에시스 필터 구조","summary":[["한 줄 정의","[[노에시스]]가 무엇을 막고 무엇을 허용하는가에 대한 판정 기준"],["억제 기준","반응이 스스로를 증폭시키는가"],["가능","지속 연소 · 보일러 · 제철 · 전기 발전"],["제한적 가능","흑색화약의 느린 폭연 · 대형 화포"],["불가능","무연화약 · 고폭약 · 내연기관"],["휴대 화기","존재하지 않음. 예외는 [[올림피아드]]의 핸드캐논"]],"content":"# 폭발과 연소\n\n[[노에시스]]가 무엇을 막고 무엇을 허용하는지에 대한 판정 기준. 이 세계의 기술 수준은 거의 전부 이 문서에서 파생된다.\n\n## 기본 규칙\n\n일반적인 화염과 지속 연소는 가능하지만, 압력과 반응 속도가 서로를 증폭시키는 급격한 반응은 비활성 [[노에시스]]의 간섭을 받는다. 비활성 노에시스는 짧은 시간 안에 스스로 가속되는 발열 반응의 전파면을 붕괴시킨다.\n\n즉 억제의 기준은 '연소인가 아닌가'가 아니라 **반응이 스스로를 증폭시키는가**이다.\n\n## 판정표\n\n| 기술 | 가능 여부 | 비고 |\n|---|---|---|\n| 장작·석탄·코크스의 지속 연소 | 가능 | 지속 연소 |\n| 용광로·보일러 | 가능 | 외연기관 |\n| 제철·압연·증기 해머 | 가능 | 폭발이 아니라 열과 기계력을 쓴다 |\n| 전기 발전 | 가능 | |\n| 흑색화약의 느린 폭연 | 약하게 가능 | 표면연소 |\n| 굵은 약립의 대형 화포 | 조건부 가능 | 필터와 긴 포신이 필요 |\n| 무연화약의 빠른 고압 연소 | 거의 불가능 | 반응 전파가 붕괴 |\n| 니트로글리세린·다이너마이트·고폭약 | 불가능 | 폭굉 전파 붕괴 |\n| 내연기관 | 극도로 불안정 | 반복 점화가 유지되지 않는다 |\n\n## 화약 병기의 계보\n\n1. **일반 휴대용 총기** — 존재하지 않는다.\n2. **대형 화포** — '노에시스 필터'를 달아 약실 안에서만 노에시스를 걸러내는 방식. [[연합]]이 전 대륙 최초로 공개했다. 굵은 약립은 표면적이 작아 노에시스와 접촉하는 면적도 줄어들기 때문에, 연소는 느리지만 억제당하는 속도 역시 느리다. 그래서 긴 포신과 큰 약실을 가진 화포에서만 실용적인 압력을 만들 수 있고, 시제품이 사람 두세 명 크기가 되는 이유도 여기에 있다.\n3. **핸드캐논** — [[올림피아드]] 수준에서 화포의 소형화에 성공한 것. 사실상 한 사람이 들고 겨눌 수 있는 화약 병기이며, [[감독관]]의 무장에 포함된다. 대륙에서 이것을 본 사람은 극소수다.\n\n## 기술의 기준\n\n향후 기술·병기 설정을 판정할 때의 기준 문장.\n\n1. 노에시스는 공기를 대체하는 기체가 아니라, 대기와 중첩된 준물질이다.\n2. 노에시스는 일반적인 화염을 끄지 않고, 빠르게 자기증폭하는 발열 반응과 압력 전파를 억제한다.\n3. 흑색화약은 느린 표면연소 덕분에 제한적으로 작동하지만, 무연화약과 고폭약은 반응 전파가 붕괴한다.\n4. 밀폐·정화된 약실에서는 화약의 성능을 회복할 수 있지만, 필터의 부피와 냉각·재정화 시간 때문에 소형화와 연사가 어렵다.\n5. 증기기관, 용광로, 전기 발전과 금속 대량생산은 가능하지만, 내연기관과 고폭약은 실용성이 없다.\n6. 노에시스를 우회하는 기술은 존재하지만, [[연합]]의 독점과 국제조약, 희귀 소재 때문에 대량 보급되지 않는다.\n\n## 여담\n\n**이 세계는 '흑색화약 시대에 멈춘 세계'가 아니다.** 폭발화학만 흑색화약 부근에서 막히고, 증기·전기·재료공학·행정은 근현대까지 뻗었다. 대륙 규모 철도망, 제철소, 컨테이너선, 비행선이 존재하는 것과 모순되지 않는다. \"금속 대량생산이 존재하지 않는다\"는 구 설정은 폐기됐다.\n\n**폐기·보류 항목.**\n- 폐기: `금속 대량생산이 존재하지 않음` — 위와 같은 이유.\n- 폐기: `활과 석궁은 총보다 불편하므로 거의 사용하지 않음` — 휴대용 총기가 없는 세계에서 석궁이 사라질 이유가 없다. 오히려 보병 원거리 무기의 표준이 될 쪽이다. 대체 무기(강철 활대 석궁, 레버식 연발 석궁, 압축공기총, 증기 공성포, 고정식 방전 병기)에 각각 결함을 부여하는 방향이 남아 있다. 아직 안 씀.\n- 보류: 원자력이 불가능한 이유. 핵분열은 화학적 연소가 아니므로 위 규칙으로는 막히지 않는다. '아직 발견하지 못했다'로 두는 쪽과 '노에시스가 자유 중성자에도 간섭한다'는 성질을 추가하는 쪽 중 미결.\n\n**화약 입도는 설정을 고치기로 확정**. 옛 설정은 \"화약의 분말이 굵을수록 더 강력한 폭발력을 가진다\"였는데 현실의 입도 원리와 반대였다. 위 「화약 병기의 계보」 2항이 고친 판이다 — 굵은 약립은 표면적이 작아 노에시스와 접촉하는 면적도 줄어들므로, 연소는 느리지만 억제당하는 속도 역시 느리다.\n\n**작품 어디에도 나오지 않는다.** 설정 원고 3,271줄, 대본 22편, 추출 텍스트 470페이지를 통틀어 `권총` `소총` `머스킷` `볼트액션` `리볼버` `라이플` `산탄` `총기` `방아쇠` `탄환` `총구` `총알` `장전` `탄약` `사격` `저격`은 전부 0건이다. 유일한 휴대 화기는 [18편. 가족, 가족과….md:176](../../script/가문과%20가족%202부/18편.%20가족,%20가족과….md:176)의 타게니아 대사 한 줄이다. 정리 문서 44행에 링크된 Google Docs 「세계관 초안」은 확인하지 못했다.","parentId":"noesis"},{"title":"핵심 개념","id":"core-concepts","type":"개념","folder":"01_핵심 규칙","sortOrder":0,"era":"시대 공통","canon":"확정","status":"작성 중","tags":["핵심 규칙"],"memo":"원문(세계관 정리.md 46~52행)의 두 원칙 문장을 그대로 옮김. 하위 6항목은 원문 순서대로.","image":"","imageCaption":"","summary":[["성격","이 세계의 규칙을 적는 자리"],["원칙","반드시 '진실'만 작성한다"],["하위 항목","7밋"],["심화 미작성","[[노에마]] · [[노모스]] · [[누스]] — 작가 메모에 따름"]],"content":"# 핵심 개념\n\n```틀\n핵심 개념\n```\n\n**해당 페이지는 일종의 ‘규칙’을 써두는 공간으로, 반드시 ‘진실’만 작성되어 있음.**\n\n**메모) 노에마, 노모스, 누스 개념은 추후 실제 구현 과정에서 극적인 효과를 위해 설정이 변동될 수 있으므로, ‘심화’까지는 작성하지 않도록 함.**\n\n## 하위 문서\n\n- [[노에시스]] — 사고에서 분비되는 준물질. 이 세계와 현실의 근본적 차이\n  - [[폭발과 연소]] — 노에시스가 무엇을 막고 무엇을 허용하는가\n- [[노에마]] — 노에시스를 사용한 초자연적 행위의 총칭\n- [[노모스]] — 활성 노에시스만 존재하게 된 영역\n- [[누스]] — 사람 이외에 노에시스를 분비하는 물질\n- [[카시마르]] — 노에시스에서 발원한 존재\n- [[바다]] — 대륙을 갈라놓는 고농도 노에시스\n- [[바다 민족]] — 신대륙에 최초로 도달한 구대륙의 민족\n\n## 여담\n\n- 원문 §핵심 개념에는 노에시스·노에마·노모스·누스·바다·바다 민족 6항목만 있다. [[카시마르]]는 원고에서 §1 신성제국사에 흩어져 있던 것을, 그렌빌리아 대륙 전체에 퍼져 있는 존재라는 점에 따라 이 자리로 올렸다. 그래서 정사 등급이 다른 항목보다 낮다.\n- 위 '메모)' 원칙에 따라 [[노에마]] · [[노모스]] · [[누스]]에는 `심화` 절을 쓰지 않았다. [[노에시스]]에만 있다.","parentId":null},{"title":"건국의 아버지들","id":"founding-fathers","type":"세력","folder":"02_지역","sortOrder":50,"era":"근대","canon":"확정","status":"완료","tags":["연방","의회","해체","건국"],"memo":"원문 302~306행 문장 그대로. 작가 확인(2026-07-31)으로 두 가지가 확정됐다 — 이들은 연말 위기 쿠데타의 '대상'이었고 현재 완전히 와해되었으며, 서사 시점에 먼로가 헌병을 부리는 장면은 전부 과거 회상이다. 대본 용어사전은 이들을 현재 기능하는 기구처럼 적고 있는데, 사전이 스포일러를 피하는 서술 방침이므로 의도된 것으로 보고 손대지 않았다.","image":"resource/wiki/건국의 아버지들.png","imageCaption":"건국의 아버지들의 상징","summary":[["원어","Founding Fathers"],["출신","[[신성제국]]에서 이탈한 유력 귀족 가문"],["성격","최상위 의결 기구 — 만장일치, 법적 논의의 바깥"],["파벌","대부분 [[철도파]] 강경 계열"],["표어","여럿으로 이루어진 하나."],["알려진 인물","[[먼로]] · [[애덤스]]"],["현재","와해 — [[연말 위기]] 쿠데타의 대상"],["남긴 것","혈족에게 이어지는 [[헌병대]] 지휘권"]],"content":"# 건국의 아버지들\n\n**Founding Fathers**\n\n연방 건국의 주역이자, 과거 드레드노 제국의 유력한 귀족 가문. 소속된 의원 대부분이 철도파에 소속된 이들이었고, 철도 연합(유나이티드 레일로드)을 강경하게 추진하던 이들이었으나. ‘연말 위기’ 사건 이후 대부분의 인원을 잃고 의회에서 종적을 감추게 되었다.\n\n```표어\n여럿으로 이루어진 하나.\n```\n\n## 성격\n\n- **최상위 의결 기구.** 만장일치로 결정하며, 그 결정은 법적 논의의 바깥에 있다.\n- **[[신성제국]]에서 나왔다.** 드레드노 제국에서 이탈한 귀족 가문이 대륙 중부 소국들을 규합해 [[연방]]을 세웠다. 연방의 뿌리가 동부 열강에 있는 셈이다.\n- **철도 기술을 규합의 수단으로 썼다.** 대륙 중부 소국들의 철도 기술이 독보적이었고, 이들이 그것을 각 소국·대가문을 묶는 핵심 요소로 활용했다.\n- [[연합]]의 [[올림피아드]] 감독관들과 긴밀한 협력 관계를 맺고 있었다. 연방이 예상보다 강경해지자 연합은 이들을 통한 영향력 확대를 포기하고 반 연방 세력을 형성했다.\n\n## 와해\n\n[[연말 위기]] 당시 [[통일파]] 쿠데타의 **대상**이었다. [[철도파]] 강경 계열로서 전쟁을 강행하려 했고, 철도파 의원들과 함께 화재로 대부분 사망했다. 쿠데타가 성공했으므로 현재는 완전히 와해된 상태다.\n\n이들의 와해가 남긴 것이 두 가지다. 연방을 통합할 최상위 권위가 사라졌고, [[연합]]과 연방을 잇던 창구가 끊겼다.\n\n## 혈족\n\n지휘 계통이 혈통을 따라 남아 있다. [[연방 헌법]]을 매개체로 하는 [[헌병대]]는 건국의 아버지들의 혈족에게 반응하므로, [[애덤스]]의 딸인 [[세라]]가 민간인 신분으로 헌병을 부릴 수 있다.\n\n## 이름\n\n**Founding Fathers** — 미국 건국자들을 부르는 말을 그대로 가져왔다.\n\n이 세력과 그 직속 무력의 인물 이름이 모두 같은 계열이다.\n\n| 인물 | 실제 |\n|---|---|\n| [[먼로]] | James Monroe · 미국 5대 대통령 |\n| [[애덤스]] | John Adams · 2대 대통령 |\n| 벤자민 | Benjamin Franklin |\n\n벤자민은 [[헌병대]] 소속이며, 대본 전체에서 헌병이 이름으로 불리는 유일한 자리다(18편). **이 기구와 이 기구가 부리는 무력의 이름이 같은 우물에서 나온다**는 뜻이고, 헌병의 지휘권이 혈족을 따른다는 설정과도 겹친다.\n\n## 알려진 인물\n\n- [[먼로]] — 지도자\n- [[애덤스]] — 지도자. [[세라]]의 아버지\n\n## 관련 문서\n\n- [[연방]]\n- [[연말 위기]]\n- [[철도파]] · [[통일파]]\n- [[연방 헌법]] · [[헌병대]]\n- [[신성제국]] · [[올림피아드]]\n\n## 여담\n\n**오해하기 쉬운 자리다.** 대본 [[인물관계도]]에 \"앤드루 - 먼로 | ?무슨 사이 | 용병을 부려 연방 전역의 지하를 파헤치고도, 국가로부터 아무런 제지를 받지 않는다\"가 있어, 먼로가 서사 시점에 실권을 쥔 것으로 읽었다. 그러나 **서사 시점에 먼로가 나오는 장면은 전부 과거 회상**이다. 그 관계의 라벨이 '?무슨 사이'인 것은 아직 밝혀지지 않은 관계라는 표시이므로, 앤드루가 제지받지 않는 이유는 별개의 미공개 사안으로 남는다.\n\n**건국의 아버지들이 신성제국 출신이라는 점이 크다.** [[연방]]과 [[신성제국]]은 서사에서 강과 산맥으로 갈려 거의 접점이 없는데, 연방의 창건자들이 그쪽에서 이탈한 귀족이다. 두 국가 사이에 아직 쓰이지 않은 실이 하나 있는 셈이다.","parentId":"federation"},{"title":"경찰청","id":"police","type":"세력","folder":"02_지역","sortOrder":80,"era":"서사 시점","canon":"확정","status":"완료","tags":["연방","치안","무력"],"memo":"원문 319~320행 문장 그대로.","image":"resource/wiki/경찰청.png","imageCaption":"파출소 풍경","summary":[["소속","[[의회]] 산하"],["성격","연방의 중앙 치안조직"],["설치 단위","각 주마다 관할 경찰청"],["두 갈래","직속 경찰 (경찰서) / 허가 경찰 (파출소)"],["비중","파출소의 수가 압도적으로 많다"],["확대 계기","[[연말 위기]] 비무장화로 인한 치안 공백"],["마찰","[[보안관]]과의 관할 분쟁"],["정치적 통로","[[통합파]]"]],"content":"# 경찰청 🗡️\n\n연방 의회 산하의 치안조직. 각 주마다 관할 경찰청을 두는 형태로 운영되고 있으며, 경찰청에 직접 소속된 직속 경찰과, 경찰청의 허가만 받고 개별적으로 치안 활동을 유지하는 ‘경찰대’가 별도로 존재한다. 이들의 기반이 ‘경찰서’인지, ‘파출소’인지에 따라 소속 경찰과 허가 경찰을 구분할 수 있으며, 파출소의 수가 압도적으로 많다.\n\n## 두 종류의 경찰\n\n| | 기반 | 소속 | 수 |\n|---|---|---|---|\n| 직속 경찰 | 경찰서 | 경찰청 직속 | 적다 |\n| 허가 경찰 (경찰대) | 파출소 | 허가만 받은 개별 조직 | 압도적으로 많다 |\n\n허가 경찰은 경찰청의 허가만 받고 개별적으로 치안 활동을 유지하므로, 경찰대에 따라 [[보안관]]과 협력하는 경우도 다수 제보된다.\n\n## 0호 비상사태\n\n경찰 인력을 즉시 투입해야 하는 최고 등급의 비상 지령이다. 지령문은 이렇게 내려온다.\n\n```조문\n[‘0호 비상사태’ 발생. 해당 메시지를 수신하는 즉시, 연방 의회로 경찰 인력을 투입할 것.]\n— 0호 비상사태 지령문, 12편\n```\n\n12편에서 이 지령이 **조작되어** 발신되고, 경찰청 전체가 흔들린다. 전임 청장의 이름으로 내려온 지령이라 현직 청장도 즉시 부정하지 못한다는 점이 문제의 핵심이다.\n\n## 무장 문제\n\n비무장국가의 치안조직이므로 무엇을 들 수 있는지가 계속 쟁점이 된다.\n\n- 9편 — 동방주에서 심야 조례를 앞세운 경찰 **무장해제**가 [[보안관]]에 의해 현장 집행된다.\n- 13편 — \"동부 경찰청에서 ‘살상용 무기’를 무장하고 있다\"는 정보가 의회로 올라가, 무장해제 조례의 명분이 된다.\n\n## 관련 문서\n\n- [[연방]] · [[의회]] · [[통합파]]\n- [[0호 비상사태]]\n- [[보안관]] — 관할을 다투는 상대\n- [[기동대]] — 인력을 제공하는 곳\n- [[헌병대]]\n- [[연말 위기]] — 확대의 계기\n\n## 여담\n\n**숫자로 메운 공백이다.** 비무장화로 정규군이 사라진 자리를 연방은 경찰대를 엄청나게 늘려 메웠다. 그 결과가 '파출소가 압도적으로 많은' 구조이고, 질이 아니라 양으로 버티는 치안이 된다.\n\n**허가 경찰이 회색지대다.** 허가만 받고 개별적으로 운영되므로 통제가 느슨하다. 그래서 [[보안관]]과 협력하기도 하고, 아예 외부 세력에게 통째로 장악되기도 한다. 9편에서 동방주의 한 경찰대가 \"저희 조직원들로 완전히 장악\"되었다는 보고가 나온다.\n\n**중앙 기구라는 점이 정치적으로 중요하다.** [[통합파]]가 [[철도청]]과 함께 경찰청을 힘의 통로로 쓴다. 반대편의 [[자치파]]는 [[대가문]]과 [[보안관]]을 쓴다. 현장의 관할 다툼이 곧 의회의 파벌 다툼이다.","parentId":"federation"},{"title":"그렌빌리아 대륙","id":"grenvillia","type":"지역","folder":"02_지역","sortOrder":0,"era":"시대 공통","canon":"확정","status":"작성 중","tags":["대륙","Vol.1","신대륙"],"memo":"원문 §1 지역의 대륙 머리글(161~172행)은 작성 지침 두 줄뿐이어서, 이 문서의 개요는 §1 각 국가 항목과 §핵심 개념에서 확인된 사실을 모은 것이다. 하위 국가 문서는 아직 착수하지 않음.","image":"resource/wiki/그렌빌리아 대륙.png","imageCaption":"그렌빌리아 대륙 지도","summary":[["구분","신대륙"],["권","Vol.1"],["노에시스 포화도","70 — 대륙 중 최고"],["열강","[[연방]] · [[신성제국]] · [[연합]] · [[컴퍼니]]"],["중견국·약소국","8"],["정착 계보","동부 분지 바실리아 / 서부 반도 헬라스"],["특이사항","[[카시마르]]가 전역에 분포"],["기술 외형","스팀펑크 — [[올림피아드]]의 증기기관 전파"]],"content":"# 그렌빌리아 대륙\n\nVol.1의 무대. [[노에시스]] 포화도가 가장 높은 신대륙이다.\n\n## 대륙의 성격\n\n- **신대륙**이다. 구대륙인 [[판게아 대륙]]에서 [[바다 민족]]이 건너와 정착했고, [[대전쟁]]의 영향권 밖이었다.\n- 바다 민족은 두 갈래로 갈라져 정착했다. 동부 분지에 정착한 쪽이 바실리아 공동체 → 훗날의 [[신성제국]], 서부 반도에 정착한 쪽이 헬라스 공동체 → 훗날의 [[연합]]이다.\n- [[노에시스]] 포화도 **70**으로 대륙 중 가장 높다. 그래서 '폭발'이 거의 발생하지 않으며, 이 대륙의 기술 수준 전체가 그 제약에서 파생된다. → [[폭발과 연소]]\n- [[카시마르]]가 대륙 전역에 퍼져 있다.\n- 대륙 전체가 스팀펑크의 외형을 띠는 것은 [[연합]]의 [[올림피아드]]가 증기기관을 전 대륙에 전파했기 때문이다.\n\n## 이름\n\n**그렌빌**(Grenville) — 초대륙 로디니아를 만든 조산운동의 이름이다. [[세계관 대문]]의 방침 \"과거 존재했던 초대륙들을 하나씩 차용\"이 대륙 이름에 그대로 적용되어 있다.\n\n| 대륙 | 실제 |\n|---|---|\n| **[[판게아 대륙]]** | Pangaea. 가장 유명한 초대륙 — 유일한 구대륙이다 |\n| **[[로디니아 대륙]]** | Rodinia |\n| **[[판노티아 대륙]]** | Pannotia |\n| **그렌빌리아** | Grenville 조산운동 |\n\n넷 중 판게아만 구대륙이고 나머지가 신대륙인 것도, 판게아가 이름의 무게에서 가장 크다는 점과 맞는다. → [[대전쟁]]\n\n## 열강\n\n| 국가 | 위치 | 핵심 키워드 | 서사에서의 축 |\n|---|---|---|---|\n| [[연방]] | 대륙 중부 요충지 | 행정 · 철도 · 치안 | 대륙 서사의 핵심 축 |\n| [[신성제국]] | 대륙 동부 분지 | 교육 · 기사 · 선박 | [[노에시스]] 서사의 핵심 축 |\n| [[연합]] | 대륙 서부 반도 | 과학 · 기술 · 외교 | 대륙 발전 서사의 핵심 축 |\n| [[컴퍼니]] | 대륙 북부 | (미착수) | (미착수) |\n\n## 중견국 · 약소국\n\n[[카고르예 공화국]] · [[루블린 공국]] · [[오흐리드 왕국]] · [[칼리아리 왕국]] · [[팔레르 기사단국]] · [[헬베티 공국]] · [[바나토국]] · [[쾨벤하운 인민연합]]\n\n## 멸망한 국가\n\n[[크레스티아 제국]] — 구 패권국. [[연방]]과의 전쟁 중 내부 반란으로 해체되었고, 영토의 80%는 연방이, 20%는 [[컴퍼니]]가 차지했다.\n\n## 여담\n\n**이 폴더의 문서 규칙.** 원고 §1 지역의 머리글(161~172행)에 적혀 있다.\n\n- 문서 제목은 고유 명칭을 제외한 **'체제'만** 쓴다. 그래서 제목이 `연방`이고 '미트로프'는 본문 부제로 간다.\n- 국가 문서에는 **'짤막한 역사'와 '이해집단'**만 쓴다.\n- 이해집단은 **그 국가에 직접 속해 있고 영향력을 행사할 수 있는 세력만** 적는다. 그렇지 않은 세력은 `03_세력` 폴더로 따로 분류한다.\n\n**시점이 섞이는 자리.** 위 「중견국 · 약소국」의 [[쾨벤하운 인민연합]]은 서사 시점에는 존재하지 않는다. 서사 시점 중에 [[연방]] 북방주에서 독립해 신생국이 되는 것이므로, 이 목록은 위키 기준 현재의 지도다. 국가 문서를 쓸 때 각각의 `시대` 값을 따로 봐야 한다.\n\n**아직 안 읽은 구간.** [[컴퍼니]](원문 689~836행), 중견국 8개국(836~1037행), [[크레스티아 제국]](1037~1094행)은 아직 읽지 않았다. 위 표와 목록의 이름은 목차에서 딴 것이므로, 각 문서를 쓸 때 내용을 확인해야 한다.","parentId":null},{"title":"기동대","id":"mobile-corps","type":"세력","folder":"02_지역","sortOrder":110,"era":"서사 시점","canon":"확정","status":"완료","tags":["연방","철도","무력","치안"],"memo":"원문 329~330행 문장 그대로. 대본 용어사전은 기동대를 '철도청 국내지부의 무력 조직'이라 적는데, 원문은 인력 조달 구조까지 설명한다. 모순이 아니라 보완 관계로 보아 둘 다 반영했다.","image":"resource/wiki/기동대.png","imageCaption":"기동대의 열차 작전","summary":[["소속","[[철도청]] 산하"],["성격","철도 수비를 위한 치안조직"],["주 소속","국내지부"],["인력 조달","[[경찰청]]과 [[보안관]]에게 제공받는다"],["조달 이유","철도청의 중립성과 힘의 균형 유지"],["특화","철도를 중심으로 수행하는 작전"],["평가","연방 내 어떤 무장조직보다 유연하고 기동성이 뛰어나다"]],"content":"# 기동대 🗡️\n\n철도청 산하의 치안조직. 철도 수비를 위한 조직으로, 철도청의 중립성과 힘의 균형을 유지하기 위해 경찰청과 보안관에게 인력을 제공받아 유지되는 무력조직이다. 철도를 중심으로 수행하는 작전에 특화되어 있어, 연방 내 어떤 무장조직보다 유연하고, 뛰어난 기동성을 자랑하기도한다.\n\n## 기록이 남는다\n\n기동대를 움직이면 **반드시 기록이 남는다.** 2편에서 [[네빌]]이 외부 업체 대신 기동대를 쓰자고 제안하자 [[앤드루]]가 거절하는 근거가 이것이다.\n\n```대사\n[기동대]를 움직이면 반드시 기록이 남잖나, 이런 일에는 적합하지 않아.\n— 앤드루, 2편\n```\n\n기록에 남기고 싶지 않은 일에는 대신 [[하노버 용병단]] 같은 외부 세력을 쓴다. 연방에서 가장 빠른 무력을 손에 쥐고도 굳이 용병을 사는 이유가 여기 있다.\n\n## 관련 문서\n\n- [[연방]] · [[철도청]]\n- [[하노버 용병단]] — 기록을 남기지 않으려 할 때의 대체 수단\n- [[경찰청]] · [[보안관]] — 인력을 제공하는 두 조직\n- [[헌병대]]\n- [[잭슨의 형제단]] — 열차를 노리는 상대\n\n## 여담\n\n**인력 조달 방식이 이 조직의 성격이다.** [[경찰청]](중앙)과 [[보안관]](대가문) 양쪽에서 사람을 받는다. 어느 한쪽에 기울지 않게 만든 장치이고, 그래서 [[철도청]]이 '중립'을 주장할 수 있다. 반대로 말하면 기동대 안에 이미 두 진영의 사람이 섞여 있다는 뜻이기도 하다.\n\n**연방에서 가장 빨리 움직이는 무력이다.** [[헌병대]]는 법적 절차 때문에 사실상 움직이지 못하고, 경찰은 관할에 묶이고, 보안관은 지역에 묶인다. 기동대만 철도를 타고 전국을 오갈 수 있다. 비무장국가에서 가장 실용적인 무력이 철도 부처 산하에 있다는 구조다.\n\n**열차 강도와 짝을 이룬다.** [[잭슨의 형제단]]이 열차만 노리므로, 기동대의 상대는 사실상 이들이다.","parentId":"federation"},{"title":"대가문","id":"great-houses","type":"세력","folder":"02_지역","sortOrder":60,"era":"서사 시점","canon":"확정","status":"작성 중","tags":["연방","대가문","기성 권력"],"memo":"원문 308~312행 문장 그대로. 작가 확인(2026-07-31)으로 북부 대가문의 계보가 정리됐다 — 쾨벤하운 시절의 귀족이 아니라 중부에서 옮겨간 가문이다. 대본 18편 55행에서 6개 가문의 이름을 확인했고, 그 여섯이 독립 가담 가문이다(작가 확인). 남은 7개는 미정.","image":"resource/wiki/대가문.png","imageCaption":"대가문의 문장","summary":[["소속","[[연방]]"],["성격","기성 권력층"],["기원","대륙 중부의 소국들과 귀족 공동체"],["가문 수","13개 — 이름 확인은 6개"],["북부 3가문","[[스프링필드]] · [[콩코드]] · [[하트퍼드]]"],["그 외 확인된 가문","[[도버]] · [[윌밍턴]] · [[밀퍼드]]"],["의회 진출","대부분 [[자치파]]"],["산하 무력","[[보안관]]"],["가문 간 관계","천차만별"],["표어","품위, 엄숙함, 교양"]],"content":"# 대가문\n\n```틀\n연방\n```\n\n기존 대륙 중부에 위치해있던 소국들과 귀족 공동체들로 구성된 기성 권력층. 대부분 ‘자치파 의원’으로 의회에 진출해있으나, 의회에서 활동하지 않는 대가문 유력자들도 상당수 존재한다. 13개의 대가문이 존재하며, 각 대가문들끼리의 관계도 천차만별인 점이 특징이다.\n\n```표어\n품위, 엄숙함, 교양\n```\n\n## 알려진 가문\n\n13개 중 6개의 이름이 확인된다. 18편에서 [[데이비스]]가 독립 선언문을 읽으며 여섯 가문을 한 줄로 부르는데, 이 여섯이 곧 **독립에 가담한 가문들**이다.\n\n```대사\n콩코드, 하트퍼드, [스프링필드]! 그리고 도버, 윌밍턴, 밀퍼드 가문의 인민들은!!\n— 데이비스, 18편 독립 선언\n```\n\n- **북부 3가문** — [[스프링필드]] · [[콩코드]] · [[하트퍼드]]. 북부 지역의 실질적인 지배세력이다.\n- **그 외** — [[도버]] · [[윌밍턴]] · [[밀퍼드]]\n\n나머지 7개 가문은 이름이 정해지지 않았고, 독립에 가담하지 않은 쪽이다.\n\n## 이름\n\n확인된 여섯 가문이 모두 **미국 동부의 실재 도시**이며, 그중 넷이 주도(州都)다.\n\n| 가문 | 실제 |\n|---|---|\n| [[스프링필드]] | Springfield · 일리노이 주도 |\n| [[콩코드]] | Concord · 뉴햄프셔 주도 |\n| [[하트퍼드]] | Hartford · 코네티컷 주도 |\n| [[도버]] | Dover · 델라웨어 주도 |\n| [[윌밍턴]] | Wilmington · 델라웨어 |\n| [[밀퍼드]] | Milford · 코네티컷 · 델라웨어 |\n\n**주도 이름이 많은 것이 이 세력의 성격과 맞는다.** 원래 소국이었다가 '주'로 편입된 집단이기 때문이다. 미정인 7개 가문의 이름을 지을 때 이 계열을 이어가면 된다.\n\n## 북부 대가문의 계보\n\n북방주는 [[연방]]이 병합한 쾨벤하운 왕국의 땅이지만, 그곳의 대가문은 쾨벤하운 시절의 귀족이 아니다. **중부에서 옮겨간 가문들**이다. 서부개척시대에 서부로 건너간 이들과 비슷한 위치라고 보면 된다.\n\n병합 당시 쾨벤하운 왕가는 명목상 연방의 ‘대가문’으로 위치할 수 있었으나 얼마 지나지 않아 모두 종적을 감추었고, 남은 쾨벤하운 귀족들은 종적을 감추거나 일반적인 연방 국민으로 살아간다.\n\n## 관련 문서\n\n- [[연방]]\n- [[의회]] · [[자치파]]\n- [[보안관]] — 대가문 산하의 치안조직\n- [[명백한 운명]] — 내전에서 분쇄된 대가문들의 잔존 세력\n\n## 여담\n\n**연방 안의 또 하나의 국가들이다.** 원래 소국이었던 집단이 '주'로 편입되면서 자치권과 각자의 철도 체계를 인정받았다. 그래서 대가문은 자기 영지에 자기 철도와 자기 무력([[보안관]])을 가진다. [[연방]]이 궤간을 통일하지 못하는 이유도, [[경찰청]]과 [[보안관]]이 관할을 다투는 이유도 여기서 나온다.\n\n**의회 밖의 유력자가 중요하다.** \"의회에서 활동하지 않는 대가문 유력자들도 상당수 존재한다\"는 한 줄이 서사에서 큰 자리를 차지한다. 가주와 보안관은 의원이 아니면서 지역을 실질적으로 지배한다.\n\n**미정 7개.** 확인된 여섯 이름(스프링필드 · 콩코드 · 하트퍼드 · 도버 · 윌밍턴 · 밀퍼드)이 모두 미국 동부의 실재 도시명 계열이다. 나머지를 지을 때 참고할 수 있다.\n\n**13개 가문이 6 대 7로 갈렸다**. 독립 선언에서 불린 여섯이 가담한 쪽이고, 남은 일곱이 연방에 남은 쪽이다. 이름이 확인된 가문이 전부 독립파라는 뜻이며, 뒤집어 말하면 **연방에 남은 일곱 가문은 아직 아무 이름도 없다.** [[미트로프 내전]]에서 독립파가 분쇄되므로, 그 뒤 연방의 대가문 층은 이 일곱만 남는다. 이름을 지을 때 그쪽이 더 중요할 수 있다.\n\n**도버는 보안관 이름으로도 확인된다.** 9편에서 [[필립]]이 \"나 민원인 아니고 도버 가 보안관이요\"라 말하며 동방주 경찰 무장해제를 집행한다. 즉 도버는 동방주 쪽 가문으로 보인다.","parentId":"federation"},{"title":"명백한 운명","id":"manifest-destiny","type":"세력","folder":"02_지역","sortOrder":200,"era":"현대(붕괴 이후)","canon":"확정","status":"작성 중","tags":["연방","음지","테러조직","붕괴 이후"],"memo":"원문 338~343행 문장 그대로. 작가 확인(2026-07-31)으로 시점이 정해졌다 — 미트로프 내전은 《가문과 가족》 후반부의 무력 충돌이고, 이 조직은 그 이후에 결성된다. 8편에서 데이비스가 쓰는 '명백한 운명'은 조직명이 아니라 관용구이며, 그를 잇겠다는 자들이 뒤에 그 말을 상징으로 채택한 것이다.","image":"resource/wiki/명백한 운명.png","imageCaption":"명백한 운명의 표식","summary":[["원어","Manifest Destiny"],["성격","거대한 테러조직"],["결성 계기","[[미트로프 내전]]에서 독립파 대가문들이 분쇄된 뒤"],["구성","잔존 세력"],["전력의 축","독립파에 가담했던 [[헌병대]] · [[보안관]]"],["목표","'연방의 붕괴' — 대가문과 연방 구성세력의 독립"],["동기","내전 패배에 대한 보복심리"],["세력 확장","사설 철도를 북부 [[컴퍼니]]로 확장"],["이름의 유래","[[데이비스]]의 말을 상징으로 채택"]],"content":"# 명백한 운명 🗡️\n\n**Manifest Destiny**\n\n‘미트로프 내전’으로 독립파에 가담한 대가문들이 분쇄된 이후, 그 잔존 세력들이 뭉쳐서 형성된 거대한 테러조직.\n\n내전에서 패배하게 되며 연방측을 향한 보복심리를 드러내며, 대가문들과 연방 구성세력들의 독립. 즉 ‘연방의 붕괴’를 ‘명백한 운명’으로 규정하며 최종적인 목표로 삼아 활동하고 있다.\n\n주로 독립파에 가담했던 헌병, 보안관을 중심으로 전력이 형성되어 있으며. 연방의 행정력이 크게 약화된 틈을 타 사설 철도를 북부 컴퍼니로 지속적으로 확장해나가며 세를 불리고 있다.\n\n## 이름\n\n**Manifest Destiny** — 19세기 미국의 팽창주의 표어를 그대로 가져왔다. 본래 \"미국이 대륙 전체로 뻗어나가는 것은 명백히 정해진 운명이다\"라는 뜻이었다.\n\n작품에서는 **뜻이 뒤집혀 쓰인다.** 팽창이 아니라 **해체**가 명백한 운명이라는 것이다 — [[대가문]]과 연방 구성세력의 독립, 즉 연방의 붕괴가 정해진 결말이라는 주장이다. [[연방]]의 다른 이름들(Founding Fathers, 미국 동부 도시명)이 건국 쪽에서 왔는데, 이 조직만 같은 우물에서 해체의 명분을 퍼올린다.\n\n조직명이 [[데이비스]]가 쓴 말에서 온 것도 같은 구조다. 서사 안에서 그 표현은 그저 관용구였고, 그가 조직을 만든 것도 아니다. 뒤에 그를 잇겠다고 하는 자들이 상징으로 채택했다.\n\n## 관련 문서\n\n- [[연방]] — 붕괴시키려는 대상\n- [[미트로프 내전]] — 결성의 계기\n- [[데이비스]] · [[자치파]] · [[북부동맹]] — 계보상의 앞자리\n- [[헌병대]] · [[보안관]] — 전력의 출처\n- [[컴퍼니]] — 사설 철도를 뻗는 방향\n- [[잭슨의 형제단]] — 자주 충돌하는 상대\n\n## 여담\n\n**시대가 '현대(붕괴 이후)'인 이유.** 결성 계기인 [[미트로프 내전]]이 《가문과 가족》 후반부이고, 조직 설명이 \"연방의 행정력이 크게 약화된 틈을 타\"를 전제한다. [[연방]] 문서 본체가 서사 시점인 것과 달리 이 문서만 시대가 뒤로 밀리는 이유다.\n\n**독립파의 무력이 그대로 넘어왔다.** 전력의 축이 [[헌병대]]와 [[보안관]]이다. 보안관은 대가문에 직접 소속된 무력이니 대가문이 등지면 함께 등지고, 헌병은 연방의 유일한 초자연 전력이다. 즉 연방을 지키던 두 무력이 연방을 무너뜨리는 쪽에 서 있다.\n\n**연방의 방식으로 연방을 무너뜨린다.** 목표는 연방의 붕괴인데 수단이 철도다. 사설 철도를 북부 [[컴퍼니]]로 뻗어 세를 불리는 방식은, [[건국의 아버지들]]이 철도로 소국들을 규합해 연방을 만든 것과 정확히 같은 수순이다.","parentId":"federation"},{"title":"보안관","id":"sheriffs","type":"세력","folder":"02_지역","sortOrder":90,"era":"서사 시점","canon":"확정","status":"완료","tags":["연방","치안","무력","대가문"],"memo":"원문 322~323행 문장 그대로.","image":"resource/wiki/보안관.png","imageCaption":"보안관의 복장과 표식","summary":[["소속","[[대가문]] 산하"],["성격","지역 치안조직"],["운영 형태","지역별로 소수가 활동"],["소속 관계","각 대가문에 직접 소속된 경우만 존재"],["마찰","[[경찰청]]과의 치안 관할 분쟁"],["협력","허가 경찰(경찰대)과 협력하는 사례 다수"],["정치적 통로","[[자치파]]"]],"content":"# 보안관 🗡️\n\n대가문 산하의 치안조직. 지역별로 소수의 보안관이 활동하는 형태로 운영되고 있으며, 경찰과 달리 각 대가문들에 직접 소속되어 있는 경우만 존재한다. 경찰들과의 치안 관할 분쟁으로 자주 충돌하는 편이지만, ‘허가 경찰’의 경우 경찰대에 따라 보안관과 협력하는 경우도 다수 제보되고 있는 편이다.\n\n## 관할 다툼의 실제\n\n9편에서 [[도버]] 가의 보안관 [[필립]]이 심야 조례를 앞세워 동방주 경찰의 무장해제를 현장에서 집행한다. 경찰이 법적 관할을 따지자 보안관의 대답은 이랬다.\n\n```대사\n관할이고 뭐고.\n— 필립, 9편\n```\n\n법조문보다 그 땅을 실제로 쥔 쪽이 앞선다는 태도이며, 이 편의 다른 장면에서는 \"여기서는 법보다 더 가까운 게 있는 거야\"라는 말도 나온다. 관할 분쟁이 법리 문제가 아니라 실효 지배 문제라는 뜻이다.\n\n## 관련 문서\n\n- [[연방]] · [[대가문]] · [[자치파]]\n- [[필립]] · [[레밍턴]] — 대본에 등장하는 보안관\n- [[도버]] · [[스프링필드]]\n- [[경찰청]] — 관할을 다투는 상대\n- [[기동대]] — 인력을 제공하는 곳\n- [[명백한 운명]] — 독립파에 가담한 보안관들이 전력의 축을 이룬다\n\n## 여담\n\n**경찰과 정반대의 구조다.** [[경찰청]]이 파출소를 잔뜩 깔아 양으로 버티는 반면, 보안관은 지역별로 소수만 활동하고 전원이 대가문에 직접 소속된다. 허가 경찰 같은 회색지대가 없다. 그래서 개별 보안관의 위상과 역량이 경찰 한 명보다 훨씬 높다.\n\n**관할 다툼이 곧 국체 문제다.** 연방의 중앙 기구인 경찰과 대가문의 사병인 보안관이 같은 땅에서 치안을 다툰다. 어느 쪽이 그 지역을 실질적으로 지배하는지를 매번 현장에서 정하는 셈이고, 그것이 [[통합파]]와 [[자치파]]의 대립을 현장 층위에서 반복한다.\n\n**붕괴기의 전력이 된다.** [[명백한 운명]]이 독립파에 가담했던 헌병과 보안관을 중심으로 전력을 꾸린다. 대가문에 직접 소속된 무력이라, 대가문이 연방을 등지면 그대로 반연방 전력이 된다.","parentId":"federation"},{"title":"북방주","id":"north-state","type":"지역","folder":"02_지역","sortOrder":310,"era":"서사 시점","canon":"확정","status":"작성 중","tags":["연방","행정구역","북방주","쾨벤하운"],"memo":"원고에 지역 항목이 없어 대본과 배경 에셋에서 만든 문서다. 등록 배경에 '전쟁 중' 변형(북방주_골목_전쟁_중 · 북방주_대로변_전쟁_중)이 있어 미트로프 내전의 전장임을 확인했다. 북부 대가문이 중부에서 옮겨간 가문이라는 것은 작가 확인(2026-07-31).","image":"resource/wiki/북방주.png","imageCaption":"북방주 대로변","summary":[["소속","[[연방]]"],["본래","쾨벤하운 왕국 — [[연방]]이 병합해 본토로 편입"],["지배 세력","[[스프링필드]] · [[콩코드]] · [[하트퍼드]]"],["정치 기반","[[자치파]]"],["치안","[[보안관]]"],["등록 배경","9장 (전쟁 중 변형 2장 포함)"],["훗날","[[북부동맹]]으로 독립 선언 → [[미트로프 내전]]의 전장"]],"content":"# 북방주\n\n```틀\n연방\n```\n\n[[연방]]의 북부. 본래 **쾨벤하운 왕국**이었고, 연방이 병합해 본토로 편입한 땅이다. 북부 3[[대가문]]의 지배 아래 있다.\n\n## 병합의 흔적\n\n연방의 첫 정복지다. 철도를 통한 기동 작전으로 함락되고 통째로 병합되었으며, 왕국은 지도에서 사라졌다. 쾨벤하운 왕가는 명목상 연방의 [[대가문]]이 되었으나 얼마 지나지 않아 종적을 감추었다.\n\n그래서 지금 이 땅의 대가문은 **쾨벤하운 시절의 귀족이 아니다.** [[스프링필드]]·[[콩코드]]·[[하트퍼드]]는 중부에서 옮겨간 가문들이다. 서부개척시대에 서부로 건너간 이들과 비슷한 위치다. 남은 쾨벤하운 귀족들은 종적을 감추거나 평범한 연방 국민으로 살아간다.\n\n[[연말 위기]]의 최후통첩에는 \"과거 연방이 편입한 쾨벤하운 왕국을 독립시킬 것\"이 들어 있었다. 연방은 **완전한 비무장화**를 대가로 내주고 이 땅만은 지켰다.\n\n## 정치적 위치\n\n[[자치파]]의 지역 기반이다. [[대가문]]과 [[보안관]]이 실질적으로 지배하며, [[경찰청]]의 중앙 통제가 가장 약한 곳이다. 5편에서 \"북방주 관할의 경찰력은 모두 마비시켜두었어요\"라는 보고가 올라오는 것도 이 구조에서 가능하다.\n\n[[잭슨의 형제단]]이 원래부터 활동하던 곳이기도 하다. 연방 열차 강도 사건의 7할이 이 지역에서 나온다.\n\n## 장소\n\n| 장소 | 나오는 자리 |\n|---|---|\n| **[[스프링필드]] A 역 · H 역** | 1편의 도착지. [[네빌]]이 열두 번 환승해 닿는다 |\n| **[[스프링필드]] 저택** | 3편의 습격, 20편의 폐허. 길가·로비·복도 배경이 따로 등록되어 있다 |\n| **하트퍼드 저택** | 저택과 저택 앞 배경이 아침 시각으로 등록되어 있다 |\n| **매표소 · 술집 · 골목 · 대로변** | 지역의 일상 |\n\n## 전쟁\n\n등록된 배경에 **`북방주_골목_전쟁_중`과 `북방주_대로변_전쟁_중`**이 있다. [[스프링필드]] 저택 길가에도 전쟁 중 변형이 있다.\n\n즉 이 주는 [[미트로프 내전]]의 전장이 된다. [[북부동맹]]의 독립 선언에서 불린 여섯 가문 중 셋이 이곳의 가문이고, 내전에서 독립파가 분쇄된 뒤 그 잔존 세력이 [[명백한 운명]]이 된다.\n\n## 관련 문서\n\n- [[연방]] · [[대가문]] · [[보안관]] · [[자치파]]\n- [[스프링필드]] · [[콩코드]] · [[하트퍼드]]\n- [[북부동맹]] · [[미트로프 내전]] · [[명백한 운명]]\n- [[잭슨의 형제단]]\n- [[수도주]] — 대비되는 지역 기반\n\n## 여담\n\n**정복지가 독립의 진원이 된다.** 연방이 비무장화까지 감수하며 지킨 땅이, 결국 연방에서 떨어져 나가려는 쪽의 중심이 된다. 병합 과정에서 [[철도파]]가 \"본토로 편입해 빠르게 철도망을 개발해야 한다\"며 [[통일파]]의 준주·자치주 편입론을 눌렀는데, 소화되지 않은 채 편입된 결과가 여기서 돌아온다.\n\n**아직 모르는 것.** 쾨벤하운 왕가가 \"종적을 감추었다\"는 것의 실제 의미. 그리고 위키 기준 현재의 [[쾨벤하운 인민연합]]이 이 땅에서 어떻게 다시 국가가 되는지.","parentId":"federation"},{"title":"수도주","id":"capital-state","type":"지역","folder":"02_지역","sortOrder":300,"era":"서사 시점","canon":"확정","status":"작성 중","tags":["연방","행정구역","수도주"],"memo":"원고에 지역 항목이 없어 대본과 배경 에셋에서 만든 문서다. 이름은 대본을 따랐다 — 원고의 '중심주'가 아니라 '수도주'(대본 85건 : 원고 1건). 등록된 배경 에셋 12장으로 실제 등장 장소를 확인했다.","image":"resource/wiki/수도주.png","imageCaption":"수도주 의회 거리","summary":[["소속","[[연방]]"],["성격","연방의 수도주"],["있는 것","[[의회]] · [[경찰청]] · [[철도청]]"],["정치 기반","[[통합파]]"],["주요 장소","연방의회 건물 · 광장 · 의회 거리 · 의원실 · 중앙역"],["등록 배경","12장"]],"content":"# 수도주\n\n```틀\n연방\n```\n\n[[연방]]의 수도가 있는 주. **연방의 중앙 기구가 모두 이곳에 있다** — [[의회]], [[경찰청]], [[철도청]].\n\n## 정치적 위치\n\n[[통합파]]의 지역 기반이다. 통합파가 [[경찰청]]·[[철도청]]이라는 중앙 기구를 통해 힘을 쓰는 것도, 그 기구들이 여기 있기 때문이다. 반대편의 [[자치파]]는 [[북방주]]·동방주를 기반으로 [[대가문]]·[[보안관]]을 쓴다.\n\n즉 수도주는 **연방이라는 중앙 체제 그 자체가 서 있는 자리**다. 그래서 《가문과 가족》 2부에서 온 세력이 이곳으로 모이고, 의회 하나에서 판이 세 번 뒤집힌다.\n\n## 장소\n\n| 장소 | 나오는 자리 |\n|---|---|\n| **연방의회 건물** | [[의회]]의 본회의장. 군사 소집·정책 결정·법안 발의가 모두 여기서 결정된다. 11~18편의 무대 |\n| **광장** | [[헌병대]]가 나타나는 자리. 6편에서 [[세라]]가 헌병과 만난다 |\n| **의회 거리** | 아침·낮·저녁 세 시각의 배경이 따로 등록되어 있다. 의회 소집일의 흐름을 이 거리로 보여준다 |\n| **의원실** | 7편에서 [[잭]]이 텅 빈 사무실에서 발버둥을 결심하는 자리 |\n| **중앙역** | 수도주의 철도 관문 |\n| **골목 · 뒷골목 · 대로변** | 아침·낮·저녁 변형이 등록되어 있다 |\n\n## 광장의 이야기\n\n수도주에 사는 아이들 사이에는 이런 소문이 돈다.\n\n```대사\n매년 5월, 이맘때가 되면… 새벽의 광장에서 아주 무서운 일이 벌어진다고요.\n— 세라, 6편\n```\n\n[[헌병대]]가 나타나는 자리다. 연방에서 헌병을 실제로 본 사람이 거의 없다는 설정이, 이 도시에서는 괴담의 형태로 남아 있다.\n\n## 관련 문서\n\n- [[연방]] · [[의회]] · [[경찰청]] · [[철도청]]\n- [[통합파]]\n- [[헌병대]]\n- [[북방주]] — 대비되는 지역 기반\n\n## 여담\n\n**이름이 두 개 있었다.** 원고는 `중심주`, 대본은 `수도주`로 쓴다. 대본이 85건, 원고가 1건이므로 대본을 따랐다. → [[위키 작성 규칙]]\n\n**아직 모르는 것.** 수도 도시의 이름. 주 이름만 나오고 도시명은 대본에 등장하지 않는다. [[대가문]]의 이름이 실재 미국 동부 도시명 계열인 것과 달리, 수도는 이름 없이 '수도주'로만 불린다.","parentId":"federation"},{"title":"스프링필드","id":"springfield","type":"세력","folder":"02_지역","sortOrder":0,"era":"서사 시점","canon":"확정","status":"작성 중","tags":["대가문","스프링필드","북방주"],"memo":"원고에는 용어 설명 한 줄뿐이었고(13개 대가문 중 하나, 북부 3대가문), 나머지는 대본에서 만들었다. 대본 언급 239건으로 전 고유명사 중 최다. 근거: 1·3·4·5·8·20편, _인물관계.md, 배경 에셋.","image":"resource/wiki/스프링필드.png","imageCaption":"스프링필드 가의 문장","summary":[["소속","[[대가문]] — 13개 중 하나"],["지역","[[북방주]]"],["위치","북부 3대가문의 하나"],["가주","[[스프링필드 가주]]"],["보안관","[[레밍턴]]"],["가문 사람","[[코네트]] · [[네빌]](10년 전 떠났다)"],["대본 언급","239건 — 최다"],["독립 선언","가담"]],"content":"# 스프링필드\n\n[[북방주]]의 [[대가문]]. 13개 대가문 중 하나이며, [[콩코드]]·[[하트퍼드]]와 함께 북부 지역의 실질적인 지배세력이다.\n\n**《가문과 가족》에서 가장 많이 불리는 이름이다.** 대본에 239회 등장하며, 이 작품의 '가문'이라는 말이 사실상 이 가문을 가리킨다.\n\n## 이 가문에 모인 인물\n\n한 가문 안에 서사의 축이 거의 다 들어 있다.\n\n| 인물 | 위치 |\n|---|---|\n| [[스프링필드 가주]] | 가주. [[코네트]]가 '할아버지'라 부른다 |\n| [[레밍턴]] | 저택의 보안관. 아이를 지킨다 |\n| [[코네트]] | 가문의 아이. 20편의 주역 |\n| [[네빌]] | 10년 전 가문을 떠났다. 1부의 시선 |\n\n[[세라]]도 이 집에 걸려 있다 — [[코네트]]가 '세라 언니'라 부르며 위기에 먼저 연락한다.\n\n## 저택\n\n서사의 시작과 끝이 이 저택이다.\n\n- **3편** — [[하노버 용병단]]이 습격한다. [[에른스트]]가 보안관 [[레밍턴]]과 거래하며 \"땅속에서 무슨 소리가 들리든 눈감으라\" 요구한다\n- **4편** — 습격이 지나간 밤. 레밍턴이 술에 기대어 배후를 증언한다\n- **20편** — 폐허가 된 저택으로 일행이 돌아온다. [[코네트]]가 가문 열쇠를 내놓지 않는다\n\n배경 에셋에 저택의 **로비·복도·길가**가 각각 등록되어 있고, `수리중`(3편 습격 이후)과 `전쟁 중`([[미트로프 내전]]) 변형까지 있다. 같은 장소가 온전한 상태 → 수리 중 → 전장 → 폐허로 네 번 바뀐다.\n\n## 열쇠\n\n```대사\n할아버지가 절대… 절대 우리 가문 열쇠는 남들한테 주면 안된다고 했어요…\n— 코네트, 20편\n```\n\n[[코네트]]의 기호가 🗝️인 이유다. 가문이 무너진 뒤에도 아이가 열쇠를 쥐고 있다.\n\n## 관련 문서\n\n- [[대가문]] · [[북방주]] · [[보안관]]\n- [[스프링필드 가주]] · [[레밍턴]] · [[코네트]] · [[네빌]]\n- [[하노버 용병단]] · [[에른스트]]\n- [[북부동맹]] · [[미트로프 내전]]\n\n## 여담\n\n**작품 제목의 '가문'이 이 가문이다.** 《가문과 가족》에서 가문 쪽 무게를 스프링필드가 거의 혼자 진다. 반대편의 '가족'은 [[세라]]가 혈연 아닌 이들을 묶어 부르는 말이다. 두 낱말이 각각 한 집과 한 사람에게 대응한다.\n\n**지하가 이 저택 밑을 지난다.** 3편에서 [[에른스트]]가 요구한 것이 \"땅속에서 무슨 소리가 들리든 눈감으라\"였다. [[앤드루]]의 지하철도가 이 저택 아래를 파고 있었다는 뜻이며, 습격의 진짜 목적이 그 묵인이었다.\n\n**아직 모르는 것.** 가문의 문장·연혁·규모. 그리고 [[스프링필드 가주]]와 [[코네트]]의 부모 사이가 어떻게 되는지 — 코네트에게 할아버지만 있고 부모 이야기가 없다.","parentId":"great-houses"},{"title":"연방","id":"federation","type":"국가","folder":"02_지역","sortOrder":0,"era":"서사 시점","canon":"확정","status":"작성 중","tags":["연방","미트로프","열강"],"memo":"원문 §1 연방(174~348행) 이관. 고친 자리 넷. (1) 국명에서 '메트로시아/메트리카' 폐기(작가 확인). (2) 197행 파벌 정의 교체 — 원문은 통일파를 '대륙을 통일하자는 온건주의', 철도파를 '철도부터 깔자는 급진주의'로 적었으나, 작가가 '철도파=역량을 전 대륙에 투사 / 통일파=내부부터 정리'로 바꿔 확정했고 강경·온건은 각 파벌 안의 갈래로 정리했다. (3) 203행에서 통일파 주장의 근거 중 '전 대륙을 확보한 이후에'를 덜어냈다 — 옛 정의에서만 성립하는 문구였다. 이 건은 작가 확인이 필요하다. (4) 2026-07-31 문체 통일 지시에 따라 「짤막한 역사」의 음슴체를 평서체로 바꿨다. 어순과 내용은 그대로다.","image":"resource/wiki/연방.png","imageCaption":"연방의 문장","summary":[["정식 명칭","미트로프 연방"],["약칭","미트로프"],["체제","연방제"],["위치","대륙 중부 요충지"],["핵심 키워드","행정 · 철도 · 치안"],["서사 축","대륙 서사의 핵심"],["건국 주체","[[건국의 아버지들]]"],["행정구역","수도주 · 북방주 · 동방주 · 남방주 · 서방주"],["무력","[[헌병대]] · [[경찰청]] · [[보안관]] — 정규군 없음"],["의회 파벌","[[통합파]] · [[자치파]] · [[철도파]]"],["대가문","13개 — 이름 확정은 3개"],["현재 상태","붕괴 (위키 기준 현재)"]],"content":"# 연방\n\n미트로프\n\n행정과 철도, 치안이 핵심 키워드인 연방제 국가다. 대륙 중부 요충지에 위치한 패권 국가로서, 대륙 서사에 핵심적인 축을 담당한다.\n\n\n```틀\n연방\n```\n\n## 연혁\n\n```연혁\n건국 | [[신성제국]]에서 이탈한 귀족 가문이 대륙 중부 소국들을 규합. 수단은 철도였다\n건국 | 연방 헌법에 **각 주가 제각기 철도 체계를 구성할 수 있다**는 조항이 삽입된다\n통일 직후 | [[철도파]]와 [[통일파]]로 분열. 각각 내부에서 강경·온건으로 다시 갈린다\n확장기 | [[연합]]과의 기술 거래로 군비 확장\n확장기 | **쾨벤하운 왕국 병합** → [[북방주]]. 왕가는 종적을 감춘다\n확장기 | [[크레스티아 제국]]에 선전포고. 고전한다\n확장기 | [[컴퍼니]]의 반란을 몰래 지원 → 제국 멸망. 영토 80%는 연방, 20%는 컴퍼니\n확장기 | 반 연방 세력이 결성되어 **최후통첩**을 보낸다\n**[[연말 위기]]** | [[통일파]]의 쿠데타. 화재로 [[철도파]] 강경파와 [[건국의 아버지들]]이 사라진다\n**[[연말 위기]]** | 조약 체결 — **완전한 비무장화**. [[헌병대]]만 남는다\n신질서 | 대륙 전체에 연방 체계의 철도망. '미트로프 중심 질서'가 선다\n신질서 | 궤간 난립, 의회 신뢰 실추, [[경찰청]]·[[보안관]] 확대와 관할 갈등\n서사 시점 | [[북부동맹]] 독립 선언 → [[미트로프 내전]]\n현재 | 붕괴\n```\n\n## 역사\n\n[[신성제국]]에서 이탈한 귀족 가문이 대륙 중부의 소국들을 철도로 규합해 세운 나라다. 그 규합 과정에서 각 주가 제각기 철도 체계를 가질 수 있다는 조항이 헌법에 들어갔고, 이것이 훗날 사유 철도 난립의 씨앗이 된다.\n\n통일 직후 대외 투사를 주장하는 [[철도파]]와 내부 정리를 주장하는 [[통일파]]로 갈렸다. 쾨벤하운 왕국을 병합해 [[북방주]]로 삼고([[철도파]] 우세), 이어 패권국 [[크레스티아 제국]]을 해체시켜 대륙의 새 패권국이 되었다.\n\n그러자 남은 열강들이 반 연방 세력을 만들어 최후통첩을 보냈고, 개전을 막으려던 [[통일파]]가 쿠데타를 일으켰다. 이것이 [[연말 위기]]다. 조약으로 연방은 **완전한 비무장국가**가 되었고, 지금 이 나라가 앓고 있는 문제는 거의 전부 여기서 나온다.\n\n```상세\n연방의 역사\n연말 위기\n```\n\n## 이름\n\n정식 명칭은 **미트로프 연방**이다. '미트로프'가 어디서 온 이름인지는 알려져 있지 않다.\n\n다만 이 나라의 이름 계열 자체는 뚜렷하다. **미국 건국사에서 왔다.** [[건국의 아버지들]](Founding Fathers), [[명백한 운명]](Manifest Destiny), 그리고 [[대가문]]의 이름이 전부 미국 동부의 주도(州都)다. 북부 [[대가문]]이 중부에서 옮겨간 가문이라는 점도 같은 계열이다 — 서부개척시대에 서부로 건너간 이들과 겹치는 위치다.\n\n원고에는 `메트로시아`와 `메트리카`라는 이름도 있었으나 **폐기되었다**.\n\n## 양지의 이해집단\n\n- [[의회]] — 연방의 대표 통치기구\n- [[통합파]] · [[자치파]] — [[통일파]]에서 분화된 현재의 파벌\n- [[철도파]] — 구 철도파에서 살아남은 온건 계열\n- [[건국의 아버지들]] — 연방 건국의 주역. 현재는 와해\n- [[대가문]] — 13개 가문의 기성 권력층\n- [[헌병대]] 🗡️ — 연방의 유일한 군사조직\n- [[경찰청]] 🗡️ · [[보안관]] 🗡️ — 관할을 다투는 두 치안 조직\n- [[철도청]] · [[기동대]] 🗡️\n\n## 음지의 세력\n\n- [[명백한 운명]] 🗡️ — 연방의 붕괴를 목표로 삼는 테러조직\n- [[잭슨의 형제단]] 🗡️ — 열차 강도 사건 7할의 출처\n\n## 여담\n\n**이 문서의 시대는 '서사 시점'이다.** 위 역사와 양지의 이해집단은 의회·철도청·경찰청이 정상 작동하는 시점 기준이다. 위키 기준 현재에 연방은 이미 무너져 있으므로, 붕괴 이후를 다루는 [[명백한 운명]] 같은 문서는 `현대(붕괴 이후)`로 따로 달았다.\n\n**《가문과 가족》 20편이 딛고 있는 판이 전부 연말 위기의 후과다.** 궤간이 뒤죽박죽인 것, 대가문이 독자 행동하는 것, 경찰과 보안관이 관할을 다투는 것, 철도청이 무력을 쓰게 되는 것이 모두 위 「내부 문제」에서 나온다. 연방을 만든 수단(철도)이 연방을 앓게 만든 원인(사유 철도 난립)이라는 구조도 「형성 과정」의 헌법 조항 한 줄에서 시작한다.\n\n\n**통일파가 준주·자치주 편입을 주장한 근거는 분명하지 않다.** 병합한 땅을 먼저 소화하자는 취지로 읽히지만, 그 이유가 직접 설명된 적은 없다.\n\n**연방군의 정체.** 「연말 위기」에서 \"연방의 정규군은 과거 대륙 중부에서 활약하던 용병들로 구성\"이라 하고, 비무장화는 그 정규군을 다시 \"특정 국가에 속하지 않은 용병단으로 환원\"시키는 것이었다. 그래서 [[하노버 용병단]] · [[프로이센 사단]] 같은 이름들이 지금도 남아 있다. 이들은 연방에 직접 속하지 않으므로 `03_세력`으로 분류할 예정이다.","parentId":"grenvillia"},{"title":"연방의 역사","id":"federation-history","type":"사건","folder":"02_지역","sortOrder":5,"era":"근대","canon":"확정","status":"작성 중","tags":["연방","역사","미트로프"],"memo":"[[연방]] 문서가 길어져 「짤막한 역사」 일곱 절을 떼어낸 문서다. 문장은 원고 §1 연방(184~273행) 그대로이며 문체 통일만 적용했다. 시대는 서술 대상의 대부분이 연말 위기까지이므로 '근대'로 달았다.","image":"resource/wiki/연방의 역사.png","imageCaption":"연방의 역사","summary":[["다루는 범위","건국 ~ [[연말 위기]] 직후"],["절 수","7"],["분기점","[[연말 위기]] — 근대와 서사 시점의 경계"],["본문서","[[연방]]"]],"content":"# 연방의 역사\n\n```틀\n연방\n```\n\n[[연방]]의 성립부터 [[연말 위기]] 직후까지. 이 나라의 현재 문제는 거의 전부 이 기간에 만들어졌다.\n\n```상세\n연방\n연말 위기\n```\n\n## 형성 과정\n\n다른 국가들에 비해 길지 않은 역사를 가지고 있다. ‘드레드노 제국’에서 이탈한 귀족 가문을 중심으로, 대륙 중부에 위치한 소국들이 연합 - 통일 과정을 거쳐 형성되었다. 연방 형성의 큰 발단이 된 귀족 가문은 훗날 ‘건국의 아버지들’이라는 명칭으로 불리게 되었다.\n\n대륙 중부 소국들의 기술 중, ‘철도’ 기술만큼은 대륙 내 다른 지역과 비교했을 때 독보적인 수준이었다. ‘건국의 아버지들’은 이러한 철도 기술을 적극적으로 활용해 각 소국들과 대가문들을 규합하는 핵심적인 요소로 활용했다.\n\n다만 그 과정에서 각 소국·대가문들의 자치권을 인정하는 ‘연방 헌법’의 내용에, ‘주’로서 편입될 대가문의 영지, 소국들은 각자의 철도 체계를 구성할 수 있다는 내용을 협상 과정에서 추가하게 되었고, 이러한 조항이 추후 사유 철도가 난립하게 되는 단초를 제공해버렸다.\n\n## 통일과 확장\n\n통일 직후의 연방은 크게 두 파벌로 나뉘어 대립했다. 각 가문들의 막대한 재력과 대륙 중부에서 활동하는 수많은 용병들을 활용하는 것을 바탕으로, ‘연방의 역량을 전 대륙에 투사해야 한다’는 입장의 ‘철도파’와, ‘우선 내부부터 정리해야 한다’는 입장의 ‘통일파’였다. 두 파벌은 각각 내부에서 다시 강경파와 온건파로 갈렸다.\n\n다만 두 파벌 모두 ‘무력 사용’을 전제하고 있었으므로, 연방의 군비 확장은 필연적으로 이루어졌다. 이미 어느정도 기존 소국들과 교류하며 철도망이 확보되어 있었던 ‘비숍스’와의 기술 거래를 통해 부족한 기술력을 충당하고, 어느정도 역량이 확보되자 바로 확장을 시작했다.\n\n첫 번째 타겟은 연방과 북부 국경을 맞대고 있는 강대국 ‘쾨벤하운’이었다. 연방군은 여러 형태의 철도를 통한 빠른 기동 작전으로 쾨벤하운 왕국을 빠르게 함락시킬 수 있었다. 이후 쾨벤하운 왕국을 통째로 병합하였으며, 왕국은 지도에서 사라지게 되었다.\n\n쾨벤하운 왕국을 병합하는 과정에서 철도파와 통일파의 충돌이 이루어졌다. 철도파는 왕국의 영토를 본토로 편입하여 빠르게 철도망을 개발해야 한다고 주장하였고, 통일파는 우선 ‘준주’ 혹은 ‘자치주’로 편입해야 한다고 주장했다.\n\n쾨벤하운과의 전쟁은 너무나도 압도적인 승리였기에, 결과는 철도파 의원들이 우세했고, 결국 쾨벤하운 왕국은 연방의 본토 ‘북방주’로 완전히 편입되어버렸다. 쾨벤하운 왕가는 명목상으로는 연방의 ‘대가문’으로 위치할 수 있었지만, 얼마 지나지 않아 이들은 모두 종적을 감추어버렸다.\n\n## 크레스티아-미트로프 전쟁\n\n연방의 다음 목표는 확장된 영토의 국경과 맞대고 있는 기존의 패권국 ‘크레스티아 제국’이 되었다. 대륙 통일이 목표였으므로 서부의 ‘비숍스 연합’이나, 동부의 ‘드레드노 신성제국’도 노려볼 수 있었지만, 가장 강력한 군사력을 갖춘 ‘크레스티아 제국’이 우선 목표가 되었다.\n\n비숍스의 경우 일시적이지만 연방과의 기술 거래를 통한 협력 관계였고, 드레드노는 강과 산맥으로 분리되어 있었기에, 크레스티아 제국 말고는 별다른 선택지도 없던 상황이었다.\n\n쾨벤하운 왕가의 출신지가 크레스티아 제국의 영토 안에 위치해있었고, 먼 과거 실제로 쾨벤하운 왕국이 크레스티아 제국 영토의 일부를 지배했던 때가 있었으므로, 이를 명분으로 선전포고를 진행했다. 다만, 이때는 쾨벤하운 때와 달리 대륙의 다른 강대국들이 연방을 규탄하기 시작했다.\n\n쾨벤하운 왕국은 대외적으로 고립주의를 표방하고 있어 주재하는 외교관들이 하나도 없었고, 또 병합당해도 크게 힘의 균형이 흔들리지 않는 수준이었다. 하지만 크레스티아 제국은 명백한 열강이자 패권국으로, 다른 국가들과의 이해관계가 복잡하게 얽혀있는 상태였다.\n\n또한 쾨벤하운 왕국을 그대로 ‘병합’해버린 것도 다른 국가들의 긴장감을 강화하게 된 원인으로 작용했다. 다른 국가들의 눈에는 연방이 새로운 패권국으로서 등장했고, 기존 패권국까지 흡수할 경우 대륙 힘의 균형이 완전히 붕괴할 수 있다는 우려로 행동에 나서게 되었다.\n\n그럼에도 연방은 전쟁을 강행했고, 크레스티아 제국에 쾨벤하운 왕국 때와 같이 철도를 통한 전면적인 공세가 시작되었다. 다만 크레스티아 제국 또한 막강한 산업력과 지하 자원, 광대한 영토를 보유하고 있었으므로 쾨벤하운 때와 달리 연방은 고전을 면치 못했다.\n\n## 크레스티아 제국 해체\n\n외부에서 보았을 때, 전쟁은 시간이 지날 수록 크레스티아 제국에게 유리해져 가고 있었다. 연방은 비숍스에서 이전받은 기술을 통해, ‘열차포’로 대표되는 화기까지 발명해 전선에 투입해보았지만, 크레스티아 제국의 압도적인 규모에 밀려나고 있었다.\n\n하지만 연방은 그럼에도 전쟁을 포기하지 않았는데, 이는 크레스티아 제국 내부 혁명 세력이 존재함을 알고, 몰래 지원해주고 있었기 때문이다. 이들은 ‘콘베이아 컴퍼니’를 기반으로 두는 기업가, 부호 세력이었는데, 전쟁 전부터 제국에게 많은 부분을 동원당하고 있어 불만이 많았다.\n\n어느정도 크레스티아 제국의 역량이 분산되었을 시점, 이들은 기다렸다는 듯 반란을 일으켰다. 기존 제국 세력과, 신생 콘베이아 컴퍼니 세력의 내전이 시작되었고, 연방이 지원하던 컴퍼니는 연방과 조약을 맺어 크레스티아 제국을 양쪽에서 압박하게 되었다.\n\n사실 컴퍼니 세력과의 협력은 철도파 내부적으로는 매우 불만스러웠으나, 무턱대고 합병하였을 때의 후폭풍을 우려하여 적국의 내부 세력을 지원하는 방안을 새로 고려해보았고, 그 결과 콘베이아 컴퍼니를 지원하게 되었다.\n\n결국 얼마 지나지 않아 크레스티아 제국은 멸망했다. 기존 제국 영토의 80%는 연방이, 나머지 20%는 콘베이아 컴퍼니의 통제 하에 있는 상태로 전쟁이 끝나고 크레스티아 황가는 모두 콘베이아 컴퍼니 세력에 의해 처형당하게 되었다.\n\n전쟁은 명백한 연방측의 승리로 끝났고, 콘베이아 컴퍼니도 반쯤은 연방의 괴뢰국으로서 기능하고 있었으나, 연방은 다시금 전쟁의 위기에 처하게 되었다. 바로, 대륙의 남은 열강들이 연합하여, 연방에게 최후통첩을 전달한 것이다.\n\n## 연말 위기\n\n연방과의 협력을 파기하고 비숍스 연합이 먼저 드레드노 신성제국에게 연합을 제의했고, 드레드노 제국이 남부 군도의 왕국과 기타 중견국들을 모두 끌어들여 형성된 반 연방 세력은 크레스티아 제국이 멸망하는 것을 마주하자 연방에게 최후통첩을 전달하게 되었다.\n\n최후통첩의 내용은 다음과 같았다. 연방이 점거한 제국 영토를 제국의 후신으로 판단되는 콘베이아 컴퍼니에게 전부 반환할 것, 콘베이아 컴퍼니는 연방에 귀속되지 않으며 일반적인 기업이 아닌 독립된 권리를 가진 ‘기업국가’로서 존속할 것, 과거 연방이 편입한 쾨벤하운 왕국을 독립시킬 것.\n\n최후통첩을 받은 연방은 초기에는 ‘반 연방 세력과도 전쟁하자’는 철도파의 주장이 우세했다. 구 패권국이었던 크레스티아 제국과도 승리했으므로, 나머지 국가들도 어렵지 않게 굴복시킬 수 있다는 생각에서 기인한 주장이었다.\n\n하지만 반대로 전쟁을 반대하는 주장도 적지 않았는데, 크레스티아 제국과의 전쟁에서 소모된 역량이 너무나도 크다는 것이 이유였다. 연방의 정규군은 과거 대륙 중부에서 활약하던 용병들로 구성되어 있었어서 역량은 뛰어나나, 소모되었을 때 보충하는 것이 매우 어려웠다.\n\n객관적으로도 당시 전쟁은 매우 위험한 도박이었으나, 크레스티아 제국에게 승리했다는 사실 하나만으로 고취된 상태라, 연방은 연합의 최후통첩을 무시하기로 결정하고 빠르게 다시 전쟁을 준비하게 되었다.\n\n연방의 전 국경에 군사들이 배치되고, 최후통첩을 거부하고 선전포고문을 작성하기 바로 사흘 전, 전쟁이 코 앞에 다가온 상황에서 전쟁을 반대하던 ‘통일파’ 의원들은 결국 쿠데타를 모의하게 되었다. 선전포고문을 발표하기 전, ‘철도파’ 의원들을 한 곳에 모으고, 한 번에 제거해버리자는 계획이었다.\n\n## 신질서의 시작\n\n통일파 의원들의 계획은 결국 실행되었고, 또 성공하게 되었다. 과정에서 쿠데타 계획이 철도파 의원 한 명에게 노출되었으나 그 의원이 통일파 의원에게 감화되어 계획을 묵인하였고, 장소로의 유인을 위해 통일파 의원 한 명이 끝까지 그 장소를 지키다 사망하는 등의 극적인 과정이 있었다.\n\n철도파 의원들이 모인 곳에서 준비된 큰 화재가 발생하였고, 그 자리에서 급진적인 철도파 의원, 전쟁에 우호적이었던 의원이 대부분 사망하였으며, 그 때에 맞춰 통일파 의원들은 반 연방 세력에게 최후통첩에 대한 협상을 시작하게 되었다.\n\n최후통첩을 받아들이되, ‘쾨벤하운 왕국’은 여전히 연방의 ‘북방주’로 남기는 것을 요구했다. 반 연방 세력은 명분을 따지며 거절했으나, 연방이 대신 조건으로 ‘완전한 비무장화’를 내세웠고, 비무장화를 수용하는 조건으로 쾨벤하운 왕국의 병합을 승인했다.\n\n비무장화의 세부적인 내용은, 연방 정규군을 모두 특정 국가에 속하지 않은 용병단으로 환원시키고, 정규군 조직 중 가장 규모가 작았던 ‘헌병’만 남길 수 있다는 것이었다. 이 조항으로 인해 현대 연방에는 ‘헌병’과 ‘경찰’, ‘보안관’만이 무력집단으로 존재할 수 있는 상태다.\n\n나머지 조건인 컴퍼니의 기업국가화는 승인하되, 콘베이아 컴퍼니의 무역권을 독점하는 조항을 추가하였으며, 컴퍼니에게 영토를 반환하는 대신, 그렌빌리아 대륙 전체에 연방의 체계에 맞춰 철도망을 설립한다는 조항을 추가했다.\n\n철도망 설립에 대한 조항은 비교적 온건한 성향에, 전쟁을 반대하는 측이어서 생존한 철도파 잔존 의원들의 의견이 반영된 결과였다. 처음에는 연방에 너도 나도 할 것 없이 굴욕적인 협상이라고 비판받았으나, 현재까지 이어지는 철도망을 위시한 ‘미트로프 중심 질서’를 만든 일등공신이었다.\n\n## 내부 문제\n\n연말 위기는 막을 내리고, 진보된 연방의 철도망을 위시한 무역 체제가 시작되어 대륙 전체적으로는 희망적인 분위기가 조성되었지만, 연방 내부적으로는 많은 정치적 문제가 뒤따르게 되었다.\n\n첫 번째는 ‘철도를 통한 통합’을 주장하던 철도파 의원, 대가문 세력이 모조리 붕괴하면서, 연방 내의 뒤죽박죽인 철도 궤간, 사유 철도, 각 대가문별 철도 이권들이 난립하여 정작 연방 내부의 철도 체계를 정비할 명분도, 힘도 없어져버린 것이다.\n\n두 번째는 테러와 쿠데타의 발생으로 의회를 향한 신뢰가 떨어지게 되어, 일부 대가문들은 의회에서 벗어나 독자적인 행동을 벌이고, 대가문 중심의 사고방식이 다시 자리잡게 된 것이다. ‘건국의 아버지들’이 통일의 기반으로 다져둔 의회가 신뢰를 잃으며, 통일된 연방 자체의 결속력이 흔들리게 되었다.\n\n마지막으로 비무장화로 인한 치안 악화가 따르게 되었지만, 이러한 문제는 연방 차원에서 관리하는 ‘경찰대’를 엄청나게 늘리고, 대가문과 각 주, 지역들 자체적으로 관리하는 ‘보안관’을 확대하는 방향으로 어느정도 해소할 수 있었다. 다만 과정에서 경찰과 보안관 간의 갈등이 벌어졌다.\n\n## 여담\n\n**연방을 만든 수단이 연방을 앓게 만들었다.** 「형성 과정」의 헌법 조항 한 줄 — 각 주가 제각기 철도 체계를 구성할 수 있다 — 이 사유 철도 난립의 씨앗이 된다. 철도로 뭉친 나라가 철도 때문에 갈라지는 구조다.\n\n**[[연말 위기]] 이후가 《[[가문과 가족]]》의 판이다.** 궤간이 뒤죽박죽인 것, [[대가문]]이 독자 행동하는 것, [[경찰청]]과 [[보안관]]이 관할을 다투는 것, [[철도청]]이 무력을 쓰게 되는 것이 모두 「내부 문제」에서 나온다.\n\n**통일파가 준주·자치주 편입을 주장한 근거는 분명하지 않다.** 병합한 땅을 먼저 소화하자는 취지로 읽히지만, 그 이유가 직접 설명된 적은 없다.\n\n**연방군의 정체.** 「연말 위기」에서 \"연방의 정규군은 과거 대륙 중부에서 활약하던 용병들로 구성\"이라 하고, 비무장화는 그 정규군을 다시 \"특정 국가에 속하지 않은 용병단으로 환원\"시키는 것이었다. 그래서 [[하노버 용병단]] · [[프로이센 사단]] 같은 이름들이 지금도 남아 있다.","parentId":"federation"},{"title":"의회","id":"parliament","type":"세력","folder":"02_지역","sortOrder":5,"era":"서사 시점","canon":"확정","status":"완료","tags":["연방","의회","통치기구"],"memo":"원문 280~285행 문장 그대로. 음슴체가 아니라 원래 평서체로 쓰인 항목이라 어미를 손대지 않았다.","image":"resource/wiki/의회.png","imageCaption":"연방의회 건물","summary":[["소속","[[연방]]"],["성격","연방의 대표 통치기구"],["의원 선출","투표가 아니라 지역·가문별 할당"],["정당","없음"],["소재","수도주 '연방의회' 건물"],["결정 사항","군사 소집 · 정책 결정 · 법안 발의"],["파벌","[[통합파]] · [[자치파]] · [[철도파]]"],["직속 무력","[[헌병대]]"],["산하 기구","[[경찰청]] · [[철도청]]"],["표어","우리의 힘은 연결에서 나온다"]],"content":"# 의회\n\n```틀\n연방\n```\n\n연방의 대표 통치기구, 투표를 통해 의원을 선정하는 것이 아닌, 지역, 가문별로 할당된 의원을 주기적으로 배출하는 형태이기에 별도의 ‘당’ 구분이 존재하지 않는다.\n\n주요 장소는 연방 수도주 ‘연방의회’ 건물로, 군사 소집, 정책 결정, 법안 발의 등의 국가적 사안은 모두 의원들이 이 곳에 모여 결정한다.\n\n```표어\n우리의 힘은 연결에서 나온다. ‘의회’는 연방의 가문, 연방의 주, 연방의 사람을 잇는 심장이다\n```\n\n## 관련 문서\n\n- [[연방]]\n- [[통합파]] · [[자치파]] · [[철도파]] — 현재의 파벌\n- [[통일파]] · [[건국의 아버지들]] — 지금은 없는 파벌\n- [[헌병대]] — 의회 직속 무력\n- [[경찰청]] · [[철도청]] — 산하 기구\n- [[대가문]]\n\n## 여담\n\n**당이 없다는 것이 이 나라의 정치를 결정한다.** 의원을 투표로 뽑지 않고 지역·가문별 할당으로 배출하므로, 의원은 유권자가 아니라 자기를 보낸 지역과 가문에게 묶인다. [[자치파]]가 [[대가문]]·[[보안관]]을 힘의 통로로 쓰는 것도, 대가문 유력자가 아예 의회에 나오지 않고도 영향력을 갖는 것도 여기서 나온다.\n\n**연말 위기로 잃은 것이 신뢰다.** 테러와 쿠데타가 의회 안에서 벌어진 뒤 일부 대가문이 의회를 떠나 독자 행동을 시작했다. [[건국의 아버지들]]이 통일의 기반으로 다져둔 기구가 무게를 잃으면서 연방의 결속 자체가 흔들렸다. → [[연방]]의 「내부 문제」\n\n**동원 절차가 서사의 장치가 된다.** [[헌병대]]는 의회 직속이지만 법적 절차와 의원 간 이해관계가 맞아야 움직인다. 그래서 '0호 비상사태' 같은 지령이나 의회 진입 여부가 그대로 사건이 된다.","parentId":"federation"},{"title":"자치파","id":"autonomists","type":"세력","folder":"02_지역","sortOrder":30,"era":"서사 시점","canon":"확정","status":"완료","tags":["연방","의회","파벌"],"memo":"원문 292~295행 문장 그대로. 문서 제목은 '자치파 의원'이 아니라 '자치파'로 두었다 — [[통합파]]와 같은 이유.","image":"","imageCaption":"","summary":[["소속","[[연방]] [[의회]]"],["전신","[[통일파]] 온건 계열"],["목표","각 지역의 자치권 확대 · 타 지역의 연방 합류"],["지역 기반","북방주 · 동방주"],["힘의 통로","[[대가문]] · [[보안관]]"],["대표 인물","[[데이비스]]"],["귀결","[[북부동맹]] · [[미트로프 내전]]"]],"content":"# 자치파\n\n과거 존재했던 ‘통일파’에서 분화된 성향을 가진 의원 집단. 각 지역의 자치권 확대와 타 지역들의 연방 합류를 핵심 목표로 삼고 활동하는 이들을 지칭한다. ‘북방주’, ‘동방주’ 등을 지역적 기반으로 두고 있으며, ‘대가문’과 ‘보안관’ 등 지역 세력을 통해 정치적 힘을 행사한다.\n\n```표어\n과도한 연결로 인해 연방이 폭주기관차처럼 날뛰게 된 것 아닌가? 오히려 우리는 거리를 두어야 할 필요가 있다.\n```\n\n## 관련 문서\n\n- [[연방]]\n- [[의회]]\n- [[통일파]] — 전신\n- [[통합파]] — 같은 뿌리에서 갈라진 상대 파벌\n- [[대가문]] · [[보안관]] — 정치적 힘의 통로\n- [[북부동맹]] — 자치파에서 이어지는 분리 독립 구상\n\n## 여담\n\n**서사에서 가장 멀리 간 파벌이다.** [[데이비스]]는 자치파 의원에서 [[북부동맹]] 위원장으로 옮겨가며, 자치권 확대라는 목표를 결국 분리 독립까지 밀고 간다. 《가문과 가족》 후반부의 [[미트로프 내전]]이 그 결과이고, 붕괴 이후의 [[명백한 운명]]은 그를 잇겠다는 자들이 그의 말을 상징으로 채택한 조직이다.\n\n**목표 두 개가 서로 당긴다.** '각 지역의 자치권 확대'와 '타 지역들의 연방 합류'가 한 문장에 있다. 자치를 넓히면서 새 지역을 끌어들이려면 연방이 느슨한 형태여야 하므로 논리는 통하지만, 결과적으로 연방을 약화시키는 방향이다.","parentId":"federation"},{"title":"잭슨의 형제단","id":"jacksons-brotherhood","type":"세력","folder":"02_지역","sortOrder":210,"era":"서사 시점","canon":"확정","status":"작성 중","tags":["연방","음지","약탈단","열차 강도"],"memo":"원문 345~348행 문장 그대로. 시대는 '서사 시점'으로 달았다 — 두목 잭슨이 《가문과 가족》 9·14·20편에 등장하기 때문이다. 다만 '명백한 운명과 자주 충돌한다'는 서술은 그 조직이 붕괴 이후의 것이므로 붕괴기 기준이다. 즉 이 조직은 두 시대에 걸쳐 있다.","image":"resource/wiki/잭슨의 형제단.png","imageCaption":"형제단의 열차 습격","summary":[["성격","거대한 약탈단"],["활동 지역","북부 연방 (본거지는 북방주)"],["악명","연방 열차 강도 사건의 7할"],["두목","[[잭슨]]"],["구성","잭슨과 그를 따르는 여러 약탈단 두목들"],["결속력","하나의 [[대가문]]에 필적"],["표적","열차만"],["충돌 상대","[[명백한 운명]] · [[기동대]]"]],"content":"# 잭슨의 형제단 🗡️\n\n북부 연방에서 활동하는 거대한 약탈단으로, 연방에서 활동하는 열차 강도 사건의 7할이 이들에게서 발생할 정도로 악명 높은 조직이기도 하다. 조직의 우두머리인 ‘잭슨’과, 그를 따르는 여러 약탈단 두목들로 구성되어 있으며, 이들은 하나의 ‘대가문’에 필적할 정도로 높은 결속력을 자랑한다.\n\n원래부터 북방주에서 활동하던 이들이었고, ‘열차’만을 타겟으로 노리는 통에 ‘명백한 운명’ 조직원들과 자주 충돌하는 편이다.\n\n## 관련 문서\n\n- [[연방]]\n- [[잭슨]] — 두목\n- [[기동대]] — 철도를 지키는 상대\n- [[명백한 운명]] — 사설 철도를 뻗는 쪽과 열차를 노리는 쪽의 충돌\n- [[대가문]] — 결속력의 비교 대상\n\n## 여담\n\n**두 시대에 걸쳐 있는 조직이다.** 두목 [[잭슨]]은 《가문과 가족》 안에서 활동하고, [[명백한 운명]]과의 충돌은 붕괴 이후의 이야기다. 원문 한 항목에 두 시점이 겹쳐 있으므로, 앞으로 갈라 쓸 필요가 생길 수 있다.\n\n**열차만 노리는 것이 정치적 위치를 만든다.** [[명백한 운명]]은 사설 철도를 뻗어 세를 불리고, 형제단은 그 철도 위의 열차를 턴다. 목적이 겹치지 않는데도 자원이 겹치니 부딪친다. 연방을 무너뜨리려는 쪽과 연방에서 뜯어먹으려는 쪽의 차이다.\n\n**결속력이 대가문에 필적한다는 비유가 눈에 걸린다.** 두목 한 명과 그를 따르는 여러 두목들의 구조는 가주와 분가의 구조와 같다. 북방주에서 원래 활동하던 이들이라는 점까지 겹치면, [[대가문]]과 같은 땅에서 자란 다른 형태의 가문처럼 읽힌다.","parentId":"federation"},{"title":"철도청","id":"railway-bureau","type":"세력","folder":"02_지역","sortOrder":100,"era":"서사 시점","canon":"확정","status":"완료","tags":["연방","철도","국제기구"],"memo":"원문 325~327행 문장 그대로.","image":"resource/wiki/철도청.png","imageCaption":"관리역 내부","summary":[["소속","[[의회]] 산하"],["성격","철도·차량 관리청. 제한적 국제기구"],["설치 단위","각 주의 정거장을 총괄하는 '관리역'"],["영향 범위","[[그렌빌리아 대륙]] 전체에 관리역"],["내부 구분","해외지부 / 국내지부"],["해외지부","평범한 공무"],["국내지부","영역 다툼 등 무력 사용이 요구되는 업무"],["산하 무력","[[기동대]]"],["숙원","[[궤간 통일]]"],["정치적 통로","[[통합파]] · [[철도파]]"]],"content":"# 철도청\n\n연방 의회 산하의 철도·차량 관리청. 경찰청과 유사하게 각 주마다 정거장들을 총괄하는 ‘관리역’들을 두는 형태로 운영되고 있으나, 경찰청과 달리 그렌빌리아 전체 대륙에 ‘관리역’을 두어 제한적인 영향력을 행사하는 국제기구이다.\n\n내부적으로는 ‘해외지부’와 ‘국내지부’로 분류되며, 해외 지부의 경우 평범한 공무를 맡으나, 국내 지부의 경우 영역 다툼에 연루되는 등 ‘무력의 사용’이 요구되는 업무를 자주 담당하고는 한다.\n\n## 두 지부\n\n| | 관할 | 업무의 성격 |\n|---|---|---|\n| 해외지부 | 그렌빌리아 대륙 각지 | 평범한 공무 |\n| 국내지부 | 연방 내 | 영역 다툼 연루, 무력 사용이 요구되는 업무 |\n\n## 궤간 통일이라는 명분\n\n[[궤간 통일]]은 철도청의 오랜 숙원이자, 서사에서는 **다른 일의 명분**으로 쓰인다. 16편에서 [[앤드루]]가 궤간 통일을 내세워 지하철도를 비밀리에 굴착하고, [[철도파]]의 [[하워드]]가 의회 쪽에서 이를 뒷받침한다.\n\n```대사\n자네가 그렇게 바라던 ‘궤간 통일’의 과정 중 하나지.\n— 16편\n```\n\n## 관련 문서\n\n- [[연방]] · [[의회]]\n- [[기동대]] — 철도청 산하의 치안조직\n- [[궤간 통일]] — 오래 밀어붙여 온 숙원이자 지하철도의 명분\n- [[하노버 용병단]] — 기록을 남기지 않아야 할 일에 동원되는 외부 세력\n- [[통합파]] · [[철도파]]\n- [[연말 위기]] — 대륙 철도망 설립 조항의 근거\n\n## 여담\n\n**연방의 부처가 국제기구인 이유는 조약 때문이다.** [[연말 위기]] 협상에서 '그렌빌리아 대륙 전체에 연방 체계에 맞춰 철도망을 설립한다'는 조항이 들어갔다. 그 결과 연방 의회 산하 부처가 대륙 전역에 관리역을 두게 되었다. 굴욕적이라 비판받은 협상이 연방에게 남긴 유일한 확장 수단이다.\n\n**국내가 해외보다 위험한 조직이다.** 해외지부는 공무를 보고, 국내지부는 무력을 쓴다. 연방 안에서 사유 철도와 대가문 철도 이권이 난립하고 있으므로, 선로를 관장하려면 [[대가문]]·[[보안관]]과 부딪쳐야 한다. 그래서 철도청이 [[기동대]]라는 무력을 갖는다.\n\n**《가문과 가족》의 무대가 이 조직이다.** [[앤드루]](철도청장) · [[세라]](비서관) · [[네빌]](비서)이 모두 여기 소속이고, 지하 굴착 사업도 철도청 이름으로 굴러간다. 인물 문서는 §3에서 착수 예정.","parentId":"federation"},{"title":"철도파","id":"railroaders","type":"세력","folder":"02_지역","sortOrder":40,"era":"서사 시점","canon":"확정","status":"완료","tags":["연방","의회","파벌"],"memo":"원문 297~300행 문장 그대로. 다만 원문의 '살아남은 온건주의 의원 집단'이 대본 용어사전의 '적극적인 강경 노선'과 엇갈려 보였는데, 작가 확인(2026-07-31)으로 축이 다른 것으로 정리됐다 — 대외 투사에는 적극적이고, 연말 위기 때 전쟁에 반대한 쪽이 온건파다.","image":"","imageCaption":"","summary":[["소속","[[연방]] [[의회]]"],["전신","구 철도파 온건 계열"],["노선","연방의 역량을 전 대륙에 투사"],["지역 기반","남방주 · 서방주"],["힘의 통로","[[연합]] · [[컴퍼니]] 등 해외 세력"],["대표 인물","[[하워드]]"],["강경파의 말로","[[연말 위기]] 화재로 숙청"]],"content":"# 철도파\n\n과거 존재했던 ‘철도파’에서 살아남은 온건주의 의원 집단. 철도의 세계화, 대륙의 철도 이권 장악 등 연방의 철도 정책을 중심적으로 다루는 이들을 지칭한다. ‘남방주’, ‘서방주’ 등을 지역적 기반으로 두고 있으며, ‘비숍스’나 ‘컴퍼니’ 등 해외 세력과의 협력을 통해 정치적 힘을 행사한다.\n\n```표어\n우리가 했던 일을 기억합니다. 반드시 필요했지만, 그릇된 방법을 통해 이루려했던…\n```\n\n## 노선과 계보\n\n구 철도파는 **‘연방의 역량을 전 대륙에 투사해야 한다’**는 입장이었고, 파벌 내부는 강경파와 온건파로 갈렸다.\n\n- **강경파** — [[건국의 아버지들]]을 포함해 철도 연합(유나이티드 레일로드)을 강경하게 추진했고, [[연말 위기]] 때 반 연방 세력과의 전쟁까지 주장했다. [[통일파]]의 쿠데타로 화재 속에서 대부분 사망했다.\n- **온건파** — 전쟁을 반대했던 덕에 생존했고, 이들이 지금의 철도파다. 최후통첩 협상에서 '그렌빌리아 대륙 전체에 연방 체계의 철도망을 설립한다'는 조항을 넣어, 현재까지 이어지는 ‘미트로프 중심 질서’를 만든 일등공신이 되었다.\n\n## 관련 문서\n\n- [[연방]]\n- [[의회]]\n- [[통일파]] — 상대 파벌\n- [[건국의 아버지들]] — 구 철도파 강경 계열\n- [[연말 위기]]\n- [[철도청]] · [[궤간 통일]]\n\n## 여담\n\n**두 '강경'이 다른 뜻이다.** 대본 용어사전은 철도파를 \"국력을 밖으로 뻗는 데 적극적인 강경 노선\"이라 하고, 원문은 \"살아남은 온건주의\"라 한다. 모순이 아니다. **대외 투사**에는 여전히 적극적이고, **연말 위기의 전쟁 찬반**에서는 반대편에 섰던 쪽이다. 축이 둘이라는 것을 놓치면 같은 파벌이 강경이면서 온건인 것처럼 보인다.\n\n**살아남은 이유가 노선을 바꿨다.** 무력으로 투사하려던 쪽이 죽고 협상으로 투사하려던 쪽이 남았으니, 지금의 철도파가 [[연합]]·[[컴퍼니]] 같은 해외 세력과의 **협력**을 통로로 쓰는 것이 자연스럽다. 위 인용문(\"반드시 필요했지만, 그릇된 방법을 통해 이루려했던\")도 그 자리에서 나온 말로 읽힌다.\n\n**서사 인물.** [[하워드]](철도파 의원)가 이 파벌 소속이다.","parentId":"federation"},{"title":"통일파","id":"unionists","type":"세력","folder":"02_지역","sortOrder":10,"era":"근대","canon":"확정","status":"완료","tags":["연방","의회","파벌","해체"],"memo":"원문에 단독 항목이 없던 문서. 197행(작가가 새로 확정한 정의)과 288·292행(분화 서술), 그리고 작가 확인(2026-07-31, '통일파 강경주의는 누스가 소실되고 통일파가 자치파와 통합파로 쪼개지는 과정에서 와해되었다')을 모아 계보 문서로 만들었다.","image":"","imageCaption":"","summary":[["소속","[[연방]] [[의회]]"],["노선","우선 내부부터 정리"],["내부 갈래","강경파 · 온건파"],["주요 사건","[[연말 위기]] 쿠데타 — 주도"],["후신","[[통합파]] · [[자치파]]"],["해체","연방 헌법 소실과 파벌 분열 과정"]],"content":"# 통일파\n\n연방 의회의 오래된 파벌. **‘우선 내부부터 정리해야 한다’**는 입장을 취했다. 지금의 [[통합파]]와 [[자치파]]가 여기에서 갈라져 나왔다.\n\n## 노선\n\n[[철도파]]가 연방의 역량을 전 대륙에 투사해야 한다고 본 반면, 통일파는 확장보다 내부 정리를 앞세웠다. 두 파벌이 다툰 축이 바로 이것이다.\n\n단, 통일파 역시 ‘무력 사용’을 전제하고 있었다. 그래서 연방의 군비 확장 자체에는 두 파벌 모두 기여했다.\n\n파벌 내부는 다시 **강경파**와 **온건파**로 갈렸다. [[철도파]]도 같은 구조였다.\n\n- 쾨벤하운 병합 당시 통일파는 본토 편입에 반대하고 우선 ‘준주’ 혹은 ‘자치주’로 편입할 것을 주장했으나, 압도적인 승리에 고취된 분위기에서 철도파에게 밀렸다.\n- [[연말 위기]] 때 전쟁을 반대한 쪽이 통일파였고, 결국 쿠데타를 모의해 [[철도파]] 강경파와 [[건국의 아버지들]]을 화재로 제거했다.\n\n## 해체\n\n쿠데타는 성공했으나 파벌 자체가 오래 남지는 못했다.\n\n- **강경파** — [[연방 헌법]]이 소실되고, 통일파가 [[자치파]]와 [[통합파]]로 쪼개지는 과정에서 와해되었다.\n- **온건파** — [[통합파]]와 [[자치파]]로 분화해 서사 시점의 의회를 구성한다.\n\n## 관련 문서\n\n- [[연방]]\n- [[의회]]\n- [[통합파]] · [[자치파]] — 후신\n- [[철도파]] — 상대 파벌\n- [[연말 위기]]\n- [[건국의 아버지들]]\n\n## 여담\n\n**'통일'의 뜻이 헷갈리기 쉽다.** 대륙을 통일한다는 뜻이 아니라 **연방 내부를 정리한다**는 뜻이다. 대외 투사를 주장한 쪽은 [[철도파]]이며, 강경·온건은 두 파벌 각각의 안에서 갈리는 축이다. 대본 용어사전의 [[통합파]](\"연방의 결속과 궤간 통일 등 내부적인 통합\") 설명도 새 정의와 맞는다.\n\n**강경파의 와해와 헌법 소실이 이어지는 것으로 보인다.** 의회 직속 무력인 [[헌병대]]의 매개체가 [[연방 헌법]]다. 내부를 무력으로 통합하려던 통일파 강경파에게는 그것이 실행 수단이었을 텐데, 연말 위기에 헌법이 80~90% 불타면서 수단을 잃은 셈이 된다. 두 사실이 나란히 전해지므로 이렇게 읽히지만, 명시적으로 설명된 적은 없다.","parentId":"federation"},{"title":"통합파","id":"integrationists","type":"세력","folder":"02_지역","sortOrder":20,"era":"서사 시점","canon":"확정","status":"완료","tags":["연방","의회","파벌"],"memo":"원문 287~290행 문장 그대로. 원문 소제목은 '통합파 의원'이지만, 세력명은 '통합파'이고 '통합파 의원'은 직함이므로(대본 용어사전·인물관계도의 용법) 문서 제목은 '통합파'로 두었다.","image":"","imageCaption":"","summary":[["소속","[[연방]] [[의회]]"],["전신","[[통일파]] 온건 계열"],["목표","연방의 결속 · [[궤간 통일]]"],["지역 기반","수도주"],["힘의 통로","[[경찰청]] · [[철도청]]"],["대표 인물","[[잭]] · [[로버트]]"]],"content":"# 통합파\n\n과거 존재했던 ‘통일파’에서 분화된 성향을 가진 의원 집단. 연방의 결속과, 궤간 통일 등의 내부적인 통합을 핵심 목표로 삼고 활동하는 이들을 지칭한다. ‘수도주’를 지역적 기반으로 두고 있으며, ‘경찰청’과 ‘철도청’ 등의 정부기구를 통해 정치적 힘을 행사한다.\n\n```표어\n‘연말 위기’ 이후, 연방의 연결은 위태로워졌습니다, 우리는, 더 단단히 뭉쳐야합니다!\n```\n\n## 관련 문서\n\n- [[연방]]\n- [[의회]]\n- [[통일파]] — 전신\n- [[자치파]] — 같은 뿌리에서 갈라진 상대 파벌\n- [[경찰청]] · [[철도청]] — 정치적 힘의 통로\n\n## 여담\n\n**기반이 대비를 이룬다.** 통합파는 ‘수도주’를 기반으로 [[경찰청]]·[[철도청]]이라는 **중앙 기구**를 통해 힘을 쓰고, [[자치파]]는 북방주·동방주를 기반으로 [[대가문]]·[[보안관]]이라는 **지역 세력**을 통해 힘을 쓴다. 서사에서 경찰과 보안관이 관할을 다투는 것이 그대로 의회의 파벌 다툼이기도 하다.\n\n**서사 인물.** [[잭]](통합파 의원), [[로버트]](통합파 의원 · 전 경찰청장)가 이 파벌 소속이다. 인물 문서는 §3에서 착수 예정.","parentId":"federation"},{"title":"헌병대","id":"gendarmerie","type":"세력","folder":"02_지역","sortOrder":70,"era":"서사 시점","canon":"확정","status":"완료","tags":["연방","무력","노에마","헌병"],"memo":"원문 314~317행 문장 그대로. 작가 확인(2026-07-31)으로 '초자연적인 힘'의 정체가 확정됐다 — 헌병은 구사자가 아니라 노에마 능력자이고, 매개체는 연방 헌법이다. 지휘 계통은 건국의 아버지들의 혈족을 따른다.","image":"resource/wiki/헌병대.png","imageCaption":"헌병의 무장","summary":[["소속","[[의회]] 직속"],["성격","연방의 유일한 군사조직"],["존속 근거","[[연말 위기]] 비무장화 조항 — 정규군 중 가장 작은 조직만 잔존"],["전력의 정체","[[노에마]] 능력자 (구사자 아님)"],["매개체","[[연방 헌법]]"],["개인 역량","1인이 하나의 군단에 버금간다"],["규모","제한된 인원을 집중 양성"],["동원 조건","법적 절차 + 의원 간 이해관계 합치"],["지휘 계통","[[건국의 아버지들]]의 혈족"]],"content":"# 헌병대 🗡️\n\n```틀\n연방\n```\n\n연방의 유일한 군사조직이자 의회 직속 무력집단. 대외적으로는 군대 내 치안조직만 남겨둠으로서 전쟁 수행 능력을 완전히 상실시켜버리는 목적으로 유지된 집단이지만, 연방 내부적으로는 제한된 인원을 집중적으로 양성하고, ‘초자연적인 힘’을 다루는 이들로 구성하여 헌병 1인의 역량을 하나의 군단에 버금갈 정도로 육성해둔 상태이다.\n\n하지만 헌병대를 동원하는 것은 법적 절차를 거쳐야하고, 의원들간의 이해관계가 맞아떨어져야 하는 등의 제한적인 상황에서만 가능한 행동이기 때문에, 연방 내에서 ‘헌병대’가 실제로 활동하는 모습을 본 이들은 거의 존재하지 않는다.\n\n## 초자연적인 힘의 정체\n\n헌병은 [[노에마]]를 구사하지만 **구사자가 아니라 노에마 능력자**다. 매개체가 [[연방 헌법]]이기 때문이다.\n\n이 구조에서 두 가지가 따라 나온다.\n\n- **헌법이 훼손되면 힘을 잃는다.** [[누스]]는 파손될 경우 그것을 통해 능력을 얻은 이가 능력을 잃을 가능성이 높다. 헌법은 [[연말 위기]]에 80~90%가 소실되었다.\n- **지휘 계통이 혈통을 따른다.** [[건국의 아버지들]]의 혈족이 헌병을 부를 수 있다. 그래서 [[애덤스]]의 딸인 [[세라]]는 의원도 관료도 아닌 민간인 신분으로 헌병을 거느린다.\n\n## 스스로에 대한 규정\n\n헌병은 자신을 이렇게 부른다.\n\n```대사\n연방을 지켜온 최초의 ‘방패’ 이자, 지금은 최후의 ‘칼날’…\n— 세라가 전하는 아버지의 말, 6편\n```\n\n그러나 [[연방 헌법]]이 소실된 뒤로는 그 규정을 스스로 부정한다. 6편에서 한 헌병이 [[세라]]에게 말한다.\n\n```대사\n지금의 우리는 ‘칼날’도, ‘방패’도 될 수 없습니다. 헌법은 그날 무너졌으니.\n집행할 법이 없다면, 헌병이 무슨 의미가 있을까요. 경찰도, [보안관]도 마찬가지고.\n— 연방 헌병, 6편\n```\n\n**신념을 확인하고 따른다.** 같은 장면에서 헌병은 헌법을 복원하겠다는 세라에게 딱 하나를 묻는다 — \"당신이 새로 만들고자 하는 ‘연방’은, ‘무엇에 의한 국가’ 입니까?\" 세라의 대답은 \"…‘가족’ 이요\"였다.\n\n**수도주 광장에 나타난다.** 수도주에 사는 아이들 사이에는 \"매년 5월, 이맘때가 되면 새벽의 광장에서 아주 무서운 일이 벌어진다\"는 이야기가 돈다.\n\n## 서사에서의 등장\n\n- **6편** — 수도주 광장과 밀실. [[세라]]가 헌법을 들고 있는 것을 보고 [[건국의 아버지들]]과의 관계를 짐작한다.\n- **17편** — [[해리엇]]이 세라의 의회 진입을 막으려 하자 \"현재 ‘헌법 복원’이 시급합니다, 귀하께서 비서관을 방해한다면, 우선순위에 따라 배제하겠습니다\"라며 물러서게 만든다. 경찰청장이 \"당신 같은 민간인이 어떻게 헌병을 데리고 있는 거야!?\"라 외치는 장면이다.\n- **18편** — 본회의장. [[데이비스]]가 \"헌병… 세라!! 설마…!\"라 알아채는 순간 판이 뒤집힌다.\n\n## 관련 문서\n\n- [[연방]] · [[의회]]\n- [[노에마]] · [[누스]] · [[연방 헌법]]\n- [[건국의 아버지들]] · [[애덤스]] · [[세라]]\n- [[연말 위기]]\n- [[경찰청]] · [[보안관]] · [[기동대]] — 연방에 남은 다른 무력\n\n## 여담\n\n**비무장화 조항의 구멍이 이 조직이다.** 반 연방 세력은 연방의 전쟁 수행 능력을 없애려 정규군 중 가장 작은 조직만 남기게 했는데, 연방은 그 작은 조직에 초자연 전력을 몰아넣었다. 겉으로는 군대 내 치안조직, 실제로는 1인이 군단급인 집단이다. 조약을 어기지 않으면서 조약의 목적을 무너뜨린 셈이다.\n\n**'소문으로만 아는 무력'이라는 설정이 두 번 설명된다.** 동원 절차가 까다로운 것이 하나, 매개체인 헌법이 대부분 불타 없어진 것이 둘이다. 대본 용어사전이 헌병을 \"좀처럼 모습을 드러내지 않아, 소문으로만 아는 이가 대부분\"이라 적은 것과 맞물린다.\n\n**서사에서 가장 무거운 카드다.** 마왕이 될 [[세라]]가 연방의 유일한 초자연 무력을 쥐고 있고, 그 근거가 혈통이며, 무력화 방법이 헌법 파괴라는 것까지 한 줄로 이어진다.","parentId":"federation"},{"title":"네빌","id":"neville","type":"인물","folder":"04_인물","sortOrder":20,"era":"서사 시점","canon":"확정","status":"작성 중","tags":["인물","철도청","스프링필드","네빌"],"memo":"원고에 인물 항목이 없어 대본에서 만든 문서다. 근거: 대본 프롤로그·1·2·3·5·14·16·17편, _인물관계.md, 주역·기호 배정. 사투리는 의도된 연출이므로 인용에서 고치지 않는다.","image":"resource/wiki/네빌.png","imageCaption":"네빌","summary":[["소속","[[철도청]]"],["직함","비서"],["기호","🎫"],["첫 등장","프롤로그"],["주역 편","1 · 14"],["등장 편","프롤로그 · 1 · 2 · 3 · 5 · 14 · 16 · 17"],["혈연","[[스프링필드]] 가 — 10년 전 떠났다 · [[코네트]]"],["목표","미정 — 자기 일을 의심하지만 대안을 말하지 않는다"],["방식","낮은 자리에서 할 말을 한다"],["훗날","미정"],["말투","~함다 / ~슴다 / ~임다 / ~검다"]],"content":"# 네빌\n\n[[철도청]] 비서. 1부의 시선이자, [[스프링필드]] 가를 10년 전에 떠난 사람이다. 청장의 '특별 지시'를 품고 고향 [[북방주]]로 돌아오는 것이 1편이다.\n\n## 인물\n\n**사투리를 쓴다.** `~함다` `~슴다` `~임다` `~검다`로 끝나는 말투가 그의 표식이며, 지방 출신이라는 사실을 문장마다 드러낸다.\n\n낮은 자리에서 정직한 말을 하는 역할이다. 프롤로그에서 이미 자기가 하는 일을 의심한다.\n\n```대사\n…저희가 하는 일이 ‘약탈’이랑 다른 게 뭠까?\n— 네빌, 프롤로그\n```\n\n```대사\n딴 소리 하지 마십쇼. 안되는 건 안되는 검다, 저는 분명 경고했슴다.\n— 네빌, 1편\n```\n\n## 두 번의 이탈\n\n네빌은 같은 일을 두 번 한다. **속한 곳을 스스로 떠나는 것**이다.\n\n- **10년 전** — [[스프링필드]] 가를 떠나 고향을 등졌다. 4편의 회상이다.\n- **3년 전** — [[대가문]]을 등지고 [[철도청]]에 제 발로 지원했다. [[세라]]가 면접해 받아들였다. 16편의 회상이다.\n\n그리고 서사 안에서 세 번째로 이탈한다. 5편의 사건이 \"[[세라]], 무단이탈한 네빌의 흔적을 쫓기 시작하다\"다.\n\n## 행적\n\n### 프롤로그 — 의뢰인의 일\n\n정체를 감춘 인물들과 함께 있다. 자기 일이 약탈과 무엇이 다른지 묻고, 어릴 때 친하게 지냈던 '가족'이 있다고 말한다. 그 가족이 [[코네트]]다.\n\n### 1편 — 귀향\n\n열두 번의 환승을 거쳐 [[스프링필드]] A 역에 도착한다. 청장의 특별 지시를 품고 있다. 편 부제가 「피는 물보다 진하다」다.\n\n### 2~3편 — 설득\n\n[[철도청]]이 [[하노버 용병단]]을 앞세워 북부 [[대가문]]들을 차례로 '설득'하는 과정에 놓인다. 2편에서 [[기동대]]를 쓰자고 제안했다가 [[앤드루]]에게 거절당한다 — 기록이 남기 때문이다.\n\n### 14편 — 소년의 영광\n\n반역죄로 몰리고, [[잭슨]]에게 구출된다. 이 편의 주역이며 부제가 「모든 답은 나왔다. 어떻게 살 것인가만 빼고」다.\n\n## 관계\n\n| 상대 | 관계 | 내용 |\n|---|---|---|\n| [[앤드루]] | 고용 | 철도청장과 그를 따라다니는 비서 |\n| [[세라]] | 고용 | 3년 전, 대가문을 등지고 온 그를 면접해 받아들였다 |\n| [[코네트]] | 혈연 | 같은 [[스프링필드]] 가. 어릴 때 친하게 지냈다 |\n| [[잭슨]] | 협력 | 반역죄로 몰린 그를 열차 강도가 빼내다 |\n\n## 여담\n\n**기호가 🎫(승차권)인 이유.** 1편이 열두 번의 환승으로 시작하고, 그가 소속을 바꿔 가며 옮겨 다니는 사람이라는 점과 겹친다. [[철도]]가 이 나라의 뼈대라는 설정에서 가장 낮은 자리의 표가 그의 상징이 된다.\n\n**1부의 눈이지만 주인공은 아니다.** 발화량은 199로 [[세라]] 다음이고 프롤로그의 시선도 그인데, 2부에 들어가면 5편 이후 14·16·17편에만 나온다. 이 작품이 개인의 활약이 아니라 이해관계를 축으로 굴러간다는 방침([[세계관 대문]])이 인물 배치에서도 드러나는 자리다.\n\n**사투리는 교정하지 않는다.** `~검다` `~함다`는 오타가 아니라 의도된 연출이다. `독ㄹ —` 같은 자모 파편도 말이 중간에 끊기는 연출이므로 손대지 않는다.","parentId":"people"},{"title":"데이비스","id":"davis","type":"인물","folder":"04_인물","sortOrder":40,"era":"서사 시점","canon":"확정","status":"작성 중","tags":["인물","의회","북부동맹","데이비스"],"memo":"원고에 인물 항목이 없어 대본에서 만든 문서다. 근거: 대본 5·7·8·9·11·12·13·17·18편, _인물관계.md. '명백한 운명'이 그의 말을 상징으로 채택한 조직이라는 것은 작가 확인(2026-07-31)이며, 8편의 해당 대사는 조직명이 아니라 관용구다.","image":"resource/wiki/데이비스.png","imageCaption":"데이비스","summary":[["소속","[[의회]]"],["직함","자치파 의원 → [[북부동맹]] 위원장"],["기호","🎭"],["첫 등장","5편"],["주역 편","8"],["등장 편","5 · 7 · 8 · 9 · 11 · 12 · 13 · 17 · 18"],["혈연","알려진 것 없음"],["목표","북부·동부의 분리 독립"],["방식","남이 먼저 나서게 만든다"],["훗날","[[미트로프 내전]]에서 분쇄 → [[명백한 운명]]이 그의 말을 상징으로 삼는다"]],"content":"# 데이비스\n\n[[자치파]] 의원에서 [[북부동맹]] 위원장으로 옮겨간 인물. 2부의 판을 짜는 쪽이며, [[대가문]]들을 포섭해 **분리 독립**까지 밀고 간다.\n\n## 인물\n\n기호가 🎭(가면)이다. 실제로 그의 행동은 대부분 **다른 사람이 먼저 나서게 만드는 것**이다.\n\n- [[스프링필드 가주]]에게 '분리 독립'을 제안한다 (8편)\n- [[연방 의원 A]]를 움직여 동방주가 먼저 조례를 던지게 만들고, 나머지는 자기가 맡는다 (9편)\n- [[타게니아]] 감독관의 개입마저 자기 판의 말로 쓴다 (13편)\n\n말투는 여유롭고 능글맞다. 8편의 \"이것도 어쩌면 ‘명백한 운명’ 일지도 모르겠어요~\" 같은 어투가 그의 것이다. 이 표현은 이때는 그냥 관용구인데, 훗날 그를 잇겠다는 자들이 조직 이름으로 삼는다. → [[명백한 운명]]\n\n## 연말 위기 당시\n\n지금은 [[잭]]과 서로의 마지막 걸림돌이지만, 두 사람은 **한때 같은 [[통일파]]**였다. 둘 다 온건파였고, 통일파가 [[철도파]]를 제거한 쿠데타의 **실행자가 아니라 방관자**에 가까웠다.\n\n[[먼로]]가 헌병을 앞세워 개전 반대파를 침묵시킬 때 그 자리에 함께 있었고, 함께 침묵당했다.\n\n## 행적\n\n### 8편 — 소문\n\n연회장에 '분리 독립'의 소문이 돌고, 북부 습격 소식이 당도한다. 이 편의 주역이며 부제가 「그는 우리의 대변자이시다」다.\n\n### 9편 — 조례\n\n동방주가 심야 조례를 앞세워 경찰 무장해제에 나선다. [[연방 의원 A]]와 [[필립]]이 현장에서 집행하고, 데이비스는 뒤에 있다.\n\n### 11~13편 — 장악\n\n[[북부동맹]]이 의회를 장악한다. 13편에서는 [[연합]] 감독관 [[타게니아]]의 개입까지 자기 판에 끌어들인다.\n\n### 18편 — 독립 선언\n\n본회의장에서 독립을 선언한다. [[연방 헌법]] 제4조를 근거로 삼고, 독립에 가담한 여섯 [[대가문]]의 이름을 부른다.\n\n```대사\n콩코드, 하트퍼드, [스프링필드]! 그리고 도버, 윌밍턴, 밀퍼드 가문의 인민들은!!\n— 데이비스, 18편 독립 선언\n```\n\n그러나 판은 곧 다시 뒤집힌다. [[세라]]가 [[헌병대]]와 함께 나타난 순간이다.\n\n```대사\n헌병… *뿌득* 세라!! 설마…!\n— 데이비스, 18편\n```\n\n## 관계\n\n| 상대 | 관계 | 내용 |\n|---|---|---|\n| [[잭]] | 적대 | 한때 같은 [[통일파]], 지금은 서로의 마지막 걸림돌 |\n| [[스프링필드 가주]] | 포섭 | 북부 대가문에 '분리 독립'을 제안했다 |\n| [[연방 의원 A]] | 포섭 | 동방주가 먼저 조례를 던지게 만들고, 나머지는 자기가 맡았다 |\n| [[타게니아]] | 이용 | 감독관의 개입마저 자기 판의 말로 썼다 |\n| [[먼로]] | 억압 | [[연말 위기]] 당시 헌병 앞에서 함께 침묵당했다 |\n\n## 여담\n\n**연말 위기의 피해자가 다음 위기의 설계자가 된다.** 헌병 앞에서 침묵당한 온건파 의원이, 몇 년 뒤 헌병을 앞세운 [[세라]]에게 다시 판을 빼앗긴다. 두 장면이 같은 구도로 겹친다.\n\n**그의 실패가 조직을 남긴다.** [[미트로프 내전]]에서 독립파가 분쇄된 뒤, 그를 잇겠다는 자들이 [[명백한 운명]]을 세운다. 정작 데이비스 본인은 그 조직을 만들지 않았고, 그가 무심코 쓴 관용구만 상징으로 남는다.\n\n**아직 모르는 것.** 내전 이후 데이비스 본인이 어떻게 되는지. [[명백한 운명]]이 \"그를 잇겠다\"고 하는 것으로 보아 그 시점에는 이미 무대에서 사라진 듯하나, 확인되지 않았다.","parentId":"people"},{"title":"세라","id":"sarah","type":"인물","folder":"04_인물","sortOrder":10,"era":"서사 시점","canon":"확정","status":"작성 중","tags":["인물","철도청","마왕","세라"],"memo":"원고에 인물 항목이 없어 대본에서 만든 문서다. 근거: 대본 5·6·8·14·16·17·18편, _인물관계.md, 주역·기호 배정. '세라가 마왕'과 '헌법 누스를 복구해 연방을 장악하려 한다'는 작가 확인(2026-07-31). 마왕화의 구조를 노모스로 읽은 부분은 추론이며 메모에만 두었다.","image":"resource/wiki/세라.png","imageCaption":"세라","summary":[["소속","[[철도청]]"],["직함","비서관"],["기호","📕"],["첫 등장","5편"],["주역 편","16 · 17 · 18 — 3편 연속"],["등장 편","5 · 6 · 8 · 14 · 16 · 17 · 18"],["혈연","[[애덤스]] — 아버지. [[건국의 아버지들]]"],["목표","'가족'의 이름으로 [[연방]]을 다시 세운다"],["방식","[[연방 헌법]] 복원과 개헌 · [[헌병대]]"],["훗날","마왕"]],"content":"# 세라\n\n[[철도청]] 비서관. 겉으로는 [[앤드루]] 청장 밑의 실무자이고, 실제로는 소실된 [[연방 헌법]]을 복구해 [[연방]]을 장악하려는 인물이다. 훗날 **마왕**이 된다.\n\n## 인물\n\n부드러운 말씨를 쓴다. 협박할 때조차 존대를 놓지 않고, 상대가 화를 내면 \"너무 걱정하지 마세요\"로 받는다. [[네빌]]이 \"비서관님은 가끔 보면 참 재밌단 말이죠…\"라 평하고, 스스로도 \"고작 단어 하나에도 정을 붙이시다니, 이상하신 분이라니까요\"라는 말을 듣는다.\n\n이 온화함이 곧 위험이다. 17편에서 [[해리엇]] 경찰청장을 [[헌병대]]로 물러서게 만들면서도 그가 하는 말은 이것뿐이다.\n\n```대사\n너무 걱정하지 마세요, 제 가족을 해칠 생각은 없으니까요.\n— 세라, 17편\n```\n\n경찰청장에게 '가족'이라 부르는 대목이 핵심이다. 세라에게 가족은 혈연이 아니라 **자기 편으로 규정한 모든 것**이다.\n\n## 유년\n\n아버지 [[애덤스]]와 둘뿐이었다. 어머니가 없고 [[대가문]] 사람도 아니라는 이유로 학교에서 놀림받았다.\n\n```대사\n나는 엄마도 없고… 다른 애들처럼 ‘가문’ 사람도 아니라면서… *훌쩍*\n— 어린 세라, 17편 회상\n```\n\n애덤스는 이렇게 답했다.\n\n```대사\n너무 걱정하지 마. 아빠가 다 해결해줄테니까.\n아빠가 전에 ‘가족’은 뭐라고 했었지?\n— 애덤스, 17편 회상\n```\n\n세라의 대답이 \"무슨 일이 있어도 항상 내 편\"이었다. **이 한 줄이 훗날 헌법 조문이 된다.**\n\n## 행적\n\n### 5편 — 등장\n\n무단이탈한 [[네빌]]의 흔적을 쫓기 시작한다. 이 시점에는 유능한 비서관으로만 보인다. 3년 전 [[대가문]]을 등지고 철도청에 제 발로 지원한 네빌을 면접해 받아들인 것도 그였다.\n\n### 6편 — 헌법\n\n수도주 광장에서 [[헌병대]]와 만난다. 헌병이 헌법 소실로 존재 의의를 잃었다고 말하자 세라는 책을 내보인다.\n\n```대사\n*슬쩍* 제가 다시 세울 수 있다면요?\n— 세라, 6편\n```\n\n헌병은 그가 [[건국의 아버지들]]과 관계가 있음을 알아채고, 딱 하나를 묻는다. \"당신이 새로 만들고자 하는 ‘연방’은, ‘무엇에 의한 국가’ 입니까?\"\n\n```대사\n…‘가족’ 이요.\n— 세라, 6편\n```\n\n이후 밀실에서 조력자([[식스]])와 함께 헌법을 복원한다. 이 편의 사건 요약은 \"밀실에서 '폭탄'이 완성되어 가다\"다.\n\n### 16편 — 그림자\n\n지하 심문실에서 세라의 그림자가 처음 모습을 드러낸다. 이 편부터 3편 연속 주역이다.\n\n### 17편 — 넘어선 선\n\n[[해리엇]]의 저지를 헌병으로 물리치고 의회로 향한다. 같은 편에서 [[앤드루]]와 서로의 뒷일을 캐지 않기로 합의한 과거가 밝혀지고, 아버지 [[애덤스]]와의 관계도 공개된다. 편 제목이 「가족에 의한 가족」이다.\n\n### 18편 — 수정헌법\n\n본회의장. [[데이비스]]의 독립 선언으로 판이 뒤집힌 직후, 세라가 나타나 판을 다시 뒤집는다.\n\n```조문\n모든 인민은. 가족을 위해. 봉사하라.\n— 수정헌법 제 1 조, 18편\n```\n\n그리고 이렇게 마친다 — \"가족의, 가족에 의한, 가족을 위한 국가가… 지상에서 사라지지 않기를 바라며…\"\n\n## 관계\n\n| 상대 | 관계 | 내용 |\n|---|---|---|\n| [[애덤스]] | 혈연 | 아버지. [[건국의 아버지들]]의 지도자 |\n| [[네빌]] | 고용 | 3년 전, 대가문을 등지고 온 그를 면접해 받아들였다 |\n| [[앤드루]] | 감시 | 서로가 뒤에서 무슨 일을 벌이는지 알면서도 캐지 않기로 했다 |\n| [[식스]] | 조력 | 떠나라는 말에도 \"세라님만 두고 갈 순 없다\"며 곁에 남았다 |\n| [[코네트]] | 신뢰 | 코네트가 '세라 언니'라 부르며 위기에 먼저 연락했다 |\n| [[해리엇]] | 적대 | 헌병을 거느린 민간인 앞에서 의회 진입을 저지당했다 |\n| [[헌병대]] | 지휘 | 건국의 아버지들의 혈족이므로 부를 수 있다 |\n\n## 여담\n\n**가족이라는 말의 뜻이 계속 넓어진다.** 아버지와 둘뿐인 집 → 자기가 거둔 사람들([[네빌]]·[[식스]]·[[코네트]]) → [[헌병대]] → 마지막에는 연방의 모든 인민. 넓어질수록 원래 뜻에서 멀어지는데, 정작 조문에 박히는 문장은 아버지가 딸을 달래던 그 말과 같다.\n\n**마왕화가 입법 절차의 형태를 취한다**. [[노모스]]는 진입자를 주체의 신념에 동화시키는 영역이고, [[연방 헌법]]은 [[누스]]다. 그 누스에 \"모든 인민은 가족을 위해 봉사하라\"를 새기는 것은 국가 전체를 세라의 신념으로 덮는 일이 된다. 즉 초자연적 폭주가 아니라 개헌이라는 합법 절차로 마왕이 되는 것으로 추정된다.\n\n**대본은 세라가 마왕이라고 한 번도 말하지 않는다.** 초자연 층 자체가 《가문과 가족》에서 은폐되어 있으므로([[세계관 대문]]), 이 문서에는 독자가 아직 모르는 것이 적혀 있다.\n\n**아직 모르는 것.** 어머니가 누구인지, 그리고 어떤 경로로 마왕에 이르는지. [[연방 헌법]]이 마왕 토벌 과정에서 파괴된다는 것까지만 정해져 있다.","parentId":"people"},{"title":"앤드루","id":"andrew","type":"인물","folder":"04_인물","sortOrder":30,"era":"서사 시점","canon":"확정","status":"작성 중","tags":["인물","철도청","앤드루"],"memo":"원고에 인물 항목이 없어 대본에서 만든 문서다. 근거: 대본 2·3·4·5·7·16·17·19·20편, _인물관계.md. '먼로와의 관계'는 인물관계도에서 '?무슨 사이'로 미공개 처리된 항목이며, 작가 확인에 따라 서사 시점의 먼로 등장은 전부 회상이므로 앤드루가 제지받지 않는 이유는 아직 열려 있다.","image":"resource/wiki/앤드루.png","imageCaption":"앤드루","summary":[["소속","[[철도청]]"],["직함","철도청장"],["기호","🕰️"],["첫 등장","2편"],["주역 편","2 · 19"],["등장 편","2 · 3 · 4 · 5 · 7 · 16 · 17 · 19 · 20"],["혈연","[[잭슨]] — 동생. 20편에서 밝혀진다"],["목표","갈라진 [[연방]]을 봉합한다"],["방식","기록이 남지 않는 손을 쓴다 — 지하철도와 용병단"],["훗날","미정"]],"content":"# 앤드루\n\n[[철도청]]장. **[[궤간 통일]]을 명분으로 연방 전역의 지하를 파는 사업**의 주인이며, 그 일에 [[하노버 용병단]] 같은 외부의 손을 쓴다.\n\n## 방식\n\n앤드루의 원칙은 하나다. **기록을 남기지 않는다.**\n\n```대사\n[기동대]를 움직이면 반드시 기록이 남잖나, 이런 일에는 적합하지 않아.\n— 앤드루, 2편\n```\n\n[[기동대]]는 연방에서 가장 빠르고 유연한 무력이고 그의 부처 산하다. 그런데도 쓰지 않고 용병을 산다. 이 한 줄이 그의 사업 전체의 성격을 정한다.\n\n## 사업\n\n- **두 달 전** — 보안관들이 선로 보수를 거듭 거부하자, \"진짜 문제는 [[대가문]]\"이라 규정한다. 5편의 회상이다.\n- **몇 달 전** — [[궤간 통일]]을 명분으로 지하철도를 비밀리에 파기 시작하고, [[철도파]]의 [[하워드]]가 의회 쪽에서 뒷받침한다. 16편의 회상이다.\n- **과거 어느 날** — [[잭]]에게 갈라진 연방을 봉합하는 '사업'의 협조를 청하나, 왜 하필 그인지는 끝내 답하지 않는다. 7편의 회상이다.\n- **2~3편** — [[하노버 용병단]]을 앞세워 북부 [[대가문]]들을 차례로 '설득'한다. 3편에서 용병단이 [[스프링필드]] 저택을 습격하고, [[레밍턴]]에게 \"땅속에서 무슨 소리가 들리든 눈감으라\" 요구한다.\n- **19편** — 지하에 숨겨진 사업이 마침내 실체를 드러낸다. 이 편의 주역이다.\n\n## 19편\n\n지하에서 [[에른스트]]의 통신을 받는다. 북부와 동부 [[대가문]]이 독립을 선언했다는 소식이다.\n\n```대사\n북동부… 의회… 헌병…\n세라는 결국… 그게 목적이었던 건가…?\n— 앤드루, 19편\n```\n\n같은 편에서 [[프로이센 사단]]의 귀환이 언급되고, 연방군 출신이 거의 전부 독립 쪽에 붙었다는 말이 나온다.\n\n## 이름\n\n동생 [[잭슨]]과 이름을 이어 읽으면 **Andrew Jackson** — 미국 7대 대통령이 된다.\n\n[[연방]]의 이름 계열이 미국 건국사에서 왔고([[건국의 아버지들]] = Founding Fathers, [[명백한 운명]] = Manifest Destiny), 인물 이름도 대통령에서 오는 것을 감안하면 의도된 배치로 추정된다. 한 사람의 이름을 둘로 쪼개, **형은 국가 기구의 수장에게 동생은 열차 강도에게** 나눠 붙인 배치가 된다.\n\n\n## 관계\n\n| 상대 | 관계 | 내용 |\n|---|---|---|\n| [[네빌]] | 고용 | 철도청장과 그를 따라다니는 비서 |\n| [[세라]] | 감시 | 서로가 뒤에서 무슨 일을 벌이는지 알면서도 캐지 않기로 했다 |\n| [[에른스트]] | 고용 | 기록이 남지 않도록 용병단을 앞세워 북부 대가문을 '설득'시켰다 |\n| [[잭]] | 밀약 | 봉합 '사업'에 협조를 청하나, 왜 하필 그인지는 말하지 않았다 |\n| [[하워드]] | 협력 | 지하철도 사업을 의회 쪽에서 뒷받침한다 |\n| [[잭슨]] | 혈연 | 잭슨은 앤드루의 동생. 20편에서 밝혀진다 |\n| [[먼로]] | **?** | 용병을 부려 전역의 지하를 파헤치고도 국가로부터 아무런 제지를 받지 않는다 |\n\n## 여담\n\n**세라와 거울이다.** 둘 다 [[철도청]] 소속이고, 둘 다 정식 절차 밖에서 연방을 다시 만들려 하고, 서로가 그것을 알면서 캐지 않는다. 다른 점은 수단이다. 앤드루는 **기록을 남기지 않는 쪽**으로, 세라는 **기록 그 자체(헌법)를 고쳐 쓰는 쪽**으로 간다. 19편에서 앤드루가 \"세라는 결국… 그게 목적이었던 건가\"라고 뒤늦게 깨닫는 장면이 그 대비의 결말이다.\n\n**제지받지 않는 이유가 미공개다.** [[인물관계도]]에서 [[먼로]]와의 관계가 '?무슨 사이'로 처리되어 있다. 서사 시점에 먼로가 나오는 장면은 전부 회상이므로, [[건국의 아버지들]]이 뒤를 봐주고 있다는 단순한 설명은 성립하지 않는다. 이 자리는 열린 채로 두었다.\n\n**동생이 열차 강도라는 설정이 20편까지 감춰진다.** [[잭슨]]은 9편부터 나오고 [[네빌]]을 구하기까지 하는데, 형제라는 사실은 20편에서야 밝혀진다. 그 사이 앤드루의 사업은 계속 열차와 선로 위에서 굴러간다.","parentId":"people"},{"title":"인물","id":"people","type":"인물","folder":"04_인물","sortOrder":0,"era":"서사 시점","canon":"확정","status":"작성 중","tags":["인물","안내"],"memo":"원고에 인물 항목이 없어 대본에서 직접 만든 구간이다. 근거는 script/ 대본 22편, _인물관계.md(인물 21·관계 29), _어록.md, storypack의 주역·기호 배정. 인용은 대본에서 화자를 직접 확인한 것만 쓴다 — 어록 파일은 화자를 감춰두었으므로 그것만으로는 귀속하지 않는다.","image":"","imageCaption":"","summary":[["범위","《가문과 가족》 22편"],["등록 인물","21"],["발화 있는 인물","38 (단역 포함)"],["기호를 받은 인물","14"],["무기호","[[식스]] — 의도된 예외"]],"content":"# 인물\n\n```틀\n가문과 가족\n```\n\n《가문과 가족》의 인물들. 이 작품은 개인의 활약보다 **이해관계와 집단**을 축으로 굴러가므로, 인물 문서도 '무엇을 원하는가'와 '누구와 묶여 있는가'를 중심에 둔다.\n\n## 기호\n\n각 편의 주역에게는 기호가 하나씩 배정되어 있다. 화 목록에 이름 대신 각인으로만 표시되며, 독자는 편을 읽고 나서야 그것이 누구였는지 알게 된다.\n\n| 기호 | 인물 | 기호 | 인물 |\n|---|---|---|---|\n| 🎫 | [[네빌]] | 📕 | [[세라]] |\n| 🕰️ | [[앤드루]] | 📰 | [[잭]] |\n| 🧨 | [[에른스트]] | 🎭 | [[데이비스]] |\n| 🛡️ | [[레밍턴]] | 🔦 | [[필립]] |\n| ⛓️ | [[로버트]] | ⚖️ | [[하워드]] |\n| 🎖️ | [[해리엇]] | ♗ | [[타게니아]] |\n| 🗝️ | [[코네트]] | ⚔️ | [[헥터]] |\n\n[[식스]]에게는 기호가 없다. 6편의 주역인데도 비워둔 것이며, 그 이질감이 의도다.\n\n## 세력별\n\n- **[[철도청]]** — [[앤드루]](청장) · [[세라]](비서관) · [[네빌]](비서)\n- **[[의회]]** — [[잭]] · [[로버트]](통합파) · [[데이비스]](자치파 → [[북부동맹]] 위원장) · [[하워드]](철도파) · [[연방 의원 A]](동방주 자치파)\n- **[[경찰청]]** — [[해리엇]](청장)\n- **[[대가문]]** — [[레밍턴]](스프링필드 보안관) · [[필립]](도버 보안관) · [[코네트]](스프링필드 가) · [[스프링필드 가주]]\n- **구 군부** — [[에른스트]](하노버 용병단장) · [[잭슨]](열차 강도) · [[프랑크]](바이에른 그룹)\n- **[[연합]]** — [[타게니아]](올림피아드 감독관) · [[에리스]](엑스포)\n- **[[건국의 아버지들]]** — [[먼로]] · [[애덤스]]\n- **???** — [[식스]](조력자)\n\n## 발화량 순\n\n대본에서 실제로 말하는 분량이다. 비중을 가늠하는 참고치일 뿐, 중요도와 같지는 않다.\n\n| 인물 | 발화 | 등장 편 |\n|---|---|---|\n| [[세라]] | 212 | 5 · 6 · 8 · 14 · 16 · 17 · 18 |\n| [[네빌]] | 199 | 프롤로그 · 1 · 2 · 3 · 5 · 14 · 16 · 17 |\n| [[데이비스]] | 196 | 5 · 7 · 8 · 9 · 11 · 12 · 13 · 17 · 18 |\n| [[앤드루]] | 170 | 2 · 3 · 4 · 5 · 7 · 16 · 17 · 19 · 20 |\n| [[에른스트]] | 128 | 1 · 2 · 3 · 15 · 19 · 20 |\n| [[잭]] | 120 | 7 · 8 · 10 · 12 · 13 · 17 · 18 |\n| [[잭슨]] | 88 | 9 · 13 · 14 · 19 · 20 |\n| [[해리엇]] | 73 | 12 · 14 · 15 · 17 · 19 |\n| [[레밍턴]] | 64 | 3 · 4 |\n| [[로버트]] | 56 | 10 · 12 · 13 · 17 · 18 |\n| [[하워드]] | 51 | 11 · 12 · 13 · 16 · 18 |\n| [[코네트]] | 44 | 5 · 20 |\n| [[필립]] | 44 | 9 |\n| [[식스]] | 30 | 6 |\n| [[프랑크]] | 26 | 15 |\n| [[타게니아]] | 15 | 13 · 18 |\n| [[애덤스]] | 8 | 17 (회상) |\n| [[먼로]] | 4 | 18 (회상) |\n\n## 여담\n\n**아직 안 쓴 인물.** [[잭]] · [[에른스트]] · [[해리엇]] · [[레밍턴]] · [[로버트]] · [[하워드]] · [[필립]] · [[잭슨]] · [[타게니아]] · [[프랑크]] · [[먼로]] · [[에리스]] · [[스프링필드 가주]] · [[연방 의원 A]] · [[헥터]].\n\n**[[세라]]가 2부의 축이다.** 16·17·18편 세 편 연속 주역이며, 작품 제목 《가문과 가족》이 그의 논리에서 나온다. 유년의 상처 → \"가족은 무슨 일이 있어도 항상 내 편\"이라는 아버지의 가르침 → 수정헌법 제1조 \"모든 인민은 가족을 위해 봉사하라\"로 이어지는 한 줄이 서사 전체를 관통한다.\n\n**인용 귀속의 원칙.** `_어록.md`는 화자와 출처를 일부러 감춰둔 파일이다(독자에게 먼저 보여주는 용도). 그래서 어록만 보고 누구의 말이라 단정하지 않고, 대본에서 화자 라벨을 직접 확인한 대사만 인물 문서에 인용했다.","parentId":null},{"title":"코네트","id":"cornet","type":"인물","folder":"04_인물","sortOrder":50,"era":"서사 시점","canon":"확정","status":"작성 중","tags":["인물","대가문","스프링필드","코네트"],"memo":"원고에 인물 항목이 없어 대본에서 만든 문서다. 근거: 대본 5·20편, _인물관계.md, 프롤로그의 네빌 대사. 20편 주역이며 기호는 🗝️.","image":"resource/wiki/코네트.png","imageCaption":"코네트","summary":[["소속","[[대가문]] — [[스프링필드]] 가"],["직함","없음 — 가문의 아이"],["기호","🗝️"],["첫 등장","5편"],["주역 편","20"],["등장 편","5 · 20"],["혈연","[[스프링필드 가주]] — 할아버지 · [[네빌]]"],["목표","할아버지와 [[레밍턴]]을 찾는다"],["방식","가문 열쇠를 내주지 않는다"],["훗날","미정"]],"content":"# 코네트\n\n[[스프링필드]] 가의 아이. [[네빌]]이 10년 전 떠난 그 집에 남은 '가족'이며, 20편의 주역이다.\n\n## 인물\n\n아이의 말투를 쓴다. [[세라]]를 '세라 언니', [[레밍턴]]을 '레밍턴 아저씨'라 부른다. 위기가 닥쳤을 때 어른들이 아니라 세라에게 먼저 연락한 것도 그였다(5편).\n\n기호가 🗝️(열쇠)다. 20편에서 그 이유가 나온다. 폐허가 된 저택 앞에서 일행이 문을 열려 하자 코네트는 열쇠를 내놓지 않는다.\n\n```대사\n할아버지가 절대… 절대 우리 가문 열쇠는 남들한테 주면 안된다고 했어요…\n— 코네트, 20편\n```\n\n## 행적\n\n### 프롤로그 — 이름 없이\n\n[[네빌]]이 \"어렸을 때 꽤 친하게 지냈던 ‘가족’이 있는데…\"라 말할 때의 그 가족이다. 이름은 나오지 않는다.\n\n### 5편 — 연락\n\n위기 상황에서 [[세라]]에게 먼저 연락한다. 이 편에서 [[네빌]]과 같은 [[스프링필드]] 가라는 사실, 그리고 네빌이 10년 전 가문을 떠났다는 사실이 공개된다.\n\n### 20편 — 귀환\n\n폐허가 된 [[스프링필드]] 저택으로 일행과 함께 돌아온다. 할아버지와 [[레밍턴]]을 찾지만 찾지 못한다. 편 부제가 「언약의 피는 태중의 물보다 진하다」다.\n\n1편의 부제가 「피는 물보다 진하다」였다. **같은 속담의 뒷문장이 마지막 편의 부제가 된다** — 혈연보다 맺은 약속이 앞선다는 쪽으로 뒤집힌다.\n\n## 관계\n\n| 상대 | 관계 | 내용 |\n|---|---|---|\n| [[네빌]] | 혈연 | 같은 [[스프링필드]] 가. 네빌은 10년 전 가문을 떠났다 |\n| [[세라]] | 신뢰 | '세라 언니'라 부르며 위기에 먼저 연락했다 |\n| [[레밍턴]] | 보호 | 저택의 아이를 지키는 보안관 |\n| [[스프링필드 가주]] | 혈연 | '할아버지'라 부르는 가주 |\n\n## 여담\n\n**작품의 두 축이 이 아이 한 명에게 모인다.** [[네빌]]에게는 등지고 떠난 가문이고, [[세라]]에게는 '가족'이라 거둔 사람이며, [[레밍턴]]에게는 목숨으로 지킨 아이다. 세 인물의 동기가 각각 다른 방향에서 코네트로 향한다.\n\n**부제가 1편과 20편을 잇는다.** 「피는 물보다 진하다」(1편) → 「언약의 피는 태중의 물보다 진하다」(20편). 원래 속담의 온전한 형태가 뒤에 오면서, 혈연이 아니라 약속이 앞선다는 뜻으로 바뀐다. [[세라]]가 혈연 아닌 이들을 가족이라 부르는 것과 같은 방향이다.\n\n**아직 모르는 것.** 코네트의 부모. 할아버지와 함께 살고 어머니·아버지 이야기가 나오지 않는다. [[세라]]가 어머니 없이 자란 것과 겹치는 자리일 수 있다.","parentId":"people"},{"title":"대전쟁","id":"great-war","type":"사건","folder":"05_사건","sortOrder":0,"era":"대전쟁","canon":"확정","status":"작성 중","tags":["대전쟁","구대륙","바다"],"memo":"원문에 항목이 없던 문서. 작가 확인(2026-07-31)으로 만들었다 — '대륙간 전쟁이며, 신대륙에 속하는 그렌빌리아·로디니아·판노티아는 영향권 밖이었지만 구대륙의 세력들이 대륙 단위로 거대한 전쟁을 벌인 것. 바다에 노에시스가 많이 녹아있는 이유이기도 하다.' 전쟁의 경과·참전 세력·시기는 전부 미정.","image":"resource/wiki/대전쟁.png","imageCaption":"대전쟁의 흔적","summary":[["성격","대륙간 전쟁"],["무대","[[판게아 대륙]] — 구대륙"],["영향권 밖","[[그렌빌리아 대륙]] · [[로디니아 대륙]] · [[판노티아 대륙]]"],["결과","[[바다]]의 노에시스 농도 급증 → 대륙 간 항해 차단"],["실종","[[바다 민족]]"],["참전 세력","미정"],["시기","미정"]],"content":"# 대전쟁\n\n**대륙간 전쟁.** 구대륙의 세력들이 대륙 단위로 벌인 거대한 전쟁이다.\n\n## 확인된 사실\n\n- 구대륙인 [[판게아 대륙]]에서 일어난 전쟁이며, 신대륙에 속하는 [[그렌빌리아 대륙]] · [[로디니아 대륙]] · [[판노티아 대륙]]은 **영향권 밖**이었다.\n- 이 전쟁이 [[바다]]에 노에시스가 대량으로 녹아 있는 원인이다.\n- [[바다 민족]]은 이 전쟁 이후 완전히 종적을 감추었다.\n\n## 이 사건이 세계 구조를 만들었다\n\n대전쟁은 직접 무대에 오르지 않지만, 지금 세계의 형태를 결정한 사건이다.\n\n전쟁으로 바다의 노에시스 농도가 올라갔고, 그 결과 대륙 간 항해가 사실상 불가능해졌다. 대륙들이 서로를 거의 모른 채 독립적으로 굴러가는 것도, [[카시마르]]가 바다와 지층의 축적된 노에시스에서 발생하는 것도, 신대륙의 인류가 [[바다 민족]]의 후손이면서 정작 그 조상의 흔적을 기록으로만 아는 것도 전부 여기서 나온다.\n\n## 관련 문서\n\n- [[바다]]\n- [[바다 민족]]\n- [[노에시스]]\n- [[카시마르]]\n\n## 여담\n\n**미정인 것.** 참전 세력, 전쟁의 원인과 경과, 시기, 승패, 그리고 구대륙이 지금 어떤 상태인지 전부 정해지지 않았다.\n\n**구대륙은 [[판게아 대륙]]이다**. 즉 대전쟁의 무대이자 [[바다 민족]]의 출신지다. 정리 문서 §1의 대륙 넷 중 그렌빌리아 · 로디니아 · 판노티아가 신대륙, 판게아가 구대륙이다.","parentId":null},{"title":"연말 위기","id":"year-end-crisis","type":"사건","folder":"05_사건","sortOrder":10,"era":"연말 위기","canon":"확정","status":"작성 중","tags":["사건","연방","연말 위기","비무장화"],"memo":"원고 §1 연방·연합의 「연말 위기」 서술과 대본 18편 회상(3건)을 합쳐 만든 문서다. 헌법 80~90% 소실, 쿠데타 주체가 통일파, 잭·데이비스가 방관자, 철도파 강경파 숙청, 통일파 강경파의 와해 경로는 모두 작가 확인(2026-07-31). 시대는 2026-07-31에 신설한 독립 항목 '연말 위기'다 — 작가가 이 사건을 근대와 서사 시점을 가르는 기준이라 확정했고, 경계는 어느 한쪽에 넣으면 어긋나기 때문이다.","image":"resource/wiki/연말 위기.png","imageCaption":"연말 위기","summary":[["성격","[[연방]]을 비무장국가로 만든 국제 위기"],["발단","크레스티아 제국 해체 후 열강들의 최후통첩"],["갈림","[[철도파]] 개전론 vs [[통일파]] 반대론"],["분기점","[[먼로]]가 [[헌병대]]를 앞세워 만장일치를 통보"],["결말","통일파의 쿠데타 — 화재로 개전파 제거"],["조약","연방 완전 비무장화"],["잃은 것","[[연방 헌법]] 80~90% 소실"],["등장","18편 회상 (3장면)"]],"content":"# 연말 위기\n\n```틀\n연방\n```\n\n[[연방]]이 **완전한 비무장화**를 받아들인 사건. 지금 연방의 모든 문제가 여기서 나온다.\n\n## 발단\n\n[[연방]]은 [[크레스티아 제국]]을 해체시키며 대륙의 새 패권국이 되었다. 그러자 남은 열강들이 뭉쳤다 — [[연합]]이 먼저 [[신성제국]]에 연합을 제의하고, 남부 군도의 왕국과 중견국들까지 끌어들여 **반 연방 세력**이 형성되었다.\n\n최후통첩의 내용은 셋이었다.\n\n1. 점거한 제국 영토를 [[컴퍼니]]에게 전부 반환할 것\n2. [[컴퍼니]]는 연방에 귀속되지 않으며 독립된 권리를 가진 '기업국가'로 존속할 것\n3. 과거 편입한 쾨벤하운 왕국([[북방주]])을 독립시킬 것\n\n## 의회의 분열\n\n[[철도파]]는 싸우자고 했다. 구 패권국에게 이겼으니 나머지도 굴복시킬 수 있다는 계산이었다.\n\n[[통일파]]는 반대했다. 크레스티아 전쟁에서 소모된 역량이 너무 컸고, 연방 정규군은 대륙 중부의 용병으로 이루어져 있어 소모되면 보충이 어려웠다.\n\n18편 회상에서 그 논쟁이 직접 나온다.\n\n```대사\n철도파 의원들은 국제 정세를 읽지 못하는 건가요? 지금 강대국, 약소국 할 것 없이 대륙의 남은 국가들이 모두 ‘반 연방 전선’을 형성하고 있지 않나요?\n— 데이비스, 18편 회상\n```\n\n```대사\n저희가 병합한 ‘크레스티아 제국’ 영토의 정상적인 통제도 불가능한 상태인데, 이 상황에서 전쟁까지 일으키겠다는 건…\n— 잭, 18편 회상\n```\n\n## 먼로의 통보\n\n논쟁은 결론이 나지 않았다. [[건국의 아버지들]]의 [[먼로]]가 본회의장에 들어와 끝냈다.\n\n```대사\n그만, 의미없는 논쟁은 여기까지 하도록.\n지금은 국가적인 비상사태, 이제부터 법적인 논의는 아무 의미 없다.\n— 먼로, 18편 회상\n```\n\n[[잭]]이 무슨 권한이냐 묻자 먼로 옆의 [[헌병대]]가 답을 대신했다. 이름이 나오는 헌병은 **벤자민** 한 명뿐이며, 대사는 없고 침묵으로만 서 있다.\n\n```대사\n하, 하하… ‘헌병’, 연방군 중에서도 특히 애지중지하시더니. 이런 곳에서 쓰려고 했던 건가요?\n— 데이비스, 18편 회상\n```\n\n```대사\n건국의 아버지들 내에서 만장일치로 결정된 사안이니, 더 이상 이 안건으로 논쟁하지 말도록. 이상.\n— 먼로, 18편 회상\n```\n\n[[데이비스]]가 [[잭]]에게 남긴 말이 이 장면의 결론이다.\n\n```대사\n이딴 식으로 일을 처리할거면, 우리가 왜 이 자리에 앉아있어야 하는 거냐?\n— 데이비스, 18편 회상\n```\n\n## 쿠데타\n\n선전포고문 발표 사흘 전, 전쟁을 반대한 [[통일파]] 의원들이 쿠데타를 모의했다. [[철도파]] 의원들을 한 곳에 모아 한 번에 제거하는 계획이었다.\n\n과정에 극적인 대목이 둘 있었다. 계획이 철도파 의원 한 명에게 노출되었으나 그가 통일파 의원에게 감화되어 묵인했고, 장소로의 유인을 위해 통일파 의원 한 명이 끝까지 그곳을 지키다 사망했다.\n\n준비된 큰 화재가 발생했다. 급진적인 철도파 의원과 전쟁에 우호적이었던 의원이 대부분 사망하고, [[건국의 아버지들]]도 이 자리에서 대부분의 인원을 잃었다.\n\n[[잭]]과 [[데이비스]]는 당시 통일파 온건파였고, 쿠데타의 **실행자가 아니라 방관자**에 가까웠다.\n\n## 조약\n\n통일파는 곧바로 협상에 들어가, 최후통첩을 받아들이되 [[북방주]]만은 지켰다. 대가는 **완전한 비무장화**였다.\n\n| 조항 | 내용 |\n|---|---|\n| 비무장화 | 정규군을 특정 국가에 속하지 않은 용병단으로 환원. 가장 작은 조직이던 [[헌병대]]만 잔존 |\n| 쾨벤하운 | 독립시키지 않고 [[북방주]]로 유지 |\n| [[컴퍼니]] | 기업국가화 승인. 단 무역권 독점 조항 추가 |\n| 철도망 | 영토 반환 대신 [[그렌빌리아 대륙]] 전체에 연방 체계의 철도망 설립 |\n\n마지막 조항은 살아남은 [[철도파]] 온건파의 의견이었고, 굴욕적이라 비판받았으나 현재까지 이어지는 '미트로프 중심 질서'를 만들었다.\n\n## 남긴 것\n\n- **[[연방 헌법]]이 80~90% 소실되었다.** 그래서 [[헌병대]]가 사실상 무력화되었다 — 매개체를 잃었기 때문이다.\n- **[[철도파]] 강경파와 [[건국의 아버지들]]이 사라졌다.** 철도를 정비할 세력이 통째로 죽어, 궤간과 사유 철도가 난립한 채 남았다.\n- **[[통일파]]도 오래가지 않았다.** 강경파는 헌법 소실과 파벌 분열 과정에서 와해되고, 온건파가 [[통합파]]와 [[자치파]]로 갈라졌다.\n- **의회가 신뢰를 잃었다.** 일부 [[대가문]]이 독자 행동을 시작했다.\n- **치안 공백이 생겼다.** [[경찰청]]을 대폭 늘리고 [[보안관]]을 확대해 메웠고, 그 과정에서 두 조직의 관할 다툼이 생겼다.\n- **[[연합]] 내부도 바뀌었다.** 연방을 잇는 창구였던 [[건국의 아버지들]]이 와해되면서 [[올림피아드]]를 앞세운 엑스포 세력의 발언권이 약해지고, 길드가 다시 권력을 양분하게 되었다.\n\n## 18편에서의 반복\n\n이 회상은 [[세라]]가 본회의장에 들어오기 직전에 배치되어 있다. 그리고 세라의 첫마디가 먼로의 말과 같다.\n\n```대사\n조약이니, 연방법이니 하는 것들… 법적인 논의는 더 이상 아무런 의미가 없습니다.\n— 세라, 18편\n```\n\n그 자리에 있었던 [[잭]]이 즉시 알아챈다.\n\n```대사\n아무 의미 없다고… 하, 하하. 옆은 헌병이겠군 그래…?\n— 잭, 18편\n```\n\n같은 본회의장, 같은 문장, 옆에 선 같은 [[헌병대]]. 연말 위기에 침묵당한 쪽이 다시 침묵당하는 구도다.\n\n## 관련 문서\n\n- [[연방]] · [[의회]] · [[연방 헌법]] · [[헌병대]]\n- [[통일파]] · [[철도파]] · [[통합파]] · [[자치파]] · [[건국의 아버지들]]\n- [[먼로]] · [[잭]] · [[데이비스]] · [[세라]]\n- [[크레스티아 제국]] · [[컴퍼니]] · [[연합]] · [[북방주]]\n- [[경찰청]] · [[보안관]] · [[궤간 통일]]\n\n## 여담\n\n**이 사건이 시대의 경계다**. 근대와 서사 시점을 가르는 기준이며, 그래서 위키의 시대 축에 **`연말 위기`라는 독립 항목**을 두었다. 경계를 어느 한쪽에 넣으면 반드시 어긋나기 때문이다 — 근대에 넣으면 대본의 `< 얼마 지나지 않은 과거 >`라는 캡션과 맞지 않고, 서사 시점에 넣으면 원인과 결과가 같은 칸에 들어간다. 지금 서사 시점에 있는 문서는 전부 이 사건의 결과물이다.\n\n시점은 **10년 전보다 뒤, 3년 전보다 앞**이다. 플레이어 연표의 시대 순서가 `먼 과거 → 10년 전 → 연말 위기 → 과거 어느 날 → 3년 전`이고, [[잭]]과 [[데이비스]]가 그때도 의원이고 지금도 의원인 것과 맞는다.\n\n**[[통일파]]와 [[건국의 아버지들]]은 '근대'에 그대로 둔다.** 이 사건에서 사라지는 구질서이기 때문이다. 사건 하나가 무대의 인물을 통째로 교체하고, 그 다음 칸부터 [[통합파]]·[[자치파]]가 나온다.\n\n**국가사와 개인사가 여기서 하나로 묶인다.** [[세라]]가 [[연방 헌법]]을 손에 넣을 수 있었던 것은 그것이 이때 불타 흩어졌기 때문이고, [[헌병대]]가 그를 따르는 것은 매개체를 되살릴 사람이 그였기 때문이며, [[데이비스]]가 독립으로 간 것은 이 자리에서 \"우리가 왜 이 자리에 앉아있어야 하는 거냐\"고 물었기 때문이다. 사건 하나가 2부의 세 축을 동시에 낳는다.\n\n**이름이 나오는 헌병 — 벤자민.** 대본 전체에서 헌병이 이름으로 불리는 유일한 자리다(18편 114행). 대사는 없다. 인물 문서를 만들 만한지는 미정이다.","parentId":null},{"title":"가문과 가족 1부","id":"story-family-1","type":"서사","folder":"08_서사","sortOrder":10,"era":"서사 시점","canon":"확정","status":"작성 중","tags":["서사","가문과 가족"],"memo":"챕터 단위 문서. 편별 목록은 만들지 않는다(작가 방침).","image":"resource/wiki/가문과 가족 1부.png","imageCaption":"가문과 가족 1부","summary":[["분량","프롤로그 + 1~10편 (+ 3.5편 잡음)"],["기간","xx월 07일 ~ 09일 아침"],["무대","[[북방주]] → [[수도주]]"],["주역","네빌 · 앤드루 · 에른스트 · 레밍턴 · 세라 · 잭 · 데이비스 · 필립 · 로버트"],["표어","달리는 기차 위에 중립은 없다"]],"content":"# 가문과 가족 1부\n\n```틀\n가문과 가족\n```\n\n프롤로그와 1~10편. **판이 깔리는 부분**이다. 북부의 저택 습격으로 시작해, 의회 소집일 아침까지 온 세력이 [[수도주]]로 모인다.\n\n```표어\n달리는 기차 위에 중립은 없다.\n```\n\n## 흐름\n\n[[철도청]]이 [[하노버 용병단]]을 앞세워 북부 [[대가문]]들을 차례로 '설득'하는 것이 발단이다(2~3편). 그 습격이 [[스프링필드]] 저택을 덮치고, 보안관 [[레밍턴]]이 배후를 증언한다(4편).\n\n한편 [[데이비스]]는 [[대가문]]들에게 분리 독립을 제안하고(8편), 동방주는 심야 조례로 경찰 무장해제에 나선다(9편). 10편은 의회 소집일 아침, 낯선 검문을 지나는 장면으로 끝난다.\n\n그 사이 6편에서 [[세라]]가 [[연방 헌법]]을 복원하고 있다. 이 편의 사건 요약이 \"밀실에서 '폭탄'이 완성되어 가다\"다.\n\n## 특징\n\n- **북부에서 수도로 이동한다.** 1편은 열두 번의 환승으로 시작하고, 10편은 의회 앞에 선다.\n- **주역이 아홉 번 바뀐다.** 용병단장·보안관·의원·비서관이 번갈아 시점을 잡는다.\n- **6편만 무기호다.** 주역이 [[식스]]인데 기호가 배정되지 않았다. 의도된 예외다.\n\n## 관련 문서\n\n- [[가문과 가족]] · [[가문과 가족 2부]]\n- [[북방주]] · [[수도주]] · [[스프링필드]]\n- [[철도청]] · [[대가문]] · [[의회]]","parentId":"story-family"},{"title":"가문과 가족 2부","id":"story-family-2","type":"서사","folder":"08_서사","sortOrder":20,"era":"서사 시점","canon":"확정","status":"작성 중","tags":["서사","가문과 가족"],"memo":"챕터 단위 문서. 편별 목록은 만들지 않는다(작가 방침).","image":"resource/wiki/가문과 가족 2부.png","imageCaption":"가문과 가족 2부","summary":[["분량","11~20편 + 에필로그 (+ 18.5편 잡음)"],["기간","xx월 09일 하루 → 11~12일 → 며칠 뒤"],["무대","[[의회]] → 지하 → [[스프링필드]] 저택"],["주역","하워드 · 해리엇 · 타게니아 · 네빌 · 에른스트 · 세라(3편) · 앤드루 · 코네트"],["판이 뒤집힌 횟수","3"]],"content":"# 가문과 가족 2부\n\n```틀\n가문과 가족\n```\n\n11~20편과 에필로그. **11~19편이 하루 안에 벌어진다.** [[의회]] 한 곳에서 판이 세 번 뒤집힌다.\n\n## 세 번의 역전\n\n1. **[[북부동맹]]이 의회를 장악한다** (11편). [[하워드]]가 [[연합]]의 개입을 끌어들이는 사이에 벌어진다.\n2. **[[데이비스]]가 독립을 선언한다** (18편). [[연방 헌법]] 제4조를 근거로, 가담한 여섯 [[대가문]]의 이름을 부른다.\n3. **[[세라]]가 수정헌법 제1조를 발표한다** (18편). 같은 편에서 두 번째 역전이 곧바로 뒤집힌다.\n\n그 사이 12편에서 조작된 [[0호 비상사태]] 지령이 경찰청을 흔들고, 13편에는 [[연합]] 감독관 [[타게니아]]가 본회의장에 도착한다.\n\n## 두 겹의 무대\n\n의회에서 정치가 굴러가는 동안, **지하에서 [[앤드루]]의 사업이 따로 굴러간다.** 16편에서 [[궤간 통일]]을 명분으로 파온 지하철도가 언급되고, 19편에서 그 실체가 드러난다. 앤드루가 지하에서 독립 선언 소식을 통신으로 전해 듣는 장면이 두 무대가 만나는 자리다.\n\n## 세라의 세 편\n\n16 · 17 · 18편이 [[세라]] 연속 주역이다. 그림자가 드러나고(16), 돌아올 수 없는 선을 넘고(17), 개헌한다(18). 부제도 이어진다 — 「나는 항상 내 의무에 충실했으며, 죽을 준비를 하고 있었다」 → 「가족은 문명의 핵이다」 → 「…나의 집」.\n\n## 끝\n\n20편은 폐허가 된 [[스프링필드]] 저택으로 돌아오는 이야기다. 주역은 [[코네트]]이고, 부제가 「언약의 피는 태중의 물보다 진하다」다.\n\n에필로그는 [[연합]] 중앙엑스포 청사로 넘어간다. [[타게니아]]의 연락이 끊겼고 연방으로 이어지는 회선이 전부 먹통이라는 보고가 올라오며, 「다음 이야기, ‘마왕과 용사’」로 닫힌다. → [[마왕과 용사]]\n\n## 관련 문서\n\n- [[가문과 가족]] · [[가문과 가족 1부]] · [[마왕과 용사]]\n- [[의회]] · [[북부동맹]] · [[연방 헌법]]\n- [[세라]] · [[앤드루]] · [[데이비스]] · [[코네트]]\n\n## 여담\n\n**독자가 마지막까지 모르는 것.** 이 챕터에서 [[세라]]가 헌법을 고쳐 쓰는 것이 [[누스]]를 이용한 행위라는 사실은 한 번도 설명되지 않는다. 에필로그가 [[연합]] 쪽으로 시점을 옮겨 \"특수 장비\"와 \"최고등급 기술 유출\"을 언급하는 것이 초자연 층으로 넘어가는 첫 단서다.","parentId":"story-family"},{"title":"가문과 가족","id":"story-family","type":"서사","folder":"08_서사","sortOrder":0,"era":"서사 시점","canon":"확정","status":"작성 중","tags":["서사","가문과 가족"],"memo":"챕터 단위 문서다. 편별 목록은 만들지 않기로 했으므로(작가 방침) 챕터의 성격과 구조만 적는다. 근거: 대본 22편, storypack의 챕터·주역·기호 배정.","image":"resource/wiki/가문과 가족.png","imageCaption":"가문과 가족","summary":[["분량","20편 + 프롤로그 · 에필로그 · 잡음 2편"],["챕터","[[가문과 가족 1부]] · [[가문과 가족 2부]]"],["무대","[[연방]]"],["기간","사흘 (xx월 7 · 8 · 9일) + 저택 귀환과 에필로그"],["주역 인물","14명 — 편마다 교대"],["다음 이야기","[[마왕과 용사]]"]],"content":"# 가문과 가족\n\n```틀\n가문과 가족\n```\n\n[[연방]]을 무대로 한 20편의 이야기. 개인의 활약이 아니라 **이해관계와 집단**이 움직이며, 편마다 주역이 교대된다.\n\n## 구조\n\n편마다 다른 인물이 주역을 맡고, 그 인물에게 배정된 기호가 화 목록에 이름 대신 표시된다. 독자는 편을 읽고 나서야 그 각인이 누구였는지 알게 된다. → [[인물]]\n\n주역이 14명이라는 것은 **주인공이 없다는 뜻**이다. 발화량이 가장 많은 [[세라]]도 7편에만 나오고, 1부의 시선인 [[네빌]]은 2부에서 3편에만 등장한다.\n\n## 시간\n\n본편의 사건은 거의 전부 **사흘**에 몰려 있다.\n\n| 날짜 | 편 | 밀도 |\n|---|---|---|\n| xx월 07일 | 1 ~ 4편 | 북부에서 시작 |\n| xx월 08일 | 5 ~ 9편 | 8편 연회장 · 9편 밀퍼드는 저녁~밤 (D-1) |\n| xx월 09일 | 10 ~ 19편 | D-day. 하루에 열 편 |\n| 11~12일 | 20편 | 저택 귀환 |\n| 며칠 뒤 | 에필로그 | 연합 중앙엑스포 |\n\n10~19편이 하루라는 것이 이 작품의 밀도다. 의회 하나에서 필리버스터·조작된 지령·감독관 개입·독립 선언·개헌이 연달아 터진다.\n\n## 두 부\n\n- **[[가문과 가족 1부]]** (1~10편) — 북부에서 시작해 의회로 모인다. 판이 깔리는 쪽\n- **[[가문과 가족 2부]]** (11~20편) — 의회에서 판이 세 번 뒤집힌다\n\n사이에 「잡음」 두 편(3.5 · 18.5)이 끼어 있다.\n\n## 처음과 끝\n\n부제가 하나의 속담을 앞뒤로 나눠 쓴다.\n\n- 1편 「피는 물보다 진하다」\n- 20편 「언약의 피는 태중의 물보다 진하다」\n\n원래 속담의 온전한 형태가 마지막에 오면서 뜻이 뒤집힌다 — 혈연보다 **맺은 약속**이 앞선다. [[세라]]가 혈연 아닌 이들을 가족이라 부르는 것과 같은 방향이다.\n\n## 관련 문서\n\n- [[가문과 가족 1부]] · [[가문과 가족 2부]] · [[마왕과 용사]]\n- [[연방]] · [[의회]] · [[철도청]]\n- [[인물]]\n\n## 여담\n\n**초자연 층이 전부 숨겨져 있다.** 22편에 `노에시스` · `노에마` · `누스` · `카시마르`가 한 번도 나오지 않는다. [[연방 헌법]]이 [[누스]]라는 사실조차 법리로만 설명된다. → [[세계관 대문]]\n\n**편별 목록은 만들지 않는다**. 각 편의 부제·사건·주역·기호는 `script/` 대본의 메타 줄과 `storypack.json`에 이미 있고, 플레이어의 연표·화 목록이 그것을 쓴다. 위키는 챕터 단위까지만 다룬다.","parentId":null},{"title":"위키 작성 규칙","id":"wiki-rules","type":"메모","folder":"09_검토","sortOrder":0,"era":"시대 공통","canon":"확정","status":"작성 중","tags":["운영","안내"],"memo":"이 문서만은 작가 원고가 아니라 작업 규약이다. 원고 이관 정책이 바뀌면 여기부터 고칠 것.","image":"","imageCaption":"","summary":[],"content":"# 위키 작성 규칙\n\n작가 원고를 이 위키로 옮길 때의 규약. 세계관 설정이 아니라 작업 방식에 대한 문서다.\n\n## 옮길 때 (2026-07-31 확정)\n\n원고의 문장을 다듬지 않는다. 위키가 정사의 기준점이 될 것이므로, 옮기는 과정에서 원고와 위키 사이에 미세한 차이가 쌓이면 나중에 어느 쪽이 맞는지 판별할 수 없게 된다.\n\n- **문장 유지** — 줄바꿈으로 끊긴 한 문장을 잇는 것까지만 허용한다. 어순·조사·종결어미를 바꾸지 않는다.\n- **맞춤법은 고친다** (2026-07-31 확정) — 명백한 오타와 맞춤법 오류는 조용히 교정하고, 무엇을 고쳤는지 `검토메모`에 남긴다. 예: `띈다`→`띤다`, `깊을 수록`→`깊을수록`, `대륙 별`→`대륙별`, `전해져내려오는`→`전해 내려오는`.\n- **문체는 건드리지 않는다** — 맞춤법이 아닌 것은 그대로 둔다. 따옴표 `‘ ’`, 느낌표 개수(`아님!!!!!!`), 문장 중간의 마침표(`차이점으로.`), 쉼표로 끊어가는 terse한 어투. 이건 오류가 아니라 작가의 목소리다. Google Docs 내보내기에서 생긴 이스케이프(`\\!` `\\-` `\\<`)는 제거한다.\n- **소제목은 레벨을 올린다** — 원문이 굵은 글씨로 표시한 소제목(`**형성 과정**`)은 `### 형성 과정`으로 올린다. 그래야 뷰어 오른쪽 목차에 잡히고 긴 문서를 훑을 수 있다. 이름이나 원어 표기처럼 소제목이 아닌 굵은 글씨는 그대로 둔다.\n- **덧붙인 것은 분리** — 옮긴 사람이 넣은 링크·추론·요약·정리는 본문에 섞지 않고 문서 끝 `## 여담` 절과 프론트매터 `검토메모`에만 둔다.\n- **수정에는 근거를 남긴다** — 점검을 거쳐 원문을 고친 자리는 무엇을 어떻게 고쳤는지 `검토메모`에 적는다.\n\n## 목소리 (2026-07-31 확정)\n\n**이 위키는 작품을 읽은 독자가 쓴 글이다.** 본문에 '작가'가 등장하지 않는다.\n\n- **확정되지 않은 것은 `~로 추정된다` · `~로 보인다`** 로 쓴다. \"작가 확인을 받지 않았다\" 같은 제작 사정은 본문에 적지 않는다.\n- **작중에 없는 것은 `알려져 있지 않다` · `작중에서 언급되지 않는다`** 로 쓴다.\n- 작가에게 물어볼 것이 생기면 본문에 묻어두지 말고 **대화로 직접 묻는다.**\n- 문서 끝의 보충 절 제목은 **`## 여담`** 이다. 뷰어가 이 제목을 찾아 접으므로 바꾸면 `tools/wiki_template.html`의 `MEMO_HEAD`도 함께 고쳐야 한다.\n- **예외 둘.** 프론트매터의 `검토메모`는 작업 기록이므로 제작 사정을 그대로 적는다. 그리고 이 문서 자체는 작업 규약이라 제작 목소리를 유지한다.\n\n## 자료의 우선순위 (2026-07-31 확정)\n\n1. **작가가 직접 확정한 것** — 대화로 정한 사항. 가장 위다.\n2. **대본 (`script/`)** — 이미 완성된 작품이므로 정사다. 원고와 어긋나면 대본을 따른다. 예: 행정구역은 원고의 `중심주`가 아니라 대본의 `수도주`를 쓴다(대본 85건 : 원고 1건).\n3. **`세계관 정리.md` 원고** — 위 둘과 충돌하지 않는 범위에서 그대로 옮긴다.\n4. **`세계관_정합성_점검_메모.md`** — 작가 승인을 받은 항목만 반영한다.\n\n**원고에 없어도 필요하면 만든다** (2026-07-31 확정). 옮기는 단계가 끝나면 작업 방식이 바뀐다 — 작가가 원작을 쓰거나 아이디어를 주고, 그것을 위키 내용으로 채워 넣는 쪽이 된다. 그래서 원고 분량 안에 스스로를 묶지 않는다. '위키라면 이 정도는 있어야 한다' 싶은 것이 있으면 **먼저 물어보고 직접 쓴다.** 다만 만든 문서에는 근거를 반드시 남긴다(대본 몇 편, 작가 확인 언제, 추론인지 아닌지).\n\n**개인 사건은 사건 문서로 만들지 않는다** (작가 방침). 인물의 과거(가출·면접·유년 등)는 해당 인물 문서 안에 둔다. `05_사건`은 국가·대륙 단위 사건만 다룬다.\n\n**편별 목록 문서도 만들지 않는다** (작가 방침). 서사는 챕터 단위까지만 문서로 둔다. 편별 부제·사건·주역·기호는 `script/` 대본 메타와 `storypack.json`에 있고 플레이어가 그것을 쓴다.\n\n**플레이버 텍스트(§5)는 위키 문서에 반영하지 않는다.** 작가 방침이다. 등장인물의 대사이지 설정 서술이 아니므로, 여기서 설정을 끌어오지 않는다. 단 작가가 그 내용을 직접 확정해준 경우는 예외이며, 그때는 플레이버가 아니라 **작가 확인**을 출처로 적는다.\n\n## 문체 (2026-07-31 확정)\n\n**평서체(`~이다` / `~한다`)로 통일한다.** 본문이든 메모든 같다.\n\n원고는 구간마다 문체가 달랐다. §핵심 개념과 §1의 이해집단 설명은 평서체였고, §1의 「짤막한 역사」만 음슴체(`~함` / `~됨` / `~임`)였다. 다수인 평서체로 맞추기로 했으므로, 국가 문서의 역사 절은 옮길 때 어미를 바꾼다. **어순과 내용은 그대로 두고 문장 끝만 고친다.**\n\n- 옮긴 사람의 메모도 평서체로 쓴다. 존댓말(`~입니다` / `~십시오`)을 쓰지 않는다.\n- 물어볼 것이 있으면 `확인이 필요하다` 형태로 적는다. 의문문으로 던지지 않는다.\n- **예외: 인용은 손대지 않는다.** 경구, 등장인물의 대사, 세력의 표어는 원문 그대로 둔다.\n- 문체를 바꾼 문서는 `검토메모`에 그 사실을 적는다.\n\n## 속성 어휘\n\n위키 도구(`wikipage/index.html`)의 선택 목록과 일치해야 한다. 없는 값을 쓰면 편집 화면에서 선택이 풀린다.\n\n- **분류** 대문 · 개념 · 국가 · 세력 · 인물 · 사건 · 기술 · 병기 · 지역 · 서사 · 연표 · 메모\n- **정사** 확정 · 잠정 · 구 설정 · 폐기 예정\n- **상태** 작성 중 · 검토 필요 · 충돌 의심 · 완료\n- **시대** 시대 공통 · 대전쟁 이전 · 대전쟁 · 고대 · 고전 · 중세 · 근대 · **연말 위기** · 서사 시점 · 현대(붕괴 이후) · 미정\n  - 2026-07-31 확정. 값을 추가·변경하면 뷰어 템플릿(`tools/wiki_template.html`)의 `ERAS` 배열에도 반영해야 한다. 순서가 곧 연표 순서다.\n  - **`연말 위기`는 경계 칸이다.** [[연말 위기]]가 근대와 서사 시점을 가르는 기준이라 독립 항목으로 두었다. 이 사건에서 사라지는 구질서([[통일파]] · [[건국의 아버지들]])는 `근대`, 이 사건의 결과로 생긴 것들([[통합파]] · [[자치파]] · [[경찰청]] 등)은 `서사 시점`이다. 플레이어 연표의 `ERA_ORDER`도 이 사건을 독립 층으로 둔다.\n  - **마왕 사태는 '서사 시점'이다.** 국가 붕괴의 계기이지만 그 자체는 서사 안의 사건이다.\n- **폴더** 00_홈 · 01_핵심 규칙 · 02_지역 · 03_세력 · 04_인물 · 05_사건 · 06_기술과 병기 · 07_연표 · 08_서사 · 09_검토 · 미분류\n\n## 시대 기준\n\n이 위키의 '현재'는 **국가 체제가 모두 무너진 이후**, 국지 세력이 난립하는 시기다. 메인 서사는 모두 그보다 앞이다. 국가와 그 이해집단을 다루는 문서는 '현대(붕괴 이후)'가 아니라 그 국가가 실제로 기능하던 시대를 적는다.\n\n## 아직 열려 있는 결정\n\n- 13개 대가문 중 이름이 확인된 것은 **6개** — 스프링필드 · 콩코드 · 하트퍼드 · 도버 · 윌밍턴 · 밀퍼드(18편 55행). 나머지 7개는 미정.\n- 하위 문서가 상위 문서의 폴더를 강제로 따라간다([index.html:222](../../wikipage/index.html:222)의 `setFolder`, [:223](../../wikipage/index.html:223)의 `setParent`). 국가 밑에 이해집단을 계층으로 매달려면 이 동작을 풀어야 한다.\n- 읽기는 해결됐다. `python tools/build_wiki.py` 가 `lore/` 를 읽어 단일 HTML 뷰어(`wikipage/위키.html`)를 만든다. 편집은 여전히 md에서 한다. `wikipage/index.html`(localStorage 편집기)은 뷰어로 대체됐으므로 쓰지 않는다.","parentId":null}],"folderOrder":["00_홈","01_핵심 규칙","02_지역","03_세력","04_인물","05_사건","06_기술과 병기","07_연표","08_서사","09_검토","미분류"],"templates":{"가문과 가족":{"title":"가문과 가족","hue":"286","groups":[["챕터","[[가문과 가족 1부]] · [[가문과 가족 2부]] · [[마왕과 용사]]"],["무대","[[연방]] · [[의회]] · [[철도청]] · [[스프링필드]]"],["인물","[[세라]] · [[네빌]] · [[앤드루]] · [[데이비스]] · [[코네트]] · [[인물]]"],["사건","[[연말 위기]] · [[미트로프 내전]] · [[연방 헌법]]"]]},"연방":{"title":"미트로프 연방","hue":"208","groups":[["통치","[[의회]] · [[통합파]] · [[자치파]] · [[철도파]] · [[통일파]] · [[건국의 아버지들]]"],["무력","[[헌병대]] · [[경찰청]] · [[보안관]] · [[기동대]]"],["행정","[[철도청]] · [[궤간 통일]] · [[0호 비상사태]]"],["지역","[[수도주]] · [[북방주]] · [[동방주]] · [[남방주]] · [[서방주]]"],["사회","[[대가문]] · [[스프링필드]] · [[콩코드]] · [[하트퍼드]] · [[도버]]"],["음지","[[명백한 운명]] · [[잭슨의 형제단]] · [[북부동맹]]"],["역사","[[연방의 역사]] · [[연말 위기]] · [[미트로프 내전]] · [[연방 헌법]]"],["인물","[[앤드루]] · [[세라]] · [[네빌]] · [[잭]] · [[데이비스]] · [[해리엇]]"]]},"핵심 개념":{"title":"이 세계의 규칙","hue":"264","groups":[["근본","[[노에시스]] · [[폭발과 연소]]"],["행위","[[노에마]] · [[노모스]] · [[누스]]"],["존재","[[카시마르]] · [[대악몽]]"],["환경","[[바다]] · [[대전쟁]]"],["사람","[[바다 민족]]"],["사례","[[연방 헌법]]"]]}},"todo":{"0호 비상사태":["가문과 가족 2부","경찰청"],"감독관":["폭발과 연소"],"궤간 통일":["가문과 가족 2부","앤드루","연말 위기","철도청","철도파"],"대악몽":["누스","카시마르"],"도버":["대가문","보안관"],"레밍턴":["가문과 가족 1부","보안관","스프링필드","앤드루","인물","코네트"],"레콩키스타":["카시마르"],"로디니아 대륙":["그렌빌리아 대륙","대전쟁"],"로버트":["인물","통합파"],"루블린 공국":["그렌빌리아 대륙"],"마왕과 용사":["가문과 가족","가문과 가족 2부"],"먼로":["건국의 아버지들","데이비스","앤드루","연말 위기","인물"],"미트로프 내전":["대가문","데이비스","명백한 운명","북방주","스프링필드","연방","자치파"],"밀퍼드":["대가문"],"바나토국":["그렌빌리아 대륙"],"북부동맹":["가문과 가족 2부","데이비스","명백한 운명","북방주","스프링필드","연방","인물","자치파"],"스프링필드 가주":["데이비스","스프링필드","인물","코네트"],"식스":["가문과 가족 1부","세라","인물"],"신물질":["카시마르"],"신성제국":["건국의 아버지들","그렌빌리아 대륙","누스","바다 민족","연말 위기","연방","카시마르"],"애덤스":["건국의 아버지들","누스","세라","연방 헌법","인물","헌병대"],"에른스트":["스프링필드","앤드루","인물"],"에리스":["인물"],"연방 의원 A":["데이비스","인물"],"연합":["가문과 가족 2부","건국의 아버지들","그렌빌리아 대륙","노에시스","데이비스","바다 민족","연말 위기","연방","인물","철도파","카시마르","폭발과 연소"],"오흐리드 왕국":["그렌빌리아 대륙"],"올림피아드":["건국의 아버지들","그렌빌리아 대륙","노에시스","연말 위기","폭발과 연소"],"윌밍턴":["대가문"],"인물관계도":["건국의 아버지들","앤드루"],"잭":["데이비스","수도주","앤드루","연말 위기","인물","통합파"],"잭슨":["네빌","앤드루","인물","잭슨의 형제단"],"철도":["네빌"],"카고르예 공화국":["그렌빌리아 대륙"],"칼리아리 왕국":["그렌빌리아 대륙"],"컴퍼니":["그렌빌리아 대륙","명백한 운명","연말 위기","연방","철도파"],"콩코드":["대가문","북방주","스프링필드"],"쾨벤하운 인민연합":["그렌빌리아 대륙","북방주"],"크레스티아 제국":["그렌빌리아 대륙","연말 위기","연방"],"타게니아":["가문과 가족 2부","데이비스","인물"],"판게아 대륙":["그렌빌리아 대륙","대전쟁","바다 민족"],"판노티아 대륙":["그렌빌리아 대륙","대전쟁"],"팔레르 기사단국":["그렌빌리아 대륙"],"프랑크":["인물"],"프로이센 사단":["앤드루","연방","연방의 역사"],"필립":["대가문","데이비스","보안관","인물"],"하노버 용병단":["가문과 가족 1부","기동대","네빌","스프링필드","앤드루","연방","연방의 역사","철도청"],"하워드":["가문과 가족 2부","앤드루","인물","철도청","철도파"],"하트퍼드":["대가문","북방주","스프링필드"],"해리엇":["세라","연방 헌법","인물","헌병대"],"헥터":["인물"],"헬베티 공국":["그렌빌리아 대륙"]}};
+const docs = DATA.docs, folderOrder = DATA.folderOrder, todo = DATA.todo || {};
+const templates = DATA.templates || {};
+const MEMO_HEAD = "## 여담";
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
+const byId = x => docs.find(d => d.id === x);
+const findT = t => docs.find(d => d.title.trim().toLowerCase() === String(t).trim().toLowerCase());
+const slug = s => "h-" + String(s).replace(/\s+/g,"-").replace(/[^\w가-힣-]/g,"");
+const icon = t => ({"대문":"⌂","개념":"◇","국가":"⚑","세력":"♟","인물":"●","사건":"◆","기술":"⚙","병기":"⚔","지역":"▧","서사":"≡","연표":"↦","메모":"□"}[t] || "□");
+function dotClass(d){
+  if (d.status === "충돌 의심") return "conflict";
+  if (d.status === "완료" && d.canon === "확정") return "done";
+  if (d.status !== "완료" || d.canon === "잠정") return "draft";
+  return "";
+}
+const sortDocs = (a,b) => (a.sortOrder||0)-(b.sortOrder||0) || a.title.localeCompare(b.title,"ko");
+const childrenOf = id => docs.filter(d => (d.parentId||null) === (id||null)).sort(sortDocs);
+
+/* ── 분류별 상징색 ── */
+const TYPE_HUE = {"대문":32,"개념":264,"국가":208,"세력":14,"인물":338,"사건":42,
+                  "기술":192,"병기":2,"지역":152,"서사":286,"연표":96,"메모":222};
+const hueOf = t => TYPE_HUE[t] ?? 222;
+
+/* ── 시대 축 ── */
+/* '연말 위기'는 근대와 서사 시점을 가르는 경계라서 독립된 칸을 가진다.
+   플레이어 연표의 ERA_ORDER 도 이 사건을 독립 층으로 두고 있다. */
+const ERAS = ["대전쟁 이전","대전쟁","고대","고전","중세","근대","연말 위기","서사 시점","현대(붕괴 이후)"];
+const ERA_SHORT = {"대전쟁 이전":"대전쟁 전","현대(붕괴 이후)":"현대"};
+const ERA_EDGE = new Set(["연말 위기"]);   // 경계 칸은 따로 표시한다
+
+function eraBar(d){
+  const hue = hueOf(d.type);
+  const seg = (e, cls) =>
+    `<div class="seg${cls}${ERA_EDGE.has(e) ? " edge" : ""}">${esc(ERA_SHORT[e] || e)}</div>`;
+  if(d.era === "시대 공통")
+    return `<div class="erabar tone" style="--hue:${hue}">` +
+      ERAS.map(e => seg(e, " span")).join("") + `</div>`;
+  const i = ERAS.indexOf(d.era);
+  if(i < 0)
+    return `<div class="erabar flat"><div class="lab">시대 ${esc(d.era || "미정")}</div></div>`;
+  return `<div class="erabar tone" style="--hue:${hue}">` +
+    ERAS.map((e, j) => seg(e, j === i ? " on" : "")).join("") + `</div>`;
+}
+
+/* 대문에 ```연표``` 를 쓰면 전체 연표가 들어간다. */
+function chronoHtml(){
+  const setting = docs.filter(d => d.type !== "대문" && d.type !== "메모");
+  const rows = ERAS.map(e => {
+    const list = setting.filter(d => d.era === e).sort(sortDocs);
+    return `<div class="row${list.length ? "" : " empty"}${ERA_EDGE.has(e) ? " edge" : ""}">
+      <div class="era">${esc(e)}${ERA_EDGE.has(e) ? `<span class="edgetag">근대와 서사 시점의 경계</span>` : ""}</div>
+      <div class="docs">${list.length
+        ? list.map(d => `<a data-go="${d.id}">${icon(d.type)} ${esc(d.title)}</a>`).join("")
+        : `<span class="none">아직 없다</span>`}</div></div>`;
+  }).join("");
+  const common = setting.filter(d => d.era === "시대 공통").sort(sortDocs);
+  const undated = setting.filter(d => d.era === "미정").sort(sortDocs);
+  const extra = [["시대 공통", common], ["미정", undated]].filter(([, l]) => l.length).map(([t, l]) =>
+    `<div class="row empty"><div class="era">${t}</div><div class="docs">${
+      l.map(d => `<a data-go="${d.id}">${icon(d.type)} ${esc(d.title)}</a>`).join("")}</div></div>`).join("");
+  return `<div class="chrono">${rows}${extra}</div>`;
+}
+
+/* ── 이미지 ──
+   lore/ 문서가 가리키는 경로는 저장소 뿌리 기준이다. 뷰어는 wikipage/ 안에 있으므로 ../ 를 붙인다.
+   파일이 없으면 빈 상자 대신 제목에서 뽑은 문양을 깐다. */
+function imgSrc(p){ return /^(https?:|\.\.\/|\/)/.test(p) ? p : "../" + p }
+function hashOf(s){ let h = 0; for(const c of String(s)) h = (h * 31 + c.codePointAt(0)) >>> 0; return h }
+function motifSvg(seed, hue){
+  const h = hashOf(seed), kind = h % 4;
+  const c = `hsl(${hue} 38% 52%)`;
+  const g = s => `<svg class="motif" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"
+    xmlns="http://www.w3.org/2000/svg"><g fill="none" stroke="${c}" stroke-width=".7">${s}</g></svg>`;
+  if(kind === 0) return g([18,28,38,48,58].map(r => `<circle cx="50" cy="52" r="${r}"/>`).join(""));
+  if(kind === 1) return g([12,30,48,66,84].map(y => `<path d="M-5 ${y} L50 ${y + 22} L105 ${y}"/>`).join(""));
+  if(kind === 2) return g(Array.from({length:9}, (_, i) =>
+    `<path d="M${i*14-30} 105 L${i*14+40} -5"/><path d="M${i*14-30} -5 L${i*14+40} 105"/>`).join(""));
+  return g(Array.from({length:11}, (_, i) =>
+    `<path d="M50 104 L${i*12-10} -6"/>`).join("") + `<circle cx="50" cy="104" r="7"/>`);
+}
+function placeholder(src, label, type){
+  const hue = hueOf(type);
+  return `<div class="imgph tone" style="--hue:${hue}">${motifSvg(label || src, hue)}
+    <div class="mark">${icon(type)}</div>
+    <div class="lab">${esc(label || "이미지 자리")}</div>
+    <div class="path">${esc(src)}</div></div>`;
+}
+/* 이미지가 없을 때. 문양 자리로 바꾸고, 같은 글이 두 번 나오지 않게 캡션 줄은 지운다. */
+function imgFail(el){
+  const slot = el.closest(".imgslot") || el.closest("figure");
+  if(!slot) return;
+  const next = slot.nextElementSibling;
+  if(next && next.classList.contains("imgcap")) next.remove();
+  slot.innerHTML = placeholder(el.dataset.phSrc, el.dataset.phLabel, el.dataset.phType);
+}
+const phAttrs = (src, label, type) =>
+  `data-ph-src="${esc(src)}" data-ph-label="${esc(label || "")}" data-ph-type="${esc(type || "메모")}" onerror="imgFail(this)"`;
+let curType = "메모";
+function imgHtml(src, alt){
+  return `<figure class="body-img"><img src="${esc(imgSrc(src))}" alt="${esc(alt||"")}"
+    ${phAttrs(src, alt, curType)}>${alt ? `<figcaption>${esc(alt)}</figcaption>` : ""}</figure>`;
+}
+
+/* ── 인용 블록 ──
+   ```경구 / ```대사 / ```표어 / ```조문 으로 감싼다.
+   '—' 로 시작하는 줄은 출처로 빠진다. */
+/* ── 틀 ──
+   ```틀
+   연방
+   ```
+   lore/_틀/연방.md 를 불러 탐색 상자로 그린다. */
+function navboxHtml(name){
+  const t = templates[name];
+  if(!t) return `<div class="navbox missing">틀 「${esc(name)}」을 찾지 못했다 — <code>lore/_틀/${esc(name)}.md</code></div>`;
+  const hue = t.hue || 222;
+  return `<nav class="navbox tone" style="--hue:${hue}">
+    <div class="nbhead">${esc(t.title)}</div>
+    <table>${t.groups.map(([k, v]) =>
+      `<tr><th>${esc(k)}</th><td>${inline(v)}</td></tr>`).join("")}</table></nav>`;
+}
+
+/* ── 상세 문서 안내 ──
+   ```상세
+   연방의 역사
+   ``` */
+function seeAlsoHtml(lines){
+  const names = lines.map(l => l.trim()).filter(Boolean);
+  if(!names.length) return "";
+  const links = names.map(n => inline(`[[${n}]]`)).join(" · ");
+  return `<div class="seealso">자세한 내용은 ${links} 문서를 참고할 것.</div>`;
+}
+
+/* ── 연혁 ──
+   ```연혁
+   건국 | 소국들을 규합했다
+   ``` */
+function historyHtml(lines){
+  let last = "";
+  const rows = lines.map(l => l.trim()).filter(Boolean).map(l => {
+    const i = l.indexOf("|");
+    const when = i < 0 ? "" : l.slice(0, i).trim();
+    const what = i < 0 ? l : l.slice(i + 1).trim();
+    const same = when === last;
+    last = when || last;
+    return `<li${same ? ' class="same"' : ""}>
+      <span class="when">${same ? "" : inline(when)}</span>
+      <span class="what">${inline(what)}</span></li>`;
+  }).join("");
+  return `<ol class="histline">${rows}</ol>`;
+}
+
+const FENCE = {"경구":"epigraph", "대사":"dialogue", "표어":"motto", "조문":"article"};
+function renderFence(kind, lines){
+  if(kind === "연표") return chronoHtml();
+  if(kind === "틀") return navboxHtml(lines.map(l=>l.trim()).filter(Boolean)[0] || "");
+  if(kind === "상세") return seeAlsoHtml(lines);
+  if(kind === "연혁") return historyHtml(lines);
+  const cls = FENCE[kind];
+  if(!cls) return `<pre><code>${esc(lines.join("\n"))}</code></pre>`;
+  const cites = [], body = [];
+  lines.forEach(l => (/^\s*—/.test(l) ? cites : body).push(l));
+  const text = body.filter(x => x.trim()).map(x => `<p>${inline(x)}</p>`).join("");
+  const cite = cites.length
+    ? `<cite>${inline(cites.map(c => c.replace(/^\s*—\s*/, "")).join(" · "))}</cite>` : "";
+  return `<figure class="quote ${cls}">${text}${cite}</figure>`;
+}
+
+/* ── 마크다운 ── */
+function inline(raw){
+  const tokens = [];
+  let s = String(raw).replace(/\[\[([^\]]+)\]\]/g, (_,v) => { tokens.push(v); return `@@W${tokens.length-1}@@` });
+  s = esc(s).replace(/`([^`]+)`/g,"<code>$1</code>")
+            .replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>")
+            .replace(/\*([^*]+)\*/g,"<em>$1</em>")
+            .replace(/~~([^~]+)~~/g,"<del>$1</del>")
+            .replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_,alt,src) => imgHtml(src, alt))
+            .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+  tokens.forEach((v,i) => {
+    const p = v.split("|"), target = p[0].split("#")[0].trim(), label = (p[1]||p[0]).trim();
+    const cl = findT(target) ? "" : " missing";
+    s = s.replace(`@@W${i}@@`, `<a class="wiki${cl}" data-wiki="${esc(target)}">${esc(label)}</a>`);
+  });
+  return s;
+}
+function md(text){
+  const lines = String(text||"").replace(/\r\n/g,"\n").split("\n");
+  let h="", list=null, code=false, buf=[], table=[];
+  const close = () => { if(list){ h += `</${list}>`; list=null } };
+  const flush = () => {
+    if(!table.length) return;
+    const row = x => x.trim().replace(/^\||\|$/g,"").split("|").map(v=>v.trim());
+    if(table.length>1 && /^\s*\|?[\s:-]+\|/.test(table[1])){
+      const hd=row(table[0]), rows=table.slice(2).map(row);
+      h += "<table><thead><tr>"+hd.map(x=>`<th>${inline(x)}</th>`).join("")+"</tr></thead><tbody>"
+        + rows.map(r=>"<tr>"+r.map(x=>`<td>${inline(x)}</td>`).join("")+"</tr>").join("")+"</tbody></table>";
+    } else h += table.map(x=>`<p>${inline(x)}</p>`).join("");
+    table=[];
+  };
+  let fence = "";
+  for(const line of lines){
+    if(line.startsWith("```")){
+      flush();close();
+      if(!code){ code=true; fence=line.slice(3).trim(); buf=[] }
+      else { h += renderFence(fence, buf); code=false; fence="" }
+      continue;
+    }
+    if(code){ buf.push(line); continue }
+    if(line.trim().startsWith("|") && line.includes("|")){ close(); table.push(line); continue } else flush();
+    if(!line.trim()){ close(); continue }
+    let m;
+    if(m = line.match(/^(#{1,6})\s+(.+)$/)){ close(); const n=m[1].length, t=m[2];
+      h += `<h${n} id="${slug(t.replace(/[*`\[\]]/g,""))}">${inline(t)}</h${n}>` }
+    else if(/^---+$/.test(line.trim())){ close(); h += "<hr>" }
+    else if(m = line.match(/^>\s?(.*)$/)){ close(); h += `<blockquote>${inline(m[1])}</blockquote>` }
+    else if(m = line.match(/^(\s*)[-*+]\s+(.+)$/)){ if(list!=="ul"){close();list="ul";h+="<ul>"} h += `<li>${inline(m[2])}</li>` }
+    else if(m = line.match(/^\s*\d+\.\s+(.+)$/)){ if(list!=="ol"){close();list="ol";h+="<ol>"} h += `<li>${inline(m[1])}</li>` }
+    else { close(); h += `<p>${inline(line)}</p>` }
+  }
+  flush(); close();
+  return h || '<p class="empty">내용이 없습니다.</p>';
+}
+
+/* ── 상태 ── */
+let active = docs.find(d => d.folder === "00_홈") ? docs.find(d => d.folder === "00_홈").id : docs[0].id;
+let query = "";
+
+function visibleSet(){
+  if(!query) return new Set(docs.map(d=>d.id));
+  const q = query.toLowerCase();
+  const hit = new Set(docs.filter(d =>
+    [d.title,d.folder,d.type,d.era,d.canon,d.status,...(d.tags||[]),d.content,d.memo].join(" ").toLowerCase().includes(q)
+  ).map(d=>d.id));
+  [...hit].forEach(id => { let d = byId(id); while(d && d.parentId){ hit.add(d.parentId); d = byId(d.parentId) } });
+  return hit;
+}
+/* 목록은 두 단계까지만 보여준다. 그 아래는 문서에 들어가 오른쪽 '하위 문서'로 넘어간다.
+   검색 중일 때는 깊이 제한을 풀어, 깊은 문서도 찾을 수 있게 한다. */
+const MAX_DEPTH = 1;
+function descendantCount(id){
+  let n = 0, stack = [id];
+  while(stack.length){ const kids = childrenOf(stack.pop()); n += kids.length; kids.forEach(k => stack.push(k.id)) }
+  return n;
+}
+function nodeHtml(d, depth, vis){
+  if(!vis.has(d.id)) return "";
+  const limited = !query && depth >= MAX_DEPTH;
+  const kids = limited ? "" : childrenOf(d.id).map(k => nodeHtml(k, depth + 1, vis)).join("");
+  const hidden = limited ? descendantCount(d.id) : 0;
+  const badge = hidden ? `<span class="more" title="하위 문서 ${hidden}밋">${hidden}</span>` : "";
+  return `<button class="doc${d.id === active ? " on" : ""}" data-id="${d.id}" style="padding-left:${8 + depth * 15}px">
+    <span class="ic">${icon(d.type)}</span><span class="tt">${esc(d.title)}</span>${badge}<span class="dot ${dotClass(d)}"></span>
+  </button>${kids}`;
+}
+function renderTree(){
+  const vis = visibleSet();
+  const groups = new Map();
+  docs.filter(d=>vis.has(d.id)).forEach(d => {
+    if(!groups.has(d.folder)) groups.set(d.folder,0);
+    groups.set(d.folder, groups.get(d.folder)+1);
+  });
+  const order = [...groups.keys()].sort((a,b)=>{
+    const x=folderOrder.indexOf(a), y=folderOrder.indexOf(b);
+    return (x<0?999:x)-(y<0?999:y) || a.localeCompare(b,"ko");
+  });
+  $("#tree").innerHTML = order.map(f => {
+    const roots = docs.filter(d => d.folder===f && vis.has(d.id) &&
+      (!d.parentId || !byId(d.parentId) || byId(d.parentId).folder !== f)).sort(sortDocs);
+    return `<section><div class="foldername">${esc(f)}<span>${groups.get(f)}</span></div>
+      ${roots.map(d=>nodeHtml(d,0,vis)).join("")}</section>`;
+  }).join("") || '<p class="empty" style="padding:10px">결과가 없습니다.</p>';
+  $("#tree").querySelectorAll(".doc").forEach(b => b.onclick = () => go(b.dataset.id));
+}
+
+function splitMemo(content){
+  const i = content.indexOf(MEMO_HEAD);
+  if(i < 0) return [content, ""];
+  return [content.slice(0,i).trimEnd(), content.slice(i + MEMO_HEAD.length).trim()];
+}
+/* ```틀 블록은 본문에서 떼어내 문서 맨 위에 따로 놓는다.
+   본문 안에 두면 인포박스에 밀려 아래로 내려가고 위에 빈 자리가 생긴다. */
+function pullNavbox(text){
+  const m = String(text).match(/(?:^|\n)```틀\n([^\n]*)\n```\n?/);
+  if(!m) return { name: "", rest: text };
+  return { name: m[1].trim(), rest: text.replace(m[0], "\n") };
+}
+
+/* 본문 첫 줄의 `# 제목`은 위에 큰 제목으로 이미 나오므로 덜어낸다. */
+function dropH1(text, title){
+  const lines = String(text).split("\n");
+  let i = 0;
+  while(i < lines.length && !lines[i].trim()) i++;
+  const m = lines[i] && lines[i].match(/^#\s+(.+)$/);
+  if(m && m[1].trim() === String(title).trim()) return lines.slice(i+1).join("\n").replace(/^\n+/,"");
+  return text;
+}
+/* ── 인포박스 ── */
+function infoboxHtml(d){
+  const hasImg = !!d.image, rows = d.summary || [];
+  if(!hasImg && !rows.length) return "";
+  const img = hasImg
+    ? `<div class="imgslot"><img src="${esc(imgSrc(d.image))}" alt="${esc(d.title)}"
+        ${phAttrs(d.image, d.imageCaption || d.title, d.type)}></div>`
+    : "";
+  const cap = d.imageCaption ? `<div class="imgcap">${inline(d.imageCaption)}</div>` : "";
+  const table = rows.length
+    ? `<table>${rows.map(([k,v]) => {
+        const tbd = /^(미정|미착수|없음)$/.test(String(v).trim()) ? " class=\"tbd\"" : "";
+        return `<tr><th>${inline(k)}</th><td${tbd}>${inline(v)}</td></tr>`;
+      }).join("")}</table>`
+    : "";
+  return `<aside class="infobox tone" style="--hue:${hueOf(d.type)};border-top:3px solid var(--tone)">
+    <div class="ibhead">${esc(d.title)}</div>${img}${cap}${table}</aside>`;
+}
+
+/* ── 항목별 접기 ── */
+function foldify(nodes, level){
+  const frag = document.createDocumentFragment();
+  let i = 0;
+  while(i < nodes.length){
+    const n = nodes[i];
+    if(n.tagName === "H" + level){
+      const bucket = [];
+      let j = i + 1;
+      while(j < nodes.length && nodes[j].tagName !== "H" + level){ bucket.push(nodes[j]); j++ }
+      const det = document.createElement("details");
+      det.className = "sec lv" + level;
+      det.open = true;
+      if(n.id) det.id = n.id;
+      const sum = document.createElement("summary");
+      sum.innerHTML = `<span class="secttl">${n.innerHTML}</span>`;
+      det.appendChild(sum);
+      const body = document.createElement("div");
+      body.className = "secbody";
+      body.appendChild(level < 3 ? foldify(bucket, level + 1) : listFrag(bucket));
+      det.appendChild(body);
+      frag.appendChild(det);
+      i = j;
+    } else { frag.appendChild(n); i++ }
+  }
+  return frag;
+}
+function listFrag(nodes){ const f = document.createDocumentFragment(); nodes.forEach(n => f.appendChild(n)); return f }
+function revealTo(el){ let p = el; while(p){ if(p.tagName === "DETAILS") p.open = true; p = p.parentElement } }
+
+function crumbOf(d){
+  const path = []; let cur = d;
+  while(cur){ path.unshift(cur); cur = cur.parentId ? byId(cur.parentId) : null }
+  return [d.folder, ...path.slice(0,-1).map(x=>x.title)].join("  ›  ");
+}
+function render(){
+  const d = byId(active) || docs[0];
+  const [main, memo] = splitMemo(d.content);
+  $("#crumb").textContent = crumbOf(d);
+  $("#title").textContent = d.title;
+  $("#chips").innerHTML = [
+    `<span class="chip">${esc(d.type)}</span>`,
+    `<span class="chip">${esc(d.era)}</span>`,
+    `<span class="chip canon-${esc(d.canon)}">정사 ${esc(d.canon)}</span>`,
+    `<span class="chip st-${esc(d.status)}">${esc(d.status)}</span>`,
+    ...(d.tags||[]).map(t=>`<span class="chip">#${esc(t)}</span>`),
+  ].join("");
+  $("#memoFm").innerHTML = d.memo
+    ? `<details class="memo"><summary>검토 메모</summary><div class="inner body">${md(d.memo)}</div></details>` : "";
+  curType = d.type;
+  const nav = pullNavbox(main);
+  $("#erabar").innerHTML = eraBar(d);
+  $("#navbox").innerHTML = nav.name ? navboxHtml(nav.name) : "";
+  $("#infobox").innerHTML = infoboxHtml(d);
+  $("#body").innerHTML = md(dropH1(nav.rest, d.title));
+
+  /* 첫 소제목 앞의 문단을 손본다. 아주 짧고 마침표가 없는 한 줄은 부제로,
+     그 다음(또는 첫) 문단을 도입부로 표시한다. */
+  let sawSub = false;
+  for(const el of $("#body").children){
+    if(/^H[1-6]$/.test(el.tagName) || el.tagName === "DETAILS") break;
+    if(el.tagName !== "P") continue;
+    const t = el.textContent.trim();
+    if(!sawSub && t.length <= 20 && !/[.!?…다]$/.test(t)){ el.classList.add("subtitle"); sawSub = true; continue }
+    el.classList.add("lead"); break;
+  }
+
+  const heads2 = [...$("#body").querySelectorAll("h2,h3")];
+  if(heads2.length){
+    const frag = foldify([...$("#body").children], 2);
+    $("#body").innerHTML = "";
+    $("#body").appendChild(frag);
+  }
+  $("#foldbar").hidden = !$("#body").querySelector("details.sec");
+  $("#memoBody").innerHTML = memo
+    ? `<details class="memo"><summary>여담</summary><div class="inner body">${md(memo)}</div></details>` : "";
+
+  document.querySelectorAll("[data-wiki]").forEach(a => a.onclick = () => {
+    const t = findT(a.dataset.wiki);
+    if(t) go(t.id); else alert(`아직 없는 문서입니다: ${a.dataset.wiki}`);
+  });
+
+  // 오른쪽: 이 문서의 목차 + 하위 문서 + 역링크
+  const heads = [...$("#body").querySelectorAll("details.sec")].map(s => ({
+    id: s.id, text: s.querySelector(".secttl").textContent, tagName: s.classList.contains("lv3") ? "H3" : "H2"
+  }));
+  const kids = childrenOf(d.id);
+  const backs = docs.filter(x => x.id!==d.id &&
+    new RegExp(`\\[\\[${d.title.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}(\\||#|\\]\\])`).test(x.content));
+  $("#rail").innerHTML =
+    (heads.length ? `<div class="box"><h5>이 문서</h5>${heads.map(h =>
+      `<a class="${h.tagName==="H3"?"sub":""}" data-jump="${esc(h.id)}">${esc(h.text)}</a>`).join("")}</div>` : "") +
+    (kids.length ? `<div class="box"><h5>하위 문서</h5>${kids.map(k =>
+      `<a class="backlink" data-go="${k.id}">${esc(k.title)}</a>`).join("")}</div>` : "") +
+    (backs.length ? `<div class="box"><h5>여기를 가리키는 문서 ${backs.length}</h5>${backs.map(b =>
+      `<a class="backlink" data-go="${b.id}">${esc(b.title)}</a>`).join("")}</div>` : "");
+  document.querySelectorAll("[data-go]").forEach(a => a.onclick = () => go(a.dataset.go));
+  $("#rail").querySelectorAll("[data-jump]").forEach(a => a.onclick = () => {
+    const el = document.getElementById(a.dataset.jump);
+    if(!el) return;
+    revealTo(el);
+    el.scrollIntoView({behavior:"smooth", block:"start"});
+  });
+
+  renderTree();
+}
+function go(id){
+  active = id; query = ""; $("#q").value = "";
+  render();
+  $("#main").scrollTop = 0;
+  if(innerWidth <= 1000) closeSide();
+  location.hash = encodeURIComponent(byId(id).title);
+}
+
+const setFold = open => $("#body").querySelectorAll("details.sec").forEach(s => s.open = open);
+$("#foldAll").onclick = () => setFold(false);
+$("#openAll").onclick = () => setFold(true);
+const closeSide = () => { $("#side").classList.remove("open"); $("#scrim").classList.remove("on") };
+$("#menu").onclick = () => {
+  const open = $("#side").classList.toggle("open");
+  $("#scrim").classList.toggle("on", open);
+};
+$("#scrim").onclick = closeSide;
+$("#q").oninput = e => { query = e.target.value.trim(); renderTree() };
+$("#theme").onclick = () => {
+  const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+  document.documentElement.dataset.theme = next;
+  try { localStorage.setItem("wiki-theme", next) } catch(e) {}
+};
+addEventListener("keydown", e => {
+  if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==="k"){ e.preventDefault(); $("#q").focus(); $("#q").select() }
+  if(e.key==="Escape" && document.activeElement===$("#q")){ query=""; $("#q").value=""; renderTree(); $("#q").blur() }
+});
+try {
+  const t = localStorage.getItem("wiki-theme");
+  document.documentElement.dataset.theme = t || (matchMedia("(prefers-color-scheme:dark)").matches ? "dark" : "light");
+} catch(e) { document.documentElement.dataset.theme = "light" }
+
+const fromHash = location.hash ? findT(decodeURIComponent(location.hash.slice(1))) : null;
+if(fromHash) active = fromHash.id;
+render();
+</script>
+</body>
+</html>
