@@ -169,7 +169,7 @@ def build():
     )
     OUT.write_text(html, encoding="utf-8")
 
-    print(f"문서 {len(docs)}밋 → {OUT.relative_to(ROOT)}  ({len(html) // 1024}KB)")
+    print(f"문서 {len(docs)}개 → {OUT.relative_to(ROOT)}  ({len(html) // 1024}KB)")
     if templates:
         print(f"틀 {len(templates)}개: {', '.join(templates)}")
     folders = {}
@@ -181,14 +181,14 @@ def build():
 
     no_summary = [d["title"] for d in docs if not d["summary"] and d["type"] not in ("대문", "메모")]
     if no_summary:
-        print(f"\n개요 표가 없는 문서 {len(no_summary)}밋: {', '.join(no_summary)}")
+        print(f"\n개요 표가 없는 문서 {len(no_summary)}개: {', '.join(no_summary)}")
 
     missing_img = []
     for d in docs:
         if d["image"] and not (ROOT / d["image"]).exists():
             missing_img.append((d["title"], d["image"]))
     if missing_img:
-        print(f"\n이미지 자리만 잡힌 문서 {len(missing_img)}밋 (파일을 넣으면 바로 보인다):")
+        print(f"\n이미지 자리만 잡힌 문서 {len(missing_img)}개 (파일을 넣으면 바로 보인다):")
         for t, src in missing_img:
             print(f"  {t}  →  {src}")
     if dangling:

@@ -284,6 +284,22 @@ a.wiki.missing:after{content:"?";font-size:.75em;vertical-align:super;opacity:.7
 .rail .sub{padding-left:20px;font-size:11.5px}
 .rail .box{margin-bottom:22px}
 .rail .backlink{border:0;padding:3px 0;color:var(--accent)}
+/* 목록이 길어지면 접는다. 레일 자체도 화면을 넘지 않게 안에서 스크롤한다. */
+.rail{max-height:calc(100vh - 76px);overflow-y:auto;scrollbar-width:thin;padding-right:4px}
+.rail details.fold>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px}
+.rail details.fold>summary::-webkit-details-marker{display:none}
+.rail details.fold>summary:before{content:"";flex:none;width:5px;height:5px;margin-top:-2px;
+  border-right:1.5px solid var(--accent);border-bottom:1.5px solid var(--accent);
+  transform:rotate(45deg);transition:transform .15s;opacity:.55}
+.rail details.fold:not([open])>summary:before{transform:rotate(-45deg);margin-top:0}
+.rail details.fold>summary:hover:before{opacity:1}
+.rail details.fold>summary h5{margin:0}
+.rail details.fold>summary h5 b{color:var(--accent);font-weight:800;opacity:.8}
+.rail details.fold>summary:hover h5{color:var(--text)}
+.rail .boxin{margin-top:6px}
+.rail .grp{margin-bottom:9px}
+.rail .grp .gl{display:block;font-size:9.5px;letter-spacing:.09em;color:var(--muted);opacity:.6;
+  margin:0 0 2px 1px;font-weight:700}
 .empty{color:var(--muted)}
 .iconbtn{border:1px solid var(--line);background:var(--panel2);color:var(--muted);border-radius:7px;
   width:30px;height:30px;cursor:pointer;font-size:14px;flex:none}
@@ -596,7 +612,7 @@ function nodeHtml(d, depth, vis){
   const limited = !query && depth >= MAX_DEPTH;
   const kids = limited ? "" : childrenOf(d.id).map(k => nodeHtml(k, depth + 1, vis)).join("");
   const hidden = limited ? descendantCount(d.id) : 0;
-  const badge = hidden ? `<span class="more" title="하위 문서 ${hidden}밋">${hidden}</span>` : "";
+  const badge = hidden ? `<span class="more" title="하위 문서 ${hidden}개">${hidden}</span>` : "";
   return `<button class="doc${d.id === active ? " on" : ""}" data-id="${d.id}" style="padding-left:${8 + depth * 15}px">
     <span class="ic">${icon(d.type)}</span><span class="tt">${esc(d.title)}</span>${badge}<span class="dot ${dotClass(d)}"></span>
   </button>${kids}`;
@@ -751,13 +767,25 @@ function render(){
   const kids = childrenOf(d.id);
   const backs = docs.filter(x => x.id!==d.id &&
     new RegExp(`\\[\\[${d.title.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}(\\||#|\\]\\])`).test(x.content));
+  /* 목록이 길어지면 접는다. 목차는 항상 펴두고, 역링크는 늘 접어둔다. */
+  const link = x => `<a class="backlink" data-go="${x.id}">${icon(x.type)} ${esc(x.title)}</a>`;
+  const foldBox = (title, n, inner, open) =>
+    `<details class="box fold"${open ? " open" : ""}><summary><h5>${title} <b>${n}</b></h5></summary>
+      <div class="boxin">${inner}</div></details>`;
+
+  // 역링크는 분류별로 묶어 훑기 쉽게 한다
+  const byType = new Map();
+  backs.forEach(b => { if(!byType.has(b.type)) byType.set(b.type, []); byType.get(b.type).push(b) });
+  const backInner = [...byType.entries()]
+    .sort((a, b) => b[1].length - a[1].length)
+    .map(([t, list]) => `<div class="grp"><span class="gl">${esc(t)}</span>${list.map(link).join("")}</div>`)
+    .join("");
+
   $("#rail").innerHTML =
     (heads.length ? `<div class="box"><h5>이 문서</h5>${heads.map(h =>
       `<a class="${h.tagName==="H3"?"sub":""}" data-jump="${esc(h.id)}">${esc(h.text)}</a>`).join("")}</div>` : "") +
-    (kids.length ? `<div class="box"><h5>하위 문서</h5>${kids.map(k =>
-      `<a class="backlink" data-go="${k.id}">${esc(k.title)}</a>`).join("")}</div>` : "") +
-    (backs.length ? `<div class="box"><h5>여기를 가리키는 문서 ${backs.length}</h5>${backs.map(b =>
-      `<a class="backlink" data-go="${b.id}">${esc(b.title)}</a>`).join("")}</div>` : "");
+    (kids.length ? foldBox("하위 문서", kids.length, kids.map(link).join(""), kids.length <= 8) : "") +
+    (backs.length ? foldBox("여기를 가리키는 문서", backs.length, backInner, false) : "");
   document.querySelectorAll("[data-go]").forEach(a => a.onclick = () => go(a.dataset.go));
   $("#rail").querySelectorAll("[data-jump]").forEach(a => a.onclick = () => {
     const el = document.getElementById(a.dataset.jump);
